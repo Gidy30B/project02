@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { RootState } from '../../app/store/configureStore';
 import Colors from '../../components/Shared/Colors';
 import Doctors from '../../components/client/Doctors'
-import BookingSection from '../../components/BookingSection'; // BookingSection component will handle the insurance directly
+import BookingSection from '../../components/BookingSection';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from 'react-native-elements';
@@ -97,7 +97,6 @@ const DoctorProfile: React.FC = () => {
           </View>
         </View>
         
-        {/* Pass insurance providers directly to the BookingSection */}
         <BookingSection
           doctorId={doctor._id}
           consultationFee={doctor.consultationFee || 'N/A'}

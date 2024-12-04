@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, StyleSheet, Picker } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import moment from 'moment';
 import AwesomeAlert from 'react-native-awesome-alerts';
 import { Paystack, PayStackRef } from 'react-native-paystack-webview';
