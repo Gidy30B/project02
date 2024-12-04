@@ -19,7 +19,7 @@ import BookingSection from '../../components/BookingSection';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from 'react-native-elements';
-import Doctors from '../../components/client/Doctors';
+
 
 const DoctorProfile: React.FC = () => {
   const router = useRouter();
@@ -32,6 +32,7 @@ const DoctorProfile: React.FC = () => {
   const error = useSelector((state: RootState) => state.doctors.error);
 
   const doctor = doctors.find((doc) => doc._id === doctorId);
+  const otherDoctors = doctors.filter((doc) => doc._id !== doctorId);
 
   useEffect(() => {
     if (!doctors.length) {
@@ -106,11 +107,38 @@ const DoctorProfile: React.FC = () => {
               insurances={insuranceProviders}
             />
             <HorizontalLine />
+            <View style={styles.otherDoctorsContainer}>
+              <Text style={styles.sectionTitle}>Other Doctors</Text>
+              <FlatList
+                data={otherDoctors}
+                horizontal={true}
+                renderItem={({ item }) => (
+                  <View style={styles.doctorItem}>
+                    <Avatar
+                      source={{ uri: item.user.profileImage || 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' }}
+                      containerStyle={styles.avatar}
+                      imageProps={{ style: { borderRadius: 50 } }}
+                    />
+                    <View style={styles.profileInfo}>
+                      <Text style={styles.doctorName}>{`${item.user.firstName} ${item.user.lastName}`}</Text>
+                      <Text style={styles.categoryName}>{item.user.category || 'General'}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.viewButton} onPress={() => router.push(`/doctors/${item._id}`)}>
+                      <Text style={styles.viewButtonText}>View</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                keyExtractor={(item) => item._id}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.flatListContent}
+              />
+            </View>
           </>
         }
         renderItem={null}
         keyExtractor={() => 'dummy'}
       />
+     
     </SafeAreaView>
   );
 };
@@ -184,6 +212,39 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     fontSize: 18,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    marginLeft: 15,
+  },
+  doctorItem: {
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: Colors.light_gray,
+    borderRadius: 10,
+    padding: 10,
+    width: 200,
+  },
+  flatListContent: {
+    paddingVertical: 10,
+  },
+  otherDoctorsContainer: {
+    marginTop: 20,
+  },
+  viewButton: {
+    backgroundColor: Colors.LIGHT_GRAY,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginTop: 10,
+    alignSelf: 'center',
+  },
+  viewButtonText: {
+    color: Colors.PRIMARY,
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
 
