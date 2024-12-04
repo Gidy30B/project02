@@ -30,6 +30,7 @@ export default function ClientLayout() {
           backgroundColor: '#f0f0f0', // Custom background color for tab bar
           paddingVertical: 10,
         },
+        headerMode: 'float', // Ensure the header scrolls smoothly with the content
       })}
     >
       <Tabs.Screen name="home" options={{ tabBarLabel: 'Home' }} />
