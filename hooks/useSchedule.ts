@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSelector } from 'react-redux'; // Import useSelector from react-redux
+import { selectUser } from '../app/store/userSlice'; // Import selectUser from userSlice
 
 interface Slot {
   _id: string;
@@ -21,24 +23,8 @@ interface UseScheduleHook {
 
 const useSchedule = (): UseScheduleHook => {
   const [schedule, setSchedule] = useState<Slot[]>([]);
-  const [professionalId, setProfessionalId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProfessionalId = async () => {
-      try {
-        // Fetch the professionalId directly from AsyncStorage or any other method
-        const storedProfessionalId = await AsyncStorage.getItem('professionalId');
-        setProfessionalId(storedProfessionalId);
-        if (storedProfessionalId) {
-          fetchSchedule(storedProfessionalId);
-        }
-      } catch (error) {
-        console.error('Error fetching professional ID from AsyncStorage:', error);
-      }
-    };
-
-    fetchProfessionalId();
-  }, []);
+  const user = useSelector(selectUser); // Get user from Redux
+  const professionalId = user.professional?._id; // Extract professionalId from user
 
   useEffect(() => {
     if (professionalId) {
