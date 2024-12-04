@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DoctorProfile: React.FC = () => {
   const route = useRoute();
-  const doctorId = route.params?.doctorId; // Get doctorId from route params
+  const doctorId = route.params?.doctorId; 
   
   const dispatch = useDispatch();
   const doctors = useSelector((state: RootState) => state.doctors.doctorList);
@@ -24,7 +24,7 @@ const DoctorProfile: React.FC = () => {
   const [selectedInsurance, setSelectedInsurance] = useState('');
 
   useEffect(() => {
-    dispatch(fetchDoctors()); // Fetch doctors when the component mounts
+    dispatch(fetchDoctors()); 
   }, [dispatch]);
 
   if (loading) {
