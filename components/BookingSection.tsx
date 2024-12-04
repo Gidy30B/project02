@@ -213,26 +213,26 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Book an Appointment</Text>
-      <FlatList
-        horizontal
-        data={dateOptions}
-        keyExtractor={(item) => item.toISOString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => setSelectedDate(item)}
-            style={[
-              styles.dateButton,
-              selectedDate.toDateString() === item.toDateString() ? { backgroundColor: Colors.goofy } : null,
-            ]}
-          >
-            <Text style={styles.dateText}>{moment(item).format('ddd, DD')}</Text>
-          </TouchableOpacity>
-        )}
-        showsHorizontalScrollIndicator={false}
-      />
+      <View>
+        <FlatList
+          horizontal
+          data={dateOptions}
+          keyExtractor={(item) => item.toISOString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              onPress={() => setSelectedDate(item)}
+              style={[
+                styles.dateButton,
+                selectedDate.toDateString() === item.toDateString() ? { backgroundColor: Colors.goofy } : null,
+              ]}
+            >
+              <Text style={styles.dateText}>{moment(item).format('ddd, DD')}</Text>
+            </TouchableOpacity>
+          )}
+          showsHorizontalScrollIndicator={false}
+        />
+      </View>
       <Text style={styles.dateTitle}>{moment(selectedDate).format('dddd, MMMM Do YYYY')}</Text>
-      
-      {/* Insurance Provider Selection */}
       <Text style={styles.insuranceTitle}>Select Insurance Provider</Text>
       <Picker
         selectedValue={selectedInsurance}
@@ -245,34 +245,35 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
         ))}
       </Picker>
 
-      {/* Time Slot Selection */}
-      <FlatList
-        data={groupedSlots[moment(selectedDate).format('YYYY-MM-DD')] || []}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          const isPast = moment(item.startTime, 'h:mma').isBefore(moment());
-          return (
-            <TouchableOpacity
-              disabled={item.isBooked || isPast}
-              onPress={() => {
-                if (item.isBooked) {
-                  Alert.alert('Unavailable', 'This time slot is already booked.');
-                  return;
-                }
-                setSelectedTimeSlot(item);
-              }}
-              style={[
-                styles.timeSlot,
-                item.isBooked && { backgroundColor: Colors.gray },
-                isPast && { backgroundColor: Colors.lightGray },
-                selectedTimeSlot?.id === item._id && { backgroundColor: Colors.darkGreen },
-              ]}
-            >
-              <Text>{`${item.startTime} - ${item.endTime}`}</Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
+      <View>
+        <FlatList
+          data={groupedSlots[moment(selectedDate).format('YYYY-MM-DD')] || []}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => {
+            const isPast = moment(item.startTime, 'h:mma').isBefore(moment());
+            return (
+              <TouchableOpacity
+                disabled={item.isBooked || isPast}
+                onPress={() => {
+                  if (item.isBooked) {
+                    Alert.alert('Unavailable', 'This time slot is already booked.');
+                    return;
+                  }
+                  setSelectedTimeSlot(item);
+                }}
+                style={[
+                  styles.timeSlot,
+                  item.isBooked && { backgroundColor: Colors.gray },
+                  isPast && { backgroundColor: Colors.lightGray },
+                  selectedTimeSlot?.id === item._id && { backgroundColor: Colors.darkGreen },
+                ]}
+              >
+                <Text>{`${item.startTime} - ${item.endTime}`}</Text>
+              </TouchableOpacity>
+            );
+          }}
+        />
+      </View>
 
       <AwesomeAlert
         show={showAlert}

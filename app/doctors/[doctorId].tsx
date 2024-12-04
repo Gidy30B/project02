@@ -5,7 +5,7 @@ import {
   View,
   ActivityIndicator,
   TouchableOpacity,
-  ScrollView,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
@@ -75,43 +75,42 @@ const DoctorProfile: React.FC = () => {
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
-      <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.profileContainer}>
-          <Avatar
-            source={{ uri: profileImageUri }}
-            containerStyle={styles.avatar}
-            imageProps={{ style: { borderRadius: 50 } }}
-          />
-          <View style={styles.profileInfo}>
-            <Text style={styles.doctorName}>{`${doctor.user.firstName} ${doctor.user.lastName}`}</Text>
-            <Text style={styles.categoryName}>{doctor.user.category || 'General'}</Text>
-          </View>
-        </View>
-        <View style={styles.infoContainer}>
-          <View style={styles.infoItem}>
-            <Ionicons name="person" size={20} color={Colors.primary} />
-            <Text style={styles.infoText}>{doctor.user.yearsOfExperience || 'N/A'} Years of Experience</Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Ionicons name="people" size={20} color={Colors.primary} />
-            <Text style={styles.infoText}>{doctor.user.numberOfPatients || 'N/A'} Patients</Text>
-          </View>
-        </View>
-        
-        <BookingSection
-          doctorId={doctor._id}
-          consultationFee={doctor.consultationFee || 'N/A'}
-          insurances={insuranceProviders}
-        />
-        
-        <HorizontalLine />
-        <Doctors
-          searchQuery=""
-          selectedCategory=""
-          onViewAll={() => {}}
-          excludeDoctorId={doctor._id}
-        />
-      </ScrollView>
+      <FlatList
+        data={[]}
+        ListHeaderComponent={
+          <>
+            <View style={styles.profileContainer}>
+              <Avatar
+                source={{ uri: profileImageUri }}
+                containerStyle={styles.avatar}
+                imageProps={{ style: { borderRadius: 50 } }}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.doctorName}>{`${doctor.user.firstName} ${doctor.user.lastName}`}</Text>
+                <Text style={styles.categoryName}>{doctor.user.category || 'General'}</Text>
+              </View>
+            </View>
+            <View style={styles.infoContainer}>
+              <View style={styles.infoItem}>
+                <Ionicons name="person" size={20} color={Colors.primary} />
+                <Text style={styles.infoText}>{doctor.user.yearsOfExperience || 'N/A'} Years of Experience</Text>
+              </View>
+              <View style={styles.infoItem}>
+                <Ionicons name="people" size={20} color={Colors.primary} />
+                <Text style={styles.infoText}>{doctor.user.numberOfPatients || 'N/A'} Patients</Text>
+              </View>
+            </View>
+            <BookingSection
+              doctorId={doctor._id}
+              consultationFee={doctor.consultationFee || 'N/A'}
+              insurances={insuranceProviders}
+            />
+            <HorizontalLine />
+          </>
+        }
+        renderItem={null}
+        keyExtractor={() => 'dummy'}
+      />
     </SafeAreaView>
   );
 };
