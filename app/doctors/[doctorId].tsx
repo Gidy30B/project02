@@ -14,11 +14,12 @@ import { fetchDoctors } from '../../app/store/doctorSlice';
 import { useRouter } from 'expo-router';
 import { RootState } from '../../app/store/configureStore';
 import Colors from '../../components/Shared/Colors';
-import Doctors from '../../components/client/Doctors'
+
 import BookingSection from '../../components/BookingSection';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from 'react-native-elements';
+import Doctors from '../../components/client/Doctors';
 
 const DoctorProfile: React.FC = () => {
   const router = useRouter();
@@ -104,7 +105,12 @@ const DoctorProfile: React.FC = () => {
         />
         
         <HorizontalLine />
-        
+        <Doctors
+          searchQuery=""
+          selectedCategory=""
+          onViewAll={() => {}}
+          excludeDoctorId={doctor._id}
+        />
       </ScrollView>
     </SafeAreaView>
   );
