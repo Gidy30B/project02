@@ -172,6 +172,7 @@ const BookAppointment = () => {
           keyExtractor={(item, index) => index.toString()}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.specialtyList}
+          nestedScrollEnabled={true} // Add this prop
         />
       </View>
 
@@ -188,6 +189,7 @@ const BookAppointment = () => {
           keyExtractor={(item, index) => index.toString()}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.insuranceList}
+          nestedScrollEnabled={true} // Add this prop
         />
       </View>
 
@@ -225,6 +227,7 @@ const BookAppointment = () => {
             keyExtractor={(item) => item._id.toString()}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.flatListContent}
+            nestedScrollEnabled={true} // Add this prop
           />
         </View>
       )}
