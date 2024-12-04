@@ -160,32 +160,36 @@ const BookAppointment = () => {
       </TouchableOpacity>
 
       <ClinicSubHeading subHeadingTitle={'Specialties'} />
-      <FlatList
-        data={clinic.specialties.split(',')}
-        horizontal={true}
-        renderItem={({ item }) => (
-          <View style={styles.specialtyCard}>
-            <Text style={styles.specialty}>{item}</Text>
-          </View>
-        )}
-        keyExtractor={(item, index) => index.toString()}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.specialtyList}
-      />
+      <View>
+        <FlatList
+          data={clinic.specialties.split(',')}
+          horizontal={true}
+          renderItem={({ item }) => (
+            <View style={styles.specialtyCard}>
+              <Text style={styles.specialty}>{item}</Text>
+            </View>
+          )}
+          keyExtractor={(item, index) => index.toString()}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.specialtyList}
+        />
+      </View>
 
       <ClinicSubHeading subHeadingTitle={'Insurance Companies'} />
-      <FlatList
-        data={clinic.insuranceCompanies}
-        horizontal={true}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.insuranceCard}>
-            <Text style={styles.insurance}>{item}</Text>
-          </TouchableOpacity>
-        )}
-        keyExtractor={(item, index) => index.toString()}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.insuranceList}
-      />
+      <View>
+        <FlatList
+          data={clinic.insuranceCompanies}
+          horizontal={true}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.insuranceCard}>
+              <Text style={styles.insurance}>{item}</Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item, index) => index.toString()}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.insuranceList}
+        />
+      </View>
 
       <ClinicSubHeading subHeadingTitle={'Doctors'} />
       {loading ? (
@@ -193,34 +197,36 @@ const BookAppointment = () => {
           <ActivityIndicator size="large" color={Colors.PRIMARY} />
         </View>
       ) : (
-        <FlatList
-          data={doctorsData}
-          horizontal={true}
-          renderItem={({ item }) => {
-            console.log('Doctor Item:', item); // Log the doctor item
-            return (
-              <View style={styles.doctorItem}>
-                <Image 
-                  source={{ 
-                    uri: item.profileImage ? item.profileImage : 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' 
-                  }} 
-                  style={styles.doctorImage} 
-                />
-                <View style={styles.nameCategoryContainer}>
-                  <Text style={styles.doctorName}>{item.name}</Text> 
-                  <Text style={styles.doctorSpecialty}>{item.specialties.join(', ')}</Text> 
+        <View>
+          <FlatList
+            data={doctorsData}
+            horizontal={true}
+            renderItem={({ item }) => {
+              console.log('Doctor Item:', item); // Log the doctor item
+              return (
+                <View style={styles.doctorItem}>
+                  <Image 
+                    source={{ 
+                      uri: item.profileImage ? item.profileImage : 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' 
+                    }} 
+                    style={styles.doctorImage} 
+                  />
+                  <View style={styles.nameCategoryContainer}>
+                    <Text style={styles.doctorName}>{item.name}</Text> 
+                    <Text style={styles.doctorSpecialty}>{item.specialties.join(', ')}</Text> 
+                  </View>
+                  <Text style={styles.consultationFee}>Consultation Fee: {item.consultationFee} KES</Text>
+                  <TouchableOpacity style={[styles.button, styles.consultButton]} onPress={() => handleConsult(item._id)}>
+                    <Text style={styles.buttonText}>View</Text>
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.consultationFee}>Consultation Fee: {item.consultationFee} KES</Text>
-                <TouchableOpacity style={[styles.button, styles.consultButton]} onPress={() => handleConsult(item._id)}>
-                  <Text style={styles.buttonText}>View</Text>
-                </TouchableOpacity>
-              </View>
-            );
-          }}
-          keyExtractor={(item) => item._id.toString()}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.flatListContent}
-        />
+              );
+            }}
+            keyExtractor={(item) => item._id.toString()}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContent}
+          />
+        </View>
       )}
     </ScrollView>
   );
