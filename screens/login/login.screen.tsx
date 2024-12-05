@@ -63,34 +63,36 @@ const LoginScreen: React.FC = () => {
         riderId,
       });
 
-      // Redirect based on user type
-      let route = '';
-      switch (userType) {
-        case 'professional':
-          if (professional.profession === 'doctor') {
-            route = professional.attachedToClinic ? '/doctor' : '/addclinic';
-          } else if (professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
-            route = '/addpharmacy';
-          } else if (professional.profession === 'pharmacist') {
-            route = '/pharmacist/tabs';
-          } else {
-            route = '/professional';
-          }
-          break;
-        case 'client':
-          route = '/client/home';
-          break;
-        case 'student':
-          route = '/student/tabs';
-          break;
-        case 'rider':
-          route = '/rider/tabs';
-          break;
-        default:
-          route = '/student/tabs';
-      }  
+      // Ensure state updates are complete before routing
+      setTimeout(() => {
+        let route = '';
+        switch (userType) {
+          case 'professional':
+            if (professional.profession === 'doctor') {
+              route = professional.attachedToClinic ? '/doctor' : '/addclinic';
+            } else if (professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
+              route = '/addpharmacy';
+            } else if (professional.profession === 'pharmacist') {
+              route = '/pharmacist/tabs';
+            } else {
+              route = '/professional';
+            }
+            break;
+          case 'client':
+            route = '/client/home';
+            break;
+          case 'student':
+            route = '/student/tabs';
+            break;
+          case 'rider':
+            route = '/rider/tabs';
+            break;
+          default:
+            route = '/student/tabs';
+        }  
 
-      router.push(route);
+        router.push(route);
+      }, 0);
     } catch (error) {
       console.error('Error during login:', error);
       setErrorMessage('Invalid email or password. Please try again.');
