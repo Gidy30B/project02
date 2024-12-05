@@ -29,11 +29,7 @@ const DashboardScreen: React.FC = () => {
   const [scheduleLoading, setScheduleLoading] = useState<boolean>(true);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!user.isLoggedIn) {
-      router.push('/login');
-    }
-  }, [user.isLoggedIn]);
+ 
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -164,147 +160,143 @@ const DashboardScreen: React.FC = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {user.isLoggedIn ? (
-        <>
-          <View style={styles.overviewContainer}>
-            <View style={styles.overviewHeader}>
-              <Text style={styles.sectionTitle}>Overview</Text>
-              <View style={styles.iconContainer}>
-                {upcomingAppointments.length > 0 && (
-                  <View style={styles.badge} />
-                )}
-                <Icon name="calendar" size={24} color="#333" style={styles.icon} />
-              </View>
-            </View>
-
-            <View style={styles.overviewCard}>
-              <TouchableOpacity
-                style={styles.overviewItem}
-                onPress={() => router.push('/tasks')}
-              >
-                <Icon name="tasks" size={24} color="#ff7f50" style={styles.icon} />
-                <Text style={styles.overviewLabel}>Tasks ({tasks.length})</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.overviewItem}>
-                <Icon name="money" size={24} color="#4CAF50" style={styles.icon} />
-                <Text style={styles.overviewLabel}>Income</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.overviewItem}>
-                <Icon name="calendar" size={24} color="#f44336" style={styles.icon} />
-                <Text style={styles.overviewLabel}>Schedule</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.overviewItem}
-                onPress={() => router.push('/consultations')}
-              >
-                <Icon name="users" size={24} color="#2196F3" style={styles.icon} />
-                <Text style={styles.overviewLabel}>Patients</Text>
-              </TouchableOpacity>
+      <>
+        <View style={styles.overviewContainer}>
+          <View style={styles.overviewHeader}>
+            <Text style={styles.sectionTitle}>Overview</Text>
+            <View style={styles.iconContainer}>
+              {upcomingAppointments.length > 0 && (
+                <View style={styles.badge} />
+              )}
+              <Icon name="calendar" size={24} color="#333" style={styles.icon} />
             </View>
           </View>
 
-          <View style={styles.analyticsContainer}>
-            <Text style={styles.sectionTitle}>Appointments Overview</Text>
-            {renderOverviewList()}
+          <View style={styles.overviewCard}>
+            <TouchableOpacity
+              style={styles.overviewItem}
+              onPress={() => router.push('/tasks')}
+            >
+              <Icon name="tasks" size={24} color="#ff7f50" style={styles.icon} />
+              <Text style={styles.overviewLabel}>Tasks ({tasks.length})</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.overviewItem}>
+              <Icon name="money" size={24} color="#4CAF50" style={styles.icon} />
+              <Text style={styles.overviewLabel}>Income</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.overviewItem}>
+              <Icon name="calendar" size={24} color="#f44336" style={styles.icon} />
+              <Text style={styles.overviewLabel}>Schedule</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.overviewItem}
+              onPress={() => router.push('/consultations')}
+            >
+              <Icon name="users" size={24} color="#2196F3" style={styles.icon} />
+              <Text style={styles.overviewLabel}>Patients</Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          <View style={styles.upcomingContainer}>
-            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-            {upcomingAppointments.length > 0 ? (
-              upcomingAppointments.map((appointment) => {
-                const appointmentDate = moment(appointment.date).calendar(null, {
-                  sameDay: '[Today]',
-                  nextDay: '[Tomorrow]',
-                  nextWeek: 'dddd',
-                  sameElse: 'MMMM D, YYYY'
-                });
+        <View style={styles.analyticsContainer}>
+          <Text style={styles.sectionTitle}>Appointments Overview</Text>
+          {renderOverviewList()}
+        </View>
 
-                return (
-                  <View key={appointment._id} style={styles.appointmentCard}>
-                    <View style={styles.appointmentDetails}>
-                      <Text style={styles.patientName}>{appointment.patientName}</Text>
-                      <Text style={styles.appointmentTime}>{appointment.time}</Text>
-                      <Text style={styles.appointmentDate}>{appointmentDate}</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.viewButton}
-                      onPress={() => handleViewPatient(appointment.patientId._id, appointment._id)}
-                    >
-                      <Text style={styles.buttonText}>View Patient</Text>
-                    </TouchableOpacity>
+        <View style={styles.upcomingContainer}>
+          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+          {upcomingAppointments.length > 0 ? (
+            upcomingAppointments.map((appointment) => {
+              const appointmentDate = moment(appointment.date).calendar(null, {
+                sameDay: '[Today]',
+                nextDay: '[Tomorrow]',
+                nextWeek: 'dddd',
+                sameElse: 'MMMM D, YYYY'
+              });
+
+              return (
+                <View key={appointment._id} style={styles.appointmentCard}>
+                  <View style={styles.appointmentDetails}>
+                    <Text style={styles.patientName}>{appointment.patientName}</Text>
+                    <Text style={styles.appointmentTime}>{appointment.time}</Text>
+                    <Text style={styles.appointmentDate}>{appointmentDate}</Text>
                   </View>
-                );
-              })
-            ) : (
-              <Text style={styles.noAppointmentsText}>No upcoming appointments.</Text>
-            )}
-          </View>
+                  <TouchableOpacity
+                    style={styles.viewButton}
+                    onPress={() => handleViewPatient(appointment.patientId._id, appointment._id)}
+                  >
+                    <Text style={styles.buttonText}>View Patient</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.noAppointmentsText}>No upcoming appointments.</Text>
+          )}
+        </View>
 
-          <View style={styles.tasksContainer}>
-            <View style={styles.tasksHeader}>
-              <Text style={styles.sectionTitle}>Your Tasks</Text>
-              <TouchableOpacity onPress={() => setModalVisible(true)}>
-                <Icon name="plus" size={24} color="#4CAF50" />
-              </TouchableOpacity>
-            </View>
-            {tasks.length > 0 ? (
-              <FlatList
-                data={tasks}
-                renderItem={renderTaskItem}
-                keyExtractor={(item, index) => index.toString()}
+        <View style={styles.tasksContainer}>
+          <View style={styles.tasksHeader}>
+            <Text style={styles.sectionTitle}>Your Tasks</Text>
+            <TouchableOpacity onPress={() => setModalVisible(true)}>
+              <Icon name="plus" size={24} color="#4CAF50" />
+            </TouchableOpacity>
+          </View>
+          {tasks.length > 0 ? (
+            <FlatList
+              data={tasks}
+              renderItem={renderTaskItem}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          ) : (
+            <Text style={styles.noTasksText}>No tasks available.</Text>
+          )}
+        </View>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add New Task</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter task"
+                value={newTask}
+                onChangeText={setNewTask}
               />
-            ) : (
-              <Text style={styles.noTasksText}>No tasks available.</Text>
-            )}
-          </View>
-
-          <Modal
-            animationType="slide"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add New Task</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter task"
-                  value={newTask}
-                  onChangeText={setNewTask}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Start Time (HH:mm)"
-                  value={startTime}
-                  onChangeText={setStartTime}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="End Time (HH:mm)"
-                  value={endTime}
-                  onChangeText={setEndTime}
-                />
-                <Button
-                  title="Add Task"
-                  onPress={() => {
-                    if (newTask.trim() && startTime.trim() && endTime.trim()) {
-                      addTask(newTask.trim(), startTime.trim(), endTime.trim());
-                      setNewTask('');
-                      setStartTime('');
-                      setEndTime('');
-                      setModalVisible(false);
-                    }
-                  }}
-                />
-                <Button title="Cancel" onPress={() => setModalVisible(false)} color="#888" />
-              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Start Time (HH:mm)"
+                value={startTime}
+                onChangeText={setStartTime}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="End Time (HH:mm)"
+                value={endTime}
+                onChangeText={setEndTime}
+              />
+              <Button
+                title="Add Task"
+                onPress={() => {
+                  if (newTask.trim() && startTime.trim() && endTime.trim()) {
+                    addTask(newTask.trim(), startTime.trim(), endTime.trim());
+                    setNewTask('');
+                    setStartTime('');
+                    setEndTime('');
+                    setModalVisible(false);
+                  }
+                }}
+              />
+              <Button title="Cancel" onPress={() => setModalVisible(false)} color="#888" />
             </View>
-          </Modal>
-        </>
-      ) : (
-        <Text style={styles.loginPrompt}>Please log in to see your dashboard.</Text>
-      )}
+          </View>
+        </Modal>
+      </>
     </ScrollView>
   );
 };

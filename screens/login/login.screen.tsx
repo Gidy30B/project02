@@ -68,11 +68,11 @@ const LoginScreen: React.FC = () => {
         let route = '';
         switch (userType) {
           case 'professional':
-            if (professional.profession === 'doctor') {
+            if (professional && professional.profession === 'doctor') {
               route = professional.attachedToClinic ? '/doctor' : '/addclinic';
-            } else if (professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
+            } else if (professional && professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
               route = '/addpharmacy';
-            } else if (professional.profession === 'pharmacist') {
+            } else if (professional && professional.profession === 'pharmacist') {
               route = '/pharmacist/tabs';
             } else {
               route = '/professional';

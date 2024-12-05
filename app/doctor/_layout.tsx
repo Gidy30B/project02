@@ -15,8 +15,6 @@ export default function DoctorLayout() {
           switch (route.name) {
             case 'dashboard':
               return <MaterialIcons name="dashboard" size={size} color={color} />;
-            case 'appointments':
-              return <MaterialIcons name="event" size={size} color={color} />;
             case 'schedule':
               return <MaterialIcons name="schedule" size={size} color={color} />;
             case 'settings':
@@ -36,7 +34,6 @@ export default function DoctorLayout() {
     >
       {/* Ensure all children are of type Tabs.Screen */}
       <Tabs.Screen name="dashboard" options={{ tabBarLabel: 'Dashboard' }} />
-      <Tabs.Screen name="appointments" options={{ tabBarLabel: 'Appointments' }} />
       <Tabs.Screen name="schedule" options={{ tabBarLabel: 'Schedule' }} />
       <Tabs.Screen name="settings" options={{ tabBarLabel: 'Settings' }} />
       <Tabs.Screen name="transaction" options={{ tabBarLabel: 'Transaction' }} /> {/* Add this line for the new tab */}
@@ -49,8 +46,6 @@ function getTitle(routeName: string): string {
   switch (routeName) {
     case 'dashboard':
       return 'Doctor Dashboard';
-    case 'appointments':
-      return 'Your Appointments';
     case 'schedule':
       return 'Manage Schedule';
     case 'settings':
