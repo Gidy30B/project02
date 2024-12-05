@@ -34,6 +34,7 @@ export default function DoctorLayout() {
         },
       })}
     >
+      {/* Ensure all children are of type Tabs.Screen */}
       <Tabs.Screen name="dashboard" options={{ tabBarLabel: 'Dashboard' }} />
       <Tabs.Screen name="appointments" options={{ tabBarLabel: 'Appointments' }} />
       <Tabs.Screen name="schedule" options={{ tabBarLabel: 'Schedule' }} />

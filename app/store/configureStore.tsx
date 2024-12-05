@@ -12,7 +12,7 @@ import patientReducer from './patientSlice';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['user', 'prescription', 'doctors', 'schedules', 'clinics'], // Add 'clinics' to the whitelist
+  whitelist: ['user'], // Persist only the user state
 };
 
 const rootReducer = combineReducers({
@@ -32,7 +32,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }), // Remove .concat(thunk)
+    }),
 });
 
 export const persistor = persistStore(store);

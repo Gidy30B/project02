@@ -52,7 +52,7 @@ const LoginScreen: React.FC = () => {
         riderId,
       }));
 
-      // AuthContext to store global auth data
+
       authLogin({
         name: `${firstName} ${lastName}`,
         email: userEmail,
@@ -63,7 +63,7 @@ const LoginScreen: React.FC = () => {
         riderId,
       });
 
-      // Ensure state updates are complete before routing
+    
       setTimeout(() => {
         let route = '';
         switch (userType) {

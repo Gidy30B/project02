@@ -1,43 +1,54 @@
-import React from "react";
-import { SplashScreen, Stack } from "expo-router";
-import { ThemeProvider, useTheme } from "../context/theme.context";
-import {
-  Poppins_600SemiBold,
-  Poppins_300Light,
-  Poppins_400Regular,
-  Poppins_700Bold,
-  Poppins_500Medium,
-  useFonts,
-} from "@expo-google-fonts/poppins";
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
+import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { store } from './store/configureStore';
-import { AuthProvider } from '../context/AuthContext';
+import { AuthProvider } from '../context/AuthContext'; // Import AuthContext for user state
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-import { Provider as PaperProvider } from 'react-native-paper';
+SplashScreen.preventAutoHideAsync();
 
-export default function _layout() {
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-    Poppins_600SemiBold,
-    Poppins_300Light,
-    Poppins_700Bold,
-    Poppins_400Regular,
-    Poppins_500Medium,
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <Provider store={store}>
-      <AuthProvider>
-        <ThemeProvider>
-          <PaperProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(routes)/onboarding/index" />
-              <Stack.Screen name="register" options={{ title: 'Register', headerShown: true }} />
-            </Stack>
-          </PaperProvider>
-        </ThemeProvider>
-      </AuthProvider>
+      <ThemeProvider value={colorScheme === 'light' ? DarkTheme : DefaultTheme}>
+        <AuthProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="register" options={{ title: 'Register', headerShown: true }} />
+            <Stack.Screen name="client" options={{ title: 'Welcome', headerShown: true }} />
+            <Stack.Screen name="hospital/book-appointment/[id]" options={{ title: '', headerShown: false }} />
+            <Stack.Screen name="client/tabs" />  {/* Existing client tabs screen */}
+            <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} />  {/* Link to the doctors overview */}
+            <Stack.Screen name="doctor/[doctorId]" options={{ title: 'Doctor Profile' }} />
+            <Stack.Screen name="doctor" />
+            <Stack.Screen name="addclinic" />
+            <Stack.Screen name="pharmacist/tabs" />
+            <Stack.Screen name="addpharmacy" />
+            <Stack.Screen name="student/tabs" />
+            <Stack.Screen name="rider/tabs" />
+          </Stack>
+        </AuthProvider>
+      </ThemeProvider>
+      <StatusBar style="auto" />
     </Provider>
   );
 }

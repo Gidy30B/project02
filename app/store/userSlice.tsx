@@ -62,7 +62,6 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    // This login action will only update user profile data and set `isAuthenticated` to true
     login: (
       state,
       action: PayloadAction<{
@@ -82,8 +81,6 @@ const userSlice = createSlice({
       state.professional = action.payload.professional || null;
       state.profileImage = action.payload.profileImage || null;
     },
-
-    // Logout action to clear user data from state
     logout: (state) => {
       state.name = null;
       state.email = null;
@@ -93,7 +90,6 @@ const userSlice = createSlice({
       state.professional = null;
       state.profileImage = null;
     },
-
     // Action to update the user profile in state (e.g., name, email, etc.)
     updateUserProfile(state, action: PayloadAction<Partial<UserState>>) {
       return { ...state, ...action.payload };
