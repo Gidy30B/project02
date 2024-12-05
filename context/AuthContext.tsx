@@ -1,11 +1,12 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { login, logout } from '../app/store/userSlice'; // Assuming userSlice is in store
 import { RootState } from '../app/store/configureStore'; // Adjust path if needed
 
-export const AuthContext = createContext();
+export const AuthContext = createContext<any>(null);
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
   
   // Get user state from Redux
@@ -20,7 +21,7 @@ export const AuthProvider = ({ children }) => {
   }, [userState]);
 
   // Handle login by dispatching the Redux login action
-  const loginHandler = (userData) => {
+  const loginHandler = (userData: any) => {
     dispatch(
       login({
         name: userData.name,
