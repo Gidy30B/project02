@@ -2,6 +2,7 @@ import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity, View, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Text } from 'react-native';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -11,15 +12,15 @@ interface SearchBarProps {
 
 const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSubmit }) => {
   return (
-    <View style={styles.searchContainer}>
+    <View style={styles.container}>
       <TextInput
-        style={styles.searchInput}
+        style={styles.input}
         value={searchQuery}
         onChangeText={setSearchQuery}
         placeholder="Search..."
         onSubmitEditing={onSubmit}
       />
-      <TouchableOpacity onPress={onSubmit} style={styles.searchButton}>
+      <TouchableOpacity onPress={onSubmit} style={styles.iconContainer}>
         <Text style={styles.searchButtonText}>Search</Text>
       </TouchableOpacity>
     </View>
@@ -51,6 +52,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50',
     padding: 8,
     borderRadius: 25,
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontSize: 16,
   },
 });
 
