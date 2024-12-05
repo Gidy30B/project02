@@ -9,21 +9,33 @@ export default function Index() {
 
   useEffect(() => {
     if (user) {
-      // Ensure user is authenticated and decide redirect path
-      const { userType } = user;
+      const { userType, professional } = user;
 
       switch (userType) {
+        case 'professional':
+          if (professional.profession === 'doctor') {
+            setRedirectPath(professional.attachedToClinic ? '/doctor' : '/addclinic');
+          } else if (professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
+            setRedirectPath('/addpharmacy');
+          } else if (professional.profession === 'pharmacist') {
+            setRedirectPath('/pharmacist/tabs');
+          } else {
+            setRedirectPath('/professional');
+          }
+          break;
         case 'client':
           setRedirectPath('/client/home');
           break;
-        default:
-          setRedirectPath('/(routes)/onboarding'); // Default fallback
+        case 'pharmacist':
+          setRedirectPath('/pharmacist/tabs');
           break;
+        default:
+          setRedirectPath('/(routes)/onboarding');
       }
     } else {
-      setRedirectPath('/(routes)/onboarding'); // Redirect to onboarding if no user
+      setRedirectPath('/(routes)/onboarding');
     }
-    setLoading(false); // Mark loading as complete
+    setLoading(false);
   }, [user]);
 
   return (

@@ -51,7 +51,7 @@ function AuthNavigator() {
             <>
              <Stack.Screen name="hospital/book-appointment/[id]" options={{ title: '', headerShown: false }} />
               <Stack.Screen name="client/tabs" />  {/* Existing client tabs screen */}
-              <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} />  {/* Link to the doctors overview */}
+              <Stack.Screen name="doctors/tabs" options={{ title: 'Doctors Overview' }} />  {/* Link to the doctors overview */}
               <Stack.Screen name="doctor/[doctorId]" options={{ title: 'Doctor Profile' }} />
             </>
           )}
