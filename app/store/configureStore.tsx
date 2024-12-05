@@ -12,7 +12,7 @@ import patientReducer from './patientSlice';
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['user', 'prescription', 'doctors', 'schedules', 'clinics'],
+  whitelist: ['user', 'prescription', 'doctors', 'schedules', 'clinics'], // Add 'clinics' to the whitelist
 };
 
 const rootReducer = combineReducers({

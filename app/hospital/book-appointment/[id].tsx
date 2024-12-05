@@ -20,7 +20,8 @@ const BookAppointment = () => {
 
   const dispatch = useDispatch();
   const clinic = useSelector(selectClinicDetails);
-  const clinicImages = clinic ? clinic.images : [];
+  const clinicImages = clinic ? clinic.clinicImages : [];
+  const clinicImageUri = clinicImages.length > 0 ? clinicImages[0] : 'https://via.placeholder.com/80';
 
   const loading = useSelector(selectClinicLoading);
   const error = useSelector(selectClinicError);
@@ -33,6 +34,10 @@ const BookAppointment = () => {
       dispatch(fetchClinicById(clinicId));
     }
   }, [clinicId, dispatch]);
+
+  useEffect(() => {
+    console.log('Clinic Data:', clinic);
+  }, [clinic]);
 
   const handleBookPress = () => {
     if (bookingSectionRef.current && scrollViewRef.current) {
@@ -107,7 +112,7 @@ const BookAppointment = () => {
 
       {/* Clinic Info */}
       <View style={styles.clinicInfo}>
-        <Image source={{ uri: clinicImages[0] }} style={styles.clinicImage} />
+        <Image source={{ uri: clinicImageUri }} style={styles.clinicImage} />
         <View style={styles.clinicDetails}>
           <Text style={styles.clinicName}>{clinic?.name}</Text>
           <Text style={styles.clinicAddress}>{clinic?.address}</Text>

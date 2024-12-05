@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { RootState } from './configureStore';
 
@@ -25,7 +24,7 @@ interface Clinic {
   name: string;
   address: string;
   category: string;
-  images?: string[];
+  clinicImages?: string[]; // Use clinicImages instead of images
   contactInfo: string;
   referenceCode: string;
   professionals: Professional[];
@@ -65,39 +64,20 @@ const initialState: ClinicsState = {
 const fetchFreshClinics = async () => {
   try {
     const response = await axios.get('https://medplus-health.onrender.com/api/clinics');
-    const clinics = response.data.map((clinic: Clinic) => ({
+    return response.data.map((clinic: Clinic) => ({
       ...clinic,
-      images: clinic.images || [],
-      clinicImages: clinic.clinicImages || [], // Ensure clinicImages is populated
+      clinicImages: clinic.clinicImages?.map(image => image.urls[0]) || [], // Ensure clinicImages is populated
     }));
-    await AsyncStorage.setItem('clinicList', JSON.stringify(clinics));
   } catch (error) {
     console.error('Failed to fetch fresh clinics', error);
+    return [];
   }
 };
 
 export const fetchClinics = createAsyncThunk(
   'clinics/fetchClinics',
-  async (_, { getState }) => {
-    const state = getState() as RootState;
-
-    if (state.clinics.clinicList.length > 0) return state.clinics.clinicList;
-
-    const cachedClinics = await AsyncStorage.getItem('clinicList');
-    if (cachedClinics) {
-      const parsedClinics = JSON.parse(cachedClinics);
-      fetchFreshClinics();
-      return parsedClinics;
-    }
-
-    const response = await axios.get('https://medplus-health.onrender.com/api/clinics');
-    const clinics = response.data.map((clinic: Clinic) => ({
-      ...clinic,
-      images: clinic.images || [],
-      clinicImages: clinic.clinicImages || [], // Ensure clinicImages is populated
-    }));
-
-    await AsyncStorage.setItem('clinicList', JSON.stringify(clinics));
+  async () => {
+    const clinics = await fetchFreshClinics();
     return clinics;
   }
 );
@@ -105,22 +85,20 @@ export const fetchClinics = createAsyncThunk(
 export const fetchClinicById = createAsyncThunk(
   'clinics/fetchClinicById',
   async (clinicId: string, { dispatch }) => {
-    const cachedClinics = await AsyncStorage.getItem('clinicList');
-    const clinics = cachedClinics ? JSON.parse(cachedClinics) : [];
-
-    let clinic = clinics.find((clinic: Clinic) => clinic._id === clinicId);
-    if (!clinic) {
+    try {
       const response = await axios.get(`https://medplus-health.onrender.com/api/clinics/${clinicId}`);
-      clinic = response.data;
+      const clinic = response.data;
+
+      // Ensure clinicImages is populated
+      clinic.clinicImages = clinic.clinicImages?.map(image => image.urls[0]) || [];
+
+      // Update the Redux state with the fetched clinic data
+      dispatch(setSelectedClinic(clinic));
+      return clinic;
+    } catch (error) {
+      console.error('Failed to fetch clinic by ID', error);
+      return null;
     }
-
-    // Combine clinicImages with images
-    const clinicImages = clinic.clinicImages?.map(image => image.urls[0]) || [];
-    clinic.images = Array.from(new Set([...clinic.images, ...clinicImages]));
-
-    // Update the Redux state with the fetched clinic data
-    dispatch(setSelectedClinic(clinic));
-    return clinic;
   }
 );
 
@@ -148,7 +126,6 @@ const clinicsSlice = createSlice({
       state.filteredClinicList = [];
       state.selectedClinic = null;
       state.clinicImages = {};
-      AsyncStorage.removeItem('clinicList');
     },
   },
   extraReducers: (builder) => {
@@ -165,7 +142,7 @@ const clinicsSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch clinics';
       })
-      .addCase(fetchClinicById.fulfilled, (state, action: PayloadAction<Clinic>) => {
+      .addCase(fetchClinicById.fulfilled, (state, action: PayloadAction<Clinic | null>) => {
         state.selectedClinic = action.payload;
         state.loading = false;
       });

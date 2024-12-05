@@ -82,10 +82,8 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   }, [loading, clinics]);
 
   const handlePress = (item) => {
-    const allImages = item.images;
-
-    console.log("Navigating to clinic with images:", allImages);
-    dispatch(setSelectedClinic({ ...item, images: allImages }));
+    console.log("Navigating to clinic with ID:", item._id);
+    dispatch(setSelectedClinic(item));
 
     router.push({
       pathname: `/hospital/book-appointment/${item._id}`,
@@ -95,7 +93,7 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   const ClinicItem = ({ item }) => {
     const [currentImage, setCurrentImage] = useState(null);
     const imageFadeAnim = useRef(new Animated.Value(1)).current;
-    const clinicImages = item.images || [];
+    const clinicImages = item.clinicImages || []; // Use clinicImages instead of images
 
     useEffect(() => {
       if (clinicImages.length > 0) {
