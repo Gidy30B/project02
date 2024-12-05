@@ -34,7 +34,6 @@ export default function _layout() {
               <Stack.Screen name="index" />
               <Stack.Screen name="(routes)/onboarding/index" />
               <Stack.Screen name="register" options={{ title: 'Register', headerShown: true }} />
-             
             </Stack>
           </PaperProvider>
         </ThemeProvider>

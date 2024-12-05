@@ -6,13 +6,18 @@ export default function Index() {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
 
-  
+  useEffect(() => {
+    // Simulate loading process
+    const timer = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <>
       {loading ? (
         <></>
       ) : (
-        <Redirect href={!user ? '/(routes)/onboarding' : '/(tabs)'} />
+        <Redirect href={!user ? '/(routes)/onboarding' : '/'} />
       )}
     </>
   );
