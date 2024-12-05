@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Category from '../../components/client/Category'; 
 import SearchBar from '../../components/client/SearchBar';
 import Doctors from '../../components/client/Doctors';
 import Clinics from '../../components/client/Clinics';
+import { useRouter } from 'expo-router';
+
 const HomeScreen = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+
+  const handleSearchSubmit = () => {
+    router.push({
+      pathname: '/search',
+      params: { query: searchQuery },
+    });
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
-        <SearchBar />
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onSubmit={handleSearchSubmit}
+        />
         <Category />
-        <Doctors />
-        <Clinics />
+        <Doctors searchQuery={searchQuery} />
+        <Clinics searchQuery={searchQuery} />
       </View>
     </ScrollView>
   );

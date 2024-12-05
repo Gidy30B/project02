@@ -1,32 +1,26 @@
-import * as React from 'react';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity, View, TextInput, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
-const SearchBar: React.FC = () => {
-  const [query, setQuery] = React.useState('');
-  const router = useRouter();
+interface SearchBarProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  onSubmit: () => void;
+}
 
-  const handlePress = () => {
-    if (query.trim() !== '') {
-      router.push(`/search?query=${query}`);
-    } else {
-      // Handle case when no query is entered (optional)
-      console.log('Please enter a search query.');
-    }
-  };
-
+const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery, onSubmit }) => {
   return (
-    <View style={styles.container}>
+    <View style={styles.searchContainer}>
       <TextInput
-        style={styles.input}
+        style={styles.searchInput}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
         placeholder="Search..."
-        value={query}
-        onChangeText={setQuery}
-        onSubmitEditing={handlePress}
+        onSubmitEditing={onSubmit}
       />
-      <TouchableOpacity onPress={handlePress} style={styles.iconContainer}>
-        <Ionicons name="search" size={24} color="white" />
+      <TouchableOpacity onPress={onSubmit} style={styles.searchButton}>
+        <Text style={styles.searchButtonText}>Search</Text>
       </TouchableOpacity>
     </View>
   );

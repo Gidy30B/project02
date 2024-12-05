@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -19,12 +19,7 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
 
   const [filteredDoctors, setFilteredDoctors] = useState<any[]>([]);
 
-  // Effect to filter doctors based on searchQuery and selectedCategory
-  useEffect(() => {
-    filterDoctors();
-  }, [searchQuery, selectedCategory, doctorList]);
-
-  const filterDoctors = () => {
+  const filterDoctors = useCallback(() => {
     if (!Array.isArray(doctorList)) {
       console.error('Doctor list is not an array:', doctorList);
       return;
@@ -51,7 +46,12 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
     }
   
     setFilteredDoctors(doctors);
-  };
+  }, [searchQuery, selectedCategory, doctorList, excludeDoctorId]);
+
+  // Effect to filter doctors based on searchQuery and selectedCategory
+  useEffect(() => {
+    filterDoctors();
+  }, [filterDoctors]);
 
   const handleConsult = (doctorId: string) => {
     router.push(`/doctors/${doctorId}`);
