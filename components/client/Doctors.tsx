@@ -33,22 +33,21 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
     let doctors = doctorList;
   
     if (excludeDoctorId) {
-      doctors = doctors.filter((doctor) => doctor._id !== excludeDoctorId);
+      doctors = doctors.filter((doctor) => doctor.id !== excludeDoctorId);
     }
   
     if (searchQuery) {
       doctors = doctors.filter((doctor) =>
-        doctor.user.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doctor.user.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (doctor.user.category?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-        (doctor.clinicId.insuranceCompanies || []).some((company) =>
+        doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doctor.insuranceCompanies.some((company) =>
           company.toLowerCase().includes(searchQuery.toLowerCase())
         )
       );
     }
   
     if (selectedCategory) {
-      doctors = doctors.filter((doctor) => doctor.user.category === selectedCategory);
+      doctors = doctors.filter((doctor) => doctor.specialty === selectedCategory);
     }
   
     setFilteredDoctors(doctors);
@@ -82,7 +81,7 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
             <Image
               source={{
                 uri:
-                  item.user.profileImage ||
+                  item.profileImage ||
                   'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg',
               }}
               style={styles.doctorImage}
@@ -90,23 +89,23 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
             {/* Doctor Name */}
             <View style={styles.nameCategoryContainer}>
               <Text style={styles.doctorName}>
-                {`${item.user.firstName} ${item.user.lastName}`}
+                {item.name}
               </Text>
               {/* Doctor Category */}
-              <Text style={styles.doctorName}>{item.user.category || 'General'}</Text>
+              <Text style={styles.doctorName}>{item.specialty}</Text>
             </View>
             {/* Doctor Location */}
-            <Text>{item.clinicId?.address || 'Location not specified'}</Text>
+            <Text>{item.clinicAddress || 'Location not specified'}</Text>
             {/* Consult Button */}
             <TouchableOpacity
               style={[styles.button, styles.consultButton]}
-              onPress={() => handleConsult(item._id)}
+              onPress={() => handleConsult(item.id)}
             >
               <Text style={styles.buttonText}>View</Text>
             </TouchableOpacity>
           </View>
         )}
-        keyExtractor={(item, index) => `${item._id}-${index}`}
+        keyExtractor={(item, index) => `${item.id}-${index}`}
         showsHorizontalScrollIndicator={false}
         nestedScrollEnabled={true}
       />

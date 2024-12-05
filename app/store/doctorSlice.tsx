@@ -30,7 +30,11 @@ export const fetchDoctors = createAsyncThunk(
 const fetchFreshDoctors = async () => {
   try {
     const response = await axios.get('https://medplus-health.onrender.com/api/professionals');
-    await AsyncStorage.setItem('doctorList', JSON.stringify(response.data));
+    const doctorsWithInsurance = response.data.map((doctor: any) => ({
+      ...doctor,
+      clinic: doctor.clinicId,
+    }));
+    await AsyncStorage.setItem('doctorList', JSON.stringify(doctorsWithInsurance));
   } catch (error) {
     console.error('Failed to fetch fresh doctors', error);
   }
@@ -38,17 +42,69 @@ const fetchFreshDoctors = async () => {
 
 // Doctor interface
 interface Doctor {
-  id: string;
+  _id: string;
   firstName: string;
   lastName: string;
-  category: string;
-  consultationFee: number;
-  clinic: {
+  email: string;
+  profession: string;
+  certifications?: any[];
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  clinic: string;
+  attachedToClinic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  profileImage?: string;
+  consultationFee?: number;
+  attachedToPharmacy: boolean;
+  clinicId: {
+    education?: {
+      course: string;
+      university: string;
+    };
+    _id: string;
     name: string;
-    insuranceCompanies: string[];  // Add insuranceCompanies as part of clinic data
+    contactInfo: string;
+    address: string;
+    images?: any[];
+    referenceCode?: string;
+    professionals: string[];
+    insuranceCompanies: string[];
+    specialties?: string;
+    experiences?: any[];
+    languages?: string;
+    assistantName?: string;
+    assistantPhone?: string;
+    bio?: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+  availability?: string[];
+  contactInfo?: string;
+  slots?: {
+    day: string;
+    startTime: string;
+    endTime: string;
+    isBooked: boolean;
+  }[];
+  specialty?: string;
+  user: {
+    status: string;
+    favoriteDoctors?: any[];
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    gender: string;
+    userType: string;
+    isVerified: boolean;
+    __v: number;
+    profileImage?: string;
   };
 }
-
 
 // Doctors state interface
 interface DoctorsState {
@@ -71,11 +127,11 @@ const doctorsSlice = createSlice({
   name: 'doctors',
   initialState,
   reducers: {
-    setSelectedDoctor(state, action: PayloadAction<Doctor>) {
-      state.selectedDoctor = action.payload;  // Set selected doctor
+    setSelectedDoctor(state, action: PayloadAction<string>) {
+      state.selectedDoctor = state.doctorList.find((doctor) => doctor._id === action.payload) || null;
     },
     clearSelectedDoctor(state) {
-      state.selectedDoctor = null;  // Clear selected doctor
+      state.selectedDoctor = null;
     },
   },
   extraReducers: (builder) => {

@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchDoctors } from '../../app/store/doctorSlice';
+import { fetchDoctors, setSelectedDoctor, clearSelectedDoctor, selectSelectedDoctor } from '../../app/store/doctorSlice';
 import { useRouter } from 'expo-router';
 import { RootState } from '../../app/store/configureStore';
 import Colors from '../../components/Shared/Colors';
@@ -27,18 +27,24 @@ const DoctorProfile: React.FC = () => {
   const doctorId = route.params?.doctorId;
 
   const dispatch = useDispatch();
-  const doctors = useSelector((state: RootState) => state.doctors.doctorList);
+  const doctor = useSelector(selectSelectedDoctor);
   const loading = useSelector((state: RootState) => state.doctors.loading);
   const error = useSelector((state: RootState) => state.doctors.error);
-
-  const doctor = doctors.find((doc) => doc._id === doctorId);
+  const doctors = useSelector((state: RootState) => state.doctors.doctorList);
   const otherDoctors = doctors.filter((doc) => doc._id !== doctorId);
 
   useEffect(() => {
-    if (!doctors.length) {
-      dispatch(fetchDoctors());
+    if (doctorId) {
+      dispatch(setSelectedDoctor(doctorId));
     }
-  }, [dispatch, doctors]);
+    return () => {
+      dispatch(clearSelectedDoctor());
+    };
+  }, [dispatch, doctorId]);
+
+  useEffect(() => {
+    console.log('Selected Doctor:', doctor);
+  }, [doctor]);
 
   if (loading) {
     return (
@@ -56,7 +62,7 @@ const DoctorProfile: React.FC = () => {
     );
   }
 
-  if (!doctor || !doctor.user) {
+  if (!doctor) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error: Doctor information not found.</Text>
@@ -65,11 +71,11 @@ const DoctorProfile: React.FC = () => {
   }
 
   const profileImageUri =
-    doctor.user.profileImage ||
+    doctor.profileImage ||
     'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg';
 
   const insuranceProviders = doctor.clinicId?.insuranceCompanies || [];
-  console.log(insuranceProviders) 
+  console.log(insuranceProviders);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -87,16 +93,17 @@ const DoctorProfile: React.FC = () => {
                 imageProps={{ style: { borderRadius: 50 } }}
               />
               <View style={styles.profileInfo}>
-                <Text style={styles.doctorName}>{`${doctor.user.firstName} ${doctor.user.lastName}`}</Text>
-                <Text style={styles.categoryName}>{doctor.user.category || 'General'}</Text>
+                <Text style={styles.doctorName}>{`${doctor.firstName} ${doctor.lastName}`}</Text>
+                <Text style={styles.categoryName}>{doctor.specialty || 'General'}</Text>
+                <Text style={styles.consultationFee}>{`Consultation Fee: ${doctor.consultationFee || 'N/A'}`}</Text>
               </View>
             </View>
             <View style={styles.infoContainer}>
-              <View style={styles.infoItem}>
+              <View style={styles.infoCard}>
                 <Ionicons name="person" size={20} color={Colors.primary} />
                 <Text style={styles.infoText}>{doctor.user.yearsOfExperience || 'N/A'} Years of Experience</Text>
               </View>
-              <View style={styles.infoItem}>
+              <View style={styles.infoCard}>
                 <Ionicons name="people" size={20} color={Colors.primary} />
                 <Text style={styles.infoText}>{doctor.user.numberOfPatients || 'N/A'} Patients</Text>
               </View>
@@ -115,13 +122,13 @@ const DoctorProfile: React.FC = () => {
                 renderItem={({ item }) => (
                   <View style={styles.doctorItem}>
                     <Avatar
-                      source={{ uri: item.user.profileImage || 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' }}
+                      source={{ uri: item.profileImage || 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' }}
                       containerStyle={styles.avatar}
                       imageProps={{ style: { borderRadius: 50 } }}
                     />
                     <View style={styles.profileInfo}>
-                      <Text style={styles.doctorName}>{`${item.user.firstName} ${item.user.lastName}`}</Text>
-                      <Text style={styles.categoryName}>{item.user.category || 'General'}</Text>
+                      <Text style={styles.doctorName}>{`${item.firstName} ${item.lastName}`}</Text>
+                      <Text style={styles.categoryName}>{item.specialty || 'General'}</Text>
                     </View>
                     <TouchableOpacity style={styles.viewButton} onPress={() => router.push(`/doctors/${item._id}`)}>
                       <Text style={styles.viewButtonText}>View</Text>
@@ -138,7 +145,6 @@ const DoctorProfile: React.FC = () => {
         renderItem={null}
         keyExtractor={() => 'dummy'}
       />
-     
     </SafeAreaView>
   );
 };
@@ -184,15 +190,29 @@ const styles = StyleSheet.create({
     color: Colors.gray,
     marginVertical: 4,
   },
+  consultationFee: {
+    fontSize: 16,
+    color: Colors.gray,
+    marginVertical: 4,
+  },
   infoContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: 10,
     paddingHorizontal: 10,
   },
-  infoItem: {
+  infoCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: Colors.white,
+    padding: 10,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
+    marginHorizontal: 5,
   },
   infoText: {
     fontSize: 16,
