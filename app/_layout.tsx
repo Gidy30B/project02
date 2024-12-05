@@ -33,18 +33,17 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'light' ? DarkTheme : DefaultTheme}>
         <AuthProvider>
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="register" options={{ title: 'Register', headerShown: true }} />
-            <Stack.Screen name="client" options={{ title: 'Welcome', headerShown: true }} />
+            <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
+            <Stack.Screen name="client" options={{ title: 'Welcome', headerShown: false}} />
             <Stack.Screen name="hospital/book-appointment/[id]" options={{ title: '', headerShown: false }} />
-            <Stack.Screen name="client/tabs" />  {/* Existing client tabs screen */}
-            <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} />  {/* Link to the doctors overview */}
+            <Stack.Screen name="client/tabs" /> 
+            <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} /> 
             <Stack.Screen name="doctor/[doctorId]" options={{ title: 'Doctor Profile' }} />
             <Stack.Screen name="doctor" />
             <Stack.Screen name="addclinic" />
             <Stack.Screen name="pharmacist/tabs" />
             <Stack.Screen name="addpharmacy" />
-            <Stack.Screen name="student/tabs" />
-            <Stack.Screen name="rider/tabs" />
+
           </Stack>
         </AuthProvider>
       </ThemeProvider>
