@@ -117,8 +117,9 @@ const clinicsSlice = createSlice({
       state.clinicImages[action.payload.clinicId] = action.payload.images;
     },
     filterClinics: (state, action: PayloadAction<string>) => {
+      const query = action.payload.toLowerCase();
       state.filteredClinicList = state.clinicList.filter((clinic) =>
-        clinic.name.toLowerCase().includes(action.payload.toLowerCase())
+        clinic.name.toLowerCase().includes(query)
       );
     },
     resetClinics: (state) => {

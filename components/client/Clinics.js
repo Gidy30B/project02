@@ -64,7 +64,7 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   useEffect(() => {
     console.log("Search Query Updated:", searchQuery);
     if (searchQuery) {
-      dispatch(filterClinics({ searchQuery }));
+      dispatch(filterClinics(searchQuery)); // Pass searchQuery directly as a string
     } else {
       dispatch(fetchClinics());
     }
