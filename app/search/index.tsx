@@ -11,17 +11,15 @@ import {
   Image,
   Animated,
 } from 'react-native';
-import { useRouter, useSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { selectAllClinics } from '../store/clinicSlice';
+import { selectClinics } from '../store/clinicSlice';
 import { Picker } from '@react-native-picker/picker';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 const ClinicSearch = () => {
   const router = useRouter();
-  const { query } = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(query || '');
   const [filteredClinics, setFilteredClinics] = useState([]);
   const [filteredProfessionals, setFilteredProfessionals] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -30,7 +28,7 @@ const ClinicSearch = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const clinics = useSelector(selectAllClinics);
+  const clinics = useSelector(selectClinics);
 
   useEffect(() => {
     try {
@@ -52,12 +50,6 @@ const ClinicSearch = () => {
       setLoading(false);
     }
   }, [clinics]);
-
-  useEffect(() => {
-    if (searchQuery) {
-      handleLocationChange(searchQuery);
-    }
-  }, [searchQuery]);
 
   const handleLocationChange = (location: string) => {
     setSelectedLocation(location);
@@ -142,9 +134,17 @@ const ClinicSearch = () => {
     ),
   ];
 
-  if (loading) return <Text>Loading...</Text>;
+  if (loading) return (
+    <View>
+      <Text>Loading...</Text>
+    </View>
+  );
 
-  if (error) return <Text>{error}</Text>;
+  if (error) return (
+    <View>
+      <Text>{error}</Text>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>

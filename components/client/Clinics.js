@@ -28,14 +28,13 @@ import {
   Poppins_500Medium,
   useFonts,
 } from "@expo-google-fonts/poppins";
-import useFetchClinics from '../../hooks/useFetchClinics';
 
 SplashScreen.preventAutoHideAsync();
 
 const Clinics = ({ searchQuery, onViewAll }) => {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { clinics, getClinicImages } = useFetchClinics();
+  const clinics = useSelector(selectClinics);
 
   const [fontsLoaded] = useFonts({
     Poppins_600SemiBold,
@@ -46,7 +45,6 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   });
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const filteredClinicList = useSelector(selectClinics);
   const loading = useSelector((state) => state.clinics.loading);
   const error = useSelector((state) => state.clinics.error);
 
@@ -58,39 +56,33 @@ const Clinics = ({ searchQuery, onViewAll }) => {
 
   useEffect(() => {
     console.log("Initial Fetch of Clinics");
-    if (filteredClinicList.length === 0) {
+    if (clinics.length === 0) {
       dispatch(fetchClinics());
     }
-  }, [dispatch, filteredClinicList.length]);
+  }, [dispatch, clinics.length]);
 
   useEffect(() => {
     console.log("Search Query Updated:", searchQuery);
     if (searchQuery) {
       dispatch(filterClinics({ searchQuery }));
+    } else {
+      dispatch(fetchClinics());
     }
   }, [searchQuery, dispatch]);
 
   useEffect(() => {
-    console.log("Filtered Clinic List:", filteredClinicList);
-    if (!loading && filteredClinicList.length > 0) {
+    console.log("Filtered Clinic List:", clinics);
+    if (!loading && clinics.length > 0) {
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }).start();
     }
-  }, [loading, filteredClinicList]);
+  }, [loading, clinics]);
 
   const handlePress = (item) => {
-    const professionalImages = item.professionals.flatMap(
-      (professional) => professional.clinic_images || []
-    );
-    const allImages = [
-      ...new Set([
-        ...(item.images || []),
-        ...professionalImages.map((image) => image.urls?.[0]),
-      ]),
-    ];
+    const allImages = item.images;
 
     console.log("Navigating to clinic with images:", allImages);
     dispatch(setSelectedClinic({ ...item, images: allImages }));
@@ -103,61 +95,36 @@ const Clinics = ({ searchQuery, onViewAll }) => {
   const ClinicItem = ({ item }) => {
     const [currentImage, setCurrentImage] = useState(null);
     const imageFadeAnim = useRef(new Animated.Value(1)).current;
-    const clinicImages = useSelector(
-      (state) => (state.clinics.clinicImages || {})[item._id] || []
-    );
+    const clinicImages = item.images || [];
 
     useEffect(() => {
-      const fetchImages = async () => {
-        try {
-          if (!item || !item._id) {
-            console.error('Item or item._id is missing');
-            return;
-          }
-    
-          console.log("Fetching images for clinic:", item._id);
-    
-          // Check if clinicImages[item._id] exists before accessing it
-          if (!clinicImages[item._id] || clinicImages[item._id].length === 0) {
-            const images = await getClinicImages(item);
-            console.log("Fetched Images:", images);
-            setCurrentImage(images[0]);
-          } else {
-            // Ensure that clinicImages[item._id] is defined
-            const images = clinicImages[item._id] || [];
-            setCurrentImage(images[0] || null); // Fallback to null if no images
-          }
-    
-          // Continue with the rest of your logic
-          if (clinicImages[item._id]?.length > 1) {
-            let imageIndex = 0;
-            const interval = setInterval(() => {
-              imageIndex = (imageIndex + 1) % clinicImages[item._id].length;
-    
+      if (clinicImages.length > 0) {
+        setCurrentImage(clinicImages[0]);
+
+        if (clinicImages.length > 1) {
+          let imageIndex = 0;
+          const interval = setInterval(() => {
+            imageIndex = (imageIndex + 1) % clinicImages.length;
+
+            Animated.timing(imageFadeAnim, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              setCurrentImage(clinicImages[imageIndex]);
               Animated.timing(imageFadeAnim, {
-                toValue: 0,
+                toValue: 1,
                 duration: 300,
                 useNativeDriver: true,
-              }).start(() => {
-                setCurrentImage(clinicImages[item._id][imageIndex]);
-                Animated.timing(imageFadeAnim, {
-                  toValue: 1,
-                  duration: 300,
-                  useNativeDriver: true,
-                }).start();
-              });
-            }, 10000);
-    
-            return () => clearInterval(interval);
-          }
-        } catch (error) {
-          console.error("Error fetching images:", error);
+              }).start();
+            });
+          }, 10000);
+
+          return () => clearInterval(interval);
         }
-      };
-    
-      fetchImages();
-    }, [getClinicImages, item, clinicImages, imageFadeAnim]);
-    
+      }
+    }, [clinicImages, imageFadeAnim]);
+
     return (
       <TouchableOpacity style={styles.clinicItem} onPress={() => handlePress(item)}>
         {currentImage ? (
@@ -198,7 +165,7 @@ const Clinics = ({ searchQuery, onViewAll }) => {
     <Animated.View style={{ marginTop: 10, opacity: fadeAnim }}>
       <SubHeading subHeadingTitle={'Discover Clinics Near You'} onViewAll={onViewAll} />
       <FlatList
-        data={filteredClinicList}
+        data={clinics}
         horizontal={true}
         renderItem={({ item }) => <ClinicItem item={item} />}
         keyExtractor={(item) => item._id?.toString() || `temp-${Math.random()}`}

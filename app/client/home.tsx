@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import Category from '../../components/client/Category'; 
 import SearchBar from '../../components/client/SearchBar';
@@ -10,12 +10,12 @@ const HomeScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const router = useRouter();
 
-  const handleSearchSubmit = () => {
+  const handleSearchSubmit = useCallback(() => {
     router.push({
       pathname: '/search',
       params: { query: searchQuery },
     });
-  };
+  }, [searchQuery, router]);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -28,6 +28,7 @@ const HomeScreen = () => {
         <Category />
         <Doctors searchQuery={searchQuery} />
         <Clinics searchQuery={searchQuery} />
+       
       </View>
     </ScrollView>
   );

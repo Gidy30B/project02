@@ -25,7 +25,7 @@ interface Clinic {
   name: string;
   address: string;
   category: string;
-  images?: string[]; 
+  images?: string[];
   contactInfo: string;
   referenceCode: string;
   professionals: Professional[];
@@ -48,7 +48,7 @@ interface ClinicsState {
   clinicList: Clinic[];
   filteredClinicList: Clinic[];
   selectedClinic: Clinic | null;
-  clinicImages: { [key: string]: string[] }; // Add this line to store clinic images
+  clinicImages: { [key: string]: string[] };
   loading: boolean;
   error: string | null;
 }
@@ -57,7 +57,7 @@ const initialState: ClinicsState = {
   clinicList: [],
   filteredClinicList: [],
   selectedClinic: null,
-  clinicImages: {}, // Initialize clinicImages
+  clinicImages: {},
   loading: false,
   error: null,
 };
@@ -68,10 +68,7 @@ const fetchFreshClinics = async () => {
     const clinics = response.data.map((clinic: Clinic) => ({
       ...clinic,
       images: clinic.images || [],
-      professionals: clinic.professionals.map((professional: Professional) => ({
-        ...professional,
-        clinic_images: professional.clinic_images || [],
-      })),
+      clinicImages: clinic.clinicImages || [], // Ensure clinicImages is populated
     }));
     await AsyncStorage.setItem('clinicList', JSON.stringify(clinics));
   } catch (error) {
@@ -83,24 +80,23 @@ export const fetchClinics = createAsyncThunk(
   'clinics/fetchClinics',
   async (_, { getState }) => {
     const state = getState() as RootState;
-    if (state.clinics.clinicList.length > 0) {
-      return state.clinics.clinicList;
-    }
+
+    if (state.clinics.clinicList.length > 0) return state.clinics.clinicList;
+
     const cachedClinics = await AsyncStorage.getItem('clinicList');
     if (cachedClinics) {
       const parsedClinics = JSON.parse(cachedClinics);
       fetchFreshClinics();
       return parsedClinics;
     }
+
     const response = await axios.get('https://medplus-health.onrender.com/api/clinics');
     const clinics = response.data.map((clinic: Clinic) => ({
       ...clinic,
       images: clinic.images || [],
-      professionals: clinic.professionals.map((professional: Professional) => ({
-        ...professional,
-        clinic_images: professional.clinic_images || [],
-      })),
+      clinicImages: clinic.clinicImages || [], // Ensure clinicImages is populated
     }));
+
     await AsyncStorage.setItem('clinicList', JSON.stringify(clinics));
     return clinics;
   }
@@ -118,30 +114,13 @@ export const fetchClinicById = createAsyncThunk(
       clinic = response.data;
     }
 
-    // Fetch images for the clinic
-    const professionalImages = await Promise.all(
-      clinic.professionals.map(async (professional: Professional) => {
-        const response = await axios.get(`https://medplus-health.onrender.com/api/images/professional/${professional._id}`);
-        const images = response.data.map((image: { urls: string[] }) => image.urls[0]);
-        professional.clinic_images = images; // Attach images to the professional
-        return images;
-      })
-    );
-    const allImages = new Set(clinic.images || []);
-    professionalImages.flat().forEach(url => allImages.add(url));
-    clinic.images = Array.from(allImages);
+    // Combine clinicImages with images
+    const clinicImages = clinic.clinicImages?.map(image => image.urls[0]) || [];
+    clinic.images = Array.from(new Set([...clinic.images, ...clinicImages]));
 
     // Update the Redux state with the fetched clinic data
     dispatch(setSelectedClinic(clinic));
     return clinic;
-  }
-);
-
-export const clearClinics = createAsyncThunk(
-  'clinics/clearClinics',
-  async (_, { dispatch }) => {
-    await AsyncStorage.removeItem('clinicList');
-    dispatch(fetchClinics());
   }
 );
 
@@ -153,47 +132,29 @@ const clinicsSlice = createSlice({
       state.clinicList = action.payload;
       state.filteredClinicList = action.payload;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
+    setSelectedClinic: (state, action: PayloadAction<Clinic>) => {
+      state.selectedClinic = action.payload;
     },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
+    setClinicImages: (state, action: PayloadAction<{ clinicId: string; images: string[] }>) => {
+      state.clinicImages[action.payload.clinicId] = action.payload.images;
     },
-    filterClinics: (state, action: PayloadAction<{ searchQuery: string }>) => {
-      const { searchQuery } = action.payload;
-      let filtered = state.clinicList;
-
-      if (searchQuery) {
-        filtered = filtered.filter((clinic) =>
-          (clinic.name && clinic.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (clinic.address && clinic.address.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (clinic.category && clinic.category.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-      }
-      state.filteredClinicList = filtered;
-    },
-    clearSelectedClinic: (state) => {
-      state.selectedClinic = null;
+    filterClinics: (state, action: PayloadAction<string>) => {
+      state.filteredClinicList = state.clinicList.filter((clinic) =>
+        clinic.name.toLowerCase().includes(action.payload.toLowerCase())
+      );
     },
     resetClinics: (state) => {
       state.clinicList = [];
       state.filteredClinicList = [];
       state.selectedClinic = null;
-      state.clinicImages = {}; // Reset clinicImages
+      state.clinicImages = {};
       AsyncStorage.removeItem('clinicList');
-    },
-    setSelectedClinic: (state, action: PayloadAction<Clinic>) => {
-      state.selectedClinic = action.payload;
-    },
-    setClinicImages: (state, action: PayloadAction<{ clinicId: string, images: string[] }>) => {
-      state.clinicImages[action.payload.clinicId] = action.payload.images;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchClinics.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(fetchClinics.fulfilled, (state, action: PayloadAction<Clinic[]>) => {
         state.clinicList = action.payload;
@@ -202,74 +163,23 @@ const clinicsSlice = createSlice({
       })
       .addCase(fetchClinics.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to load clinics';
-      })
-      .addCase(fetchClinicById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        state.error = action.error.message || 'Failed to fetch clinics';
       })
       .addCase(fetchClinicById.fulfilled, (state, action: PayloadAction<Clinic>) => {
         state.selectedClinic = action.payload;
         state.loading = false;
-      })
-      .addCase(fetchClinicById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to load clinic details';
-      })
-      .addCase(clearClinics.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(clearClinics.fulfilled, (state) => {
-        state.clinicList = [];
-        state.filteredClinicList = [];
-        state.loading = false;
-      })
-      .addCase(clearClinics.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to clear clinics';
       });
   },
 });
 
-export const { setClinics, setLoading, setError, filterClinics, clearSelectedClinic, resetClinics, setSelectedClinic, setClinicImages } = clinicsSlice.actions;
+export const { setClinics, setSelectedClinic, setClinicImages, filterClinics, resetClinics } = clinicsSlice.actions;
 
-export const selectClinics = createSelector(
-  (state: RootState) => state.clinics.filteredClinicList,
-  (filteredClinicList) => filteredClinicList
-);
+export const selectClinics = (state: RootState) => state.clinics.filteredClinicList;
+export const selectClinicImages = (state: RootState, clinicId: string) => state.clinics.clinicImages[clinicId] || [];
+export const selectSelectedClinic = (state: RootState) => state.clinics.selectedClinic;
 
-export const selectAllClinics = createSelector(
-  (state: RootState) => state.clinics.clinicList,
-  (clinicList) => clinicList
-);
-
-export const selectClinicDetails = createSelector(
-  (state: RootState) => state.clinics.selectedClinic,
-  (selectedClinic) => selectedClinic
-);
-
-export const selectClinicLoading = createSelector(
-  (state: RootState) => state.clinics.loading,
-  (loading) => loading
-);
-
-export const selectClinicError = createSelector(
-  (state: RootState) => state.clinics.error,
-  (error) => error
-);
-
-export const selectSpecialties = createSelector(
-  (state: RootState) => state.clinics.clinicList,
-  (clinicList) => {
-    const specialtiesSet = new Set<string>();
-    clinicList.forEach(clinic => {
-      if (clinic.specialties) {
-        clinic.specialties.split(',').forEach(specialty => specialtiesSet.add(specialty.trim()));
-      }
-    });
-    return Array.from(specialtiesSet);
-  }
-);
+export const selectClinicDetails = (state: RootState) => state.clinics.selectedClinic;
+export const selectClinicLoading = (state: RootState) => state.clinics.loading;
+export const selectClinicError = (state: RootState) => state.clinics.error;
 
 export default clinicsSlice.reducer;

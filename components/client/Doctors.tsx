@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React from 'react';
 import { View, FlatList, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -6,52 +6,9 @@ import useDoctors from '../../hooks/useDoctors'; // Import the custom hook
 import SubHeading from '../client/SubHeading';
 import Colors from '../../components/Shared/Colors';
 
-interface DoctorsProps {
-  searchQuery: string;
-  selectedCategory: string;
-  onViewAll: (category: string) => void;
-  excludeDoctorId?: string;
-}
-
-const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onViewAll, excludeDoctorId }) => {
+const Doctors: React.FC = () => {
   const router = useRouter();
   const { doctorList, loading, error } = useDoctors(); // Use the hook to get the list of doctors
-
-  const [filteredDoctors, setFilteredDoctors] = useState<any[]>([]);
-
-  const filterDoctors = useCallback(() => {
-    if (!Array.isArray(doctorList)) {
-      console.error('Doctor list is not an array:', doctorList);
-      return;
-    }
-  
-    let doctors = doctorList;
-  
-    if (excludeDoctorId) {
-      doctors = doctors.filter((doctor) => doctor.id !== excludeDoctorId);
-    }
-  
-    if (searchQuery) {
-      doctors = doctors.filter((doctor) =>
-        doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doctor.insuranceCompanies.some((company) =>
-          company.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    }
-  
-    if (selectedCategory) {
-      doctors = doctors.filter((doctor) => doctor.specialty === selectedCategory);
-    }
-  
-    setFilteredDoctors(doctors);
-  }, [searchQuery, selectedCategory, doctorList, excludeDoctorId]);
-
-  // Effect to filter doctors based on searchQuery and selectedCategory
-  useEffect(() => {
-    filterDoctors();
-  }, [filterDoctors]);
 
   const handleConsult = (doctorId: string) => {
     router.push(`/doctors/${doctorId}`);
@@ -71,9 +28,9 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
 
   return (
     <View style={{ marginTop: 10 }}>
-      <SubHeading subHeadingTitle="Discover Doctors Near You" onViewAll={() => onViewAll('Doctors')} />
+      <SubHeading subHeadingTitle="Discover Doctors Near You" />
       <FlatList
-        data={filteredDoctors}
+        data={doctorList}
         horizontal
         renderItem={({ item }) => (
           <View style={styles.doctorItem}>
@@ -88,10 +45,8 @@ const Doctors: React.FC<DoctorsProps> = ({ searchQuery, selectedCategory, onView
             />
             {/* Doctor Name */}
             <View style={styles.nameCategoryContainer}>
-              <Text style={styles.doctorName}>
-                {item.name}
-              </Text>
-              {/* Doctor Category */}
+              <Text style={styles.doctorName}>{item.name}</Text>
+              {/* Doctor Specialty */}
               <Text style={styles.doctorName}>{item.specialty}</Text>
             </View>
             {/* Doctor Location */}

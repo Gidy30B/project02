@@ -4,16 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { setClinics, selectClinics, setLoading, setError, setClinicImages } from '../app/store/clinicSlice';
 
+// Fetch fresh clinics from the API
 const fetchFreshClinics = async () => {
   try {
     const response = await axios.get('https://medplus-health.onrender.com/api/clinics');
     return response.data.map(clinic => ({
       ...clinic,
       images: clinic.images || [],
-      professionals: clinic.professionals.map(professional => ({
-        ...professional,
-        clinic_images: professional.clinic_images || [],
-      })),
     }));
   } catch (error) {
     console.error('Failed to fetch fresh clinics', error);
@@ -21,22 +18,23 @@ const fetchFreshClinics = async () => {
   }
 };
 
-const fetchClinicImages = async (clinic) => {
+// Fetch images for a specific clinic
+const fetchClinicImages = async (clinicId) => {
   try {
-    const professionalImages = await Promise.all(
-      clinic.professionals.map(async professional => {
-        const response = await axios.get(`https://medplus-health.onrender.com/api/images/professional/${professional._id}`);
-        return response.data.map(image => image.urls[0]);
-      })
-    );
-
-    return Array.from(new Set([...(clinic.images || []), ...professionalImages.flat()]));
+    const response = await axios.get(`https://medplus-health.onrender.com/api/images/clinic/${clinicId}`);
+    if (response.data && Array.isArray(response.data)) {
+      return response.data.flatMap(image => image.urls);
+    } else {
+      console.error('Invalid response format:', response.data);
+      return [];
+    }
   } catch (error) {
     console.error('Error fetching images:', error);
     return [];
   }
 };
 
+// Custom hook to fetch clinics and their images
 const useFetchClinics = () => {
   const dispatch = useDispatch();
   const clinics = useSelector(selectClinics);
@@ -68,12 +66,12 @@ const useFetchClinics = () => {
   }, [clinics.length, dispatch]);
 
   const getClinicImages = useCallback(
-    async (clinic) => {
-      if (clinicImages[clinic._id]) {
-        return clinicImages[clinic._id];
+    async (clinicId) => {
+      if (clinicImages[clinicId]) {
+        return clinicImages[clinicId];
       }
-      const images = await fetchClinicImages(clinic);
-      dispatch(setClinicImages({ clinicId: clinic._id, images }));
+      const images = await fetchClinicImages(clinicId);
+      dispatch(setClinicImages({ clinicId, images }));
       return images;
     },
     [clinicImages, dispatch]
