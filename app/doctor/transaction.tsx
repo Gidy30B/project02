@@ -163,7 +163,7 @@ const TransactionScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Example Button to create a subaccount (will be enabled after payment setup) */}
+       
         <TouchableOpacity
           style={[styles.card, !isPaymentSetupCompleted && styles.disabledCard]}
           onPress={() => {

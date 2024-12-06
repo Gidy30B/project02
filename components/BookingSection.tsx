@@ -160,7 +160,11 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       setIsSubmitting(false);
     } catch (error) {
       console.error('Failed to book appointment:', error);
-      setAlertMessage('Failed to book appointment. Please try again.');
+      if (error.response && error.response.data && error.response.data.error) {
+        setAlertMessage(`Failed to book appointment: ${error.response.data.error}`);
+      } else {
+        setAlertMessage('Failed to book appointment. Please try again.');
+      }
       setAlertType('error');
       setShowAlert(true);
       setIsSubmitting(false);
