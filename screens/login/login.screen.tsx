@@ -1,47 +1,56 @@
-import React, { useState, useContext, createRef } from 'react';
-import { StyleSheet, TextInput, View, Text, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import GlobalApi from '../../Services/GlobalApi';
-import { useDispatch } from 'react-redux';
-import { login } from '../../app/store/userSlice'; // Redux action
-import { AuthContext } from '../../context/AuthContext'; // AuthContext
-import Icon from 'react-native-vector-icons/Ionicons';
-import { fontSizes, windowHeight, windowWidth } from '@/theme/app.constant';
+import React, { useState, useContext, createRef } from 'react'
+import { TouchableOpacity, StyleSheet, View, ActivityIndicator } from 'react-native'
+import { Text } from 'react-native-paper'
+import Background from '../../components/login/Background'
+import Logo from '../../components/login/Logo'
+import Header from '../../components/login/Header'
+import Button from '../../components/login/Button'
+import TextInput from '../../components/login/TextInput'
+import BackButton from '../../components/login/BackButton'
+import { theme } from '../../core/theme'
+import { emailValidator } from '../../helpers/emailValidator'
+import { passwordValidator } from '../../helpers/passwordValidator'
+import { useRouter } from 'expo-router'
+import GlobalApi from '../../Services/GlobalApi'
+import { useDispatch } from 'react-redux'
+import { login } from '../../app/store/userSlice'
+import { AuthContext } from '../../context/AuthContext'
+import Icon from 'react-native-vector-icons/Ionicons'
 
-const LoginScreen: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const passwordInputRef = createRef<TextInput>();
-  const router = useRouter();
-  const dispatch = useDispatch(); // Redux hook
-  const { login: authLogin } = useContext(AuthContext); // AuthContext
+export default function LoginScreen() {
+  const [email, setEmail] = useState({ value: '', error: '' })
+  const [password, setPassword] = useState({ value: '', error: '' })
+  const [showPassword, setShowPassword] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
+  const passwordInputRef = createRef<TextInput>()
+  const router = useRouter()
+  const dispatch = useDispatch()
+  const { login: authLogin } = useContext(AuthContext)
 
-  // Handle login logic
-  const handleLoginPress = async () => {
-    if (email === '' || password === '') {
-      setErrorMessage('Please enter both email and password.');
-      return;
+  const onLoginPressed = async () => {
+    const emailError = emailValidator(email.value)
+    const passwordError = passwordValidator(password.value)
+    if (emailError || passwordError) {
+      setEmail({ ...email, error: emailError })
+      setPassword({ ...password, error: passwordError })
+      return
     }
 
-    setIsLoggingIn(true);
+    setIsLoggingIn(true)
     try {
-      const response = await GlobalApi.loginUser(email, password);
-
+      const response = await GlobalApi.loginUser(email.value, password.value)
       if (!response || !response.data) {
-        throw new Error('Invalid response from server');
+        throw new Error('Invalid response from server')
       }
-      setErrorMessage(null);
+      setErrorMessage(null)
 
-      const { token, userId, firstName, lastName, email: userEmail, userType, doctorId, professional, profileImage, riderId } = response.data;
+      const { token, userId, firstName, lastName, email: userEmail, userType, doctorId, professional, profileImage, riderId } = response.data
 
       if (!firstName || !lastName) {
-        console.error('First name or last name is missing:', { firstName, lastName });
+        console.error('First name or last name is missing:', { firstName, lastName })
       }
 
-      // Redux action to store user details
       dispatch(login({
         name: `${firstName} ${lastName}`,
         email: userEmail,
@@ -50,8 +59,7 @@ const LoginScreen: React.FC = () => {
         professional,
         profileImage,
         riderId,
-      }));
-
+      }))
 
       authLogin({
         name: `${firstName} ${lastName}`,
@@ -61,122 +69,110 @@ const LoginScreen: React.FC = () => {
         professional,
         profileImage,
         riderId,
-      });
+      })
 
-    
       setTimeout(() => {
-        let route = '';
+        let route = ''
         switch (userType) {
           case 'professional':
             if (professional && professional.profession === 'doctor') {
-              route = professional.attachedToClinic ? '/doctor' : '/addclinic';
+              route = professional.attachedToClinic ? '/doctor' : '/addclinic'
             } else if (professional && professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
-              route = '/addpharmacy';
+              route = '/addpharmacy'
             } else if (professional && professional.profession === 'pharmacist') {
-              route = '/pharmacist/tabs';
+              route = '/pharmacist/tabs'
             } else {
-              route = '/professional';
+              route = '/professional'
             }
-            break;
+            break
           case 'client':
-            route = '/client/home';
-            break;
+            route = '/client/home'
+            break
           case 'student':
-            route = '/student/tabs';
-            break;
+            route = '/student/tabs'
+            break
           case 'rider':
-            route = '/rider/tabs';
-            break;
+            route = '/rider/tabs'
+            break
           default:
-            route = '/student/tabs';
-        }  
-
-        router.push(route);
-      }, 0);
+            route = '/student/tabs'
+        }
+        router.push(route)
+      }, 0)
     } catch (error) {
-      console.error('Error during login:', error);
-      setErrorMessage('Invalid email or password. Please try again.');
+      console.error('Error during login:', error)
+      setErrorMessage('Invalid email or password. Please try again.')
     } finally {
-      setIsLoggingIn(false);
+      setIsLoggingIn(false)
     }
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image source={{ uri: 'https://example.com/logo.png' }} style={styles.logo} />
-      </View>
-      <Text style={styles.heading}>Welcome Back!</Text>
+    <Background>
+      <Logo />
+      <Header>Welcome back.</Header>
       <TextInput
-        style={[styles.input, errorMessage && styles.inputError]}
-        placeholder="Email"
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        label="Email"
+        returnKeyType="next"
+        value={email.value}
+        onChangeText={(text) => setEmail({ value: text, error: '' })}
+        error={!!email.error}
+        errorText={email.error}
         autoCapitalize="none"
+        autoCompleteType="email"
+        textContentType="emailAddress"
+        keyboardType="email-address"
       />
       <View style={styles.passwordContainer}>
         <TextInput
-          style={styles.input}
-          placeholder="Password"
+          label="Password"
+          returnKeyType="done"
+          value={password.value}
+          onChangeText={(text) => setPassword({ value: text, error: '' })}
+          error={!!password.error}
+          errorText={password.error}
           secureTextEntry={!showPassword}
-          onChangeText={setPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
           <Icon name={showPassword ? "eye" : "eye-off"} size={20} color="#333" />
         </TouchableOpacity>
       </View>
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-      <TouchableOpacity
-        style={[styles.button, isLoggingIn && styles.buttonDisabled]}
-        onPress={handleLoginPress}
-        disabled={isLoggingIn}
-      >
-        {isLoggingIn ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={styles.registerText}>New here? Register</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-export default LoginScreen;
+      <View style={styles.forgotPassword}>
+        <TouchableOpacity onPress={() => {}}>
+          <Text style={styles.forgot}>Forgot your password?</Text>
+        </TouchableOpacity>
+      </View>
+      <Button mode="contained" onPress={onLoginPressed} disabled={isLoggingIn}>
+        {isLoggingIn ? <ActivityIndicator size="small" color="#fff" /> : 'Login'}
+      </Button>
+      <View style={styles.row}>
+        <Text>Don’t have an account? </Text>
+        <TouchableOpacity onPress={() => router.push('/register')}>
+          <Text style={styles.link}>Sign up</Text>
+        </TouchableOpacity>
+      </View>
+    </Background>
+  )
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#c5f0a4',
-    paddingHorizontal: 20,
+  forgotPassword: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: 24,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
+  row: {
+    flexDirection: 'row',
+    marginTop: 4,
   },
-  logo: {
-    width: 100,
-    height: 100,
-    resizeMode: 'contain',
+  forgot: {
+    fontSize: 13,
+    color: theme.colors.secondary,
   },
-  heading: {
-    fontSize: 24,
+  link: {
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 20,
-    color: '#333',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginVertical: 10,
-    backgroundColor: '#f9f9f9',
-  },
-  inputError: {
-    borderColor: 'red',
+    color: theme.colors.primary,
   },
   passwordContainer: {
     position: 'relative',
@@ -184,32 +180,11 @@ const styles = StyleSheet.create({
   eyeButton: {
     position: 'absolute',
     right: 15,
-    top: 15,
+    top: 35, // Adjusted to align with the password placeholder
   },
   errorText: {
     color: 'red',
     textAlign: 'center',
     marginTop: 10,
   },
-  button: {
-    backgroundColor: '#226b80',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  buttonDisabled: {
-    backgroundColor: '#b3cde0',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  registerText: {
-    textAlign: 'center',
-    color: '#226b80',
-    fontSize: 14,
-    marginTop: 10,
-  },
-});
+})
