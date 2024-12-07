@@ -184,6 +184,9 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       }
       console.log('Confirming appointment with ID:', appointmentId);
 
+      // Log the appointmentId
+      console.log('Appointment ID:', appointmentId);
+
       const confirmResponse = await axios.patch(
         `https://medplus-health.onrender.com/api/appointments/confirm/${appointmentId}`,
         { status: 'confirmed' }
