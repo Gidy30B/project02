@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout, selectUser } from '../../app/store/userSlice';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { Badge } from 'react-native-elements';
+import io from 'socket.io-client';
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { profileImage, name } = useSelector(selectUser);
+  const { profileImage, name, userId } = useSelector(selectUser);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const socket = useRef(io('https://medplus-health.onrender.com')).current;
+
+  useEffect(() => {
+    socket.on('newAppointment', ({ appointment, userId: appointmentUserId }) => {
+      if (appointmentUserId === userId) {
+        setNotificationCount((prevCount) => prevCount + 1);
+      }
+    });
+
+    return () => {
+      socket.off('newAppointment');
+    };
+  }, [userId]);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -27,9 +43,21 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
         )}
       </View>
       <Text style={styles.title}>{title}</Text>
-      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <AntDesign name="logout" size={24} color="black" />
-      </TouchableOpacity>
+      <View style={styles.rightSection}>
+        <TouchableOpacity style={styles.notificationButton}>
+          <AntDesign name="bells" size={24} color="black" />
+          {notificationCount > 0 && (
+            <Badge
+              value={notificationCount}
+              status="error"
+              containerStyle={styles.badgeContainer}
+            />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <AntDesign name="logout" size={24} color="black" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -76,10 +104,24 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#4CAF50',
   },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notificationButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+  },
   logoutButton: {
     padding: 8,
     backgroundColor: '#fff',
     borderRadius: 20,
+    marginLeft: 10,
   },
 });
 

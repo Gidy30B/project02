@@ -9,6 +9,7 @@ import Colors from './Shared/Colors';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectUser, updateUserProfile } from '../app/store/userSlice';
 import useSchedule from '../hooks/useSchedule'; // Import the useSchedule hook
+import io from 'socket.io-client';
 
 const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insurances?: string[]; selectedInsurance?: string }> = ({
   doctorId,
@@ -34,6 +35,20 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   const dispatch = useDispatch();
   const { schedule, fetchSchedule, clearCache, updateSlot } = useSchedule();
  
+  const socket = useRef(io('https://medplus-health.onrender.com')).current;
+
+  useEffect(() => {
+    socket.on('newAppointment', ({ appointment, userId, doctorId }) => {
+      if (userId === user.userId) {
+        Alert.alert('New Appointment', `You have a new appointment with Dr. ${appointment.doctorId}`);
+        fetchSchedule(doctorId); // Refresh the schedule
+      }
+    });
+
+    return () => {
+      socket.off('newAppointment');
+    };
+  }, [user.userId, doctorId]);
 
  
   const [dateOptions, setDateOptions] = useState<Array<Date>>(
