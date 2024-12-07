@@ -10,6 +10,7 @@ import { useRegisterLogic } from './register.logic';
 
 export default function RegisterScreen() {
   const [step, setStep] = useState(1);
+  const router = useRouter();
   const {
     firstName, setFirstName,
     lastName, setLastName,
@@ -66,9 +67,6 @@ export default function RegisterScreen() {
             value={verificationCode}
             onChangeText={(value) => handleInputChange('verificationCode', value)}
           />
-          <Button mode="contained" onPress={handleVerificationPress}>
-            Verify
-          </Button>
         </>
       );
     }
