@@ -107,10 +107,10 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
         date: moment(selectedDate).format('YYYY-MM-DD'), 
         time: selectedTimeSlot.time,
         status: selectedInsurance ? 'pending' : 'pending',
-        insurance: selectedInsurance, 
+        insurance: selectedInsurance, // Include insurance in the appointment data
       });
 
-      const newAppointmentId = appointmentResponse.data.appointment._id; 
+      const newAppointmentId = appointmentResponse.data.appointment._id; // Ensure correct path to appointment ID
       if (!newAppointmentId) {
         throw new Error('Failed to retrieve appointmentId from response');
       }
@@ -177,28 +177,29 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   useEffect(() => {
     appointmentIdRef.current = appointmentId;
   }, [appointmentId]);
-  
+
   const handlePaymentSuccess = async (response: any) => {
     setIsSubmitting(false);
     setAlertMessage('Payment successful and appointment confirmed!');
     setAlertType('success');
     setShowAlert(true);
     console.log('Payment successful:', response);
-  
+
     try {
-      // Use the ref to get the current appointment ID
-      const currentAppointmentId = appointmentIdRef.current;
-      if (!currentAppointmentId) {
+     
+      console.log('State before confirming appointment:', { appointmentId });
+
+      if (!appointmentId) {
         throw new Error('No appointment ID available for status update.');
       }
-      console.log('Confirming appointment with ID:', currentAppointmentId);
-  
+      console.log('Confirming appointment with ID:', appointmentId);
+
       const confirmResponse = await axios.patch(
-        `https://medplus-health.onrender.com/api/appointments/confirm/${currentAppointmentId}`,
+        `https://medplus-health.onrender.com/api/appointments/confirm/${appointmentId}`,
         { status: 'confirmed' }
       );
       console.log('Confirm response:', confirmResponse.data);
-  
+
       fetchSchedule(doctorId);
     } catch (error) {
       console.error('Error updating appointment status:', error);
@@ -207,7 +208,6 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       setShowAlert(true);
     }
   };
-  
 
   const handlePaymentCancel = () => {
     setIsSubmitting(false);
