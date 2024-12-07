@@ -35,7 +35,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   const { schedule, fetchSchedule, clearCache, updateSlot } = useSchedule();
  
 
-  // Replace the existing dateOptions with state
+ 
   const [dateOptions, setDateOptions] = useState<Array<Date>>(
     Array.from({ length: 7 }).map((_, i) => moment().add(i, 'days').toDate())
   );
@@ -43,13 +43,13 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   useEffect(() => {
     fetchSchedule(doctorId);
     
-    // Prevent selecting past dates
+ 
     const today = new Date();
     const availableDates = dateOptions.filter(date => moment(date).isSameOrAfter(today, 'day'));
     setDateOptions(availableDates);
   }, [doctorId]);
 
-  // Log the schedule data to verify it is being fetched correctly
+ 
   useEffect(() => {
     console.log('Fetched schedule:', schedule);
   }, [schedule]);
@@ -60,7 +60,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       return;
     }
 
-    // Ensure selected date and time are in the future
+  
     const selectedDateTime = moment(`${moment(selectedDate).format('YYYY-MM-DD')} ${selectedTimeSlot.time.split(' - ')[0]}`, 'YYYY-MM-DD HH:mm');
     if (selectedDateTime.isBefore(moment())) {
       Alert.alert('Error', 'Cannot book an appointment in the past.');
@@ -104,19 +104,21 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
         doctorId: doctorId,
         userId: userId,
         patientName: patientName,
-        date: moment(selectedDate).format('YYYY-MM-DD'), // Ensure date is included
-        timeSlotId: selectedTimeSlot.id, // Ensure timeSlotId is included
+        date: moment(selectedDate).format('YYYY-MM-DD'), 
         time: selectedTimeSlot.time,
-        status: selectedInsurance ? 'pending' : 'pending', // Set status to pending if insurance is provided
-        insurance: selectedInsurance, // Include insurance in the appointment data
+        status: selectedInsurance ? 'pending' : 'pending',
+        insurance: selectedInsurance, 
       });
 
-      const newAppointmentId = appointmentResponse.data.appointment._id; // Ensure correct path to appointment ID
+      const newAppointmentId = appointmentResponse.data.appointment._id; 
       if (!newAppointmentId) {
         throw new Error('Failed to retrieve appointmentId from response');
       }
       console.log('New appointment ID:', newAppointmentId);
       setAppointmentId(newAppointmentId);
+
+      // Log the state after setting the appointmentId
+      console.log('State after setting appointmentId:', { appointmentId: newAppointmentId });
 
       // Update the slot to booked in the local state
       updateSlot(selectedTimeSlot.id, { isBooked: true });
@@ -170,29 +172,33 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       setIsSubmitting(false);
     }
   };
+  const appointmentIdRef = useRef<string | null>(null);
 
+  useEffect(() => {
+    appointmentIdRef.current = appointmentId;
+  }, [appointmentId]);
+  
   const handlePaymentSuccess = async (response: any) => {
     setIsSubmitting(false);
     setAlertMessage('Payment successful and appointment confirmed!');
     setAlertType('success');
     setShowAlert(true);
     console.log('Payment successful:', response);
-
+  
     try {
-      if (!appointmentId) {
+      // Use the ref to get the current appointment ID
+      const currentAppointmentId = appointmentIdRef.current;
+      if (!currentAppointmentId) {
         throw new Error('No appointment ID available for status update.');
       }
-      console.log('Confirming appointment with ID:', appointmentId);
-
-      // Log the appointmentId
-      console.log('Appointment ID:', appointmentId);
-
+      console.log('Confirming appointment with ID:', currentAppointmentId);
+  
       const confirmResponse = await axios.patch(
-        `https://medplus-health.onrender.com/api/appointments/confirm/${appointmentId}`,
+        `https://medplus-health.onrender.com/api/appointments/confirm/${currentAppointmentId}`,
         { status: 'confirmed' }
       );
       console.log('Confirm response:', confirmResponse.data);
-
+  
       fetchSchedule(doctorId);
     } catch (error) {
       console.error('Error updating appointment status:', error);
@@ -201,6 +207,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       setShowAlert(true);
     }
   };
+  
 
   const handlePaymentCancel = () => {
     setIsSubmitting(false);
