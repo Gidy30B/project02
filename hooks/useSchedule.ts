@@ -62,11 +62,11 @@ const useSchedule = (): UseScheduleHook => {
     }
   };
 
-  const createRecurringSlots = async (professionalId: string, slot: Slot, recurrence: string) => {
+  const createRecurringSlots = async (professionalId: string, slots: Slot[], recurrence: string) => {
     try {
-      const response = await axios.post(`https://medplus-health.onrender.com/api/schedule/create-recurring`, {
+      const response = await axios.post(`https://medplus-health.onrender.com/api/schedule/createRecurringSlots`, {
         professionalId,
-        slot,
+        slots,
         recurrence,
       });
       if (response.status === 200) {

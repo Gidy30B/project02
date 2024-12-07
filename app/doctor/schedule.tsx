@@ -50,7 +50,7 @@ const bookedSlotColors = ['#e6c39a', '#d4a76c', '#c39156'];
 
 const ScheduleScreen: React.FC = () => {
   const user: User = useSelector(selectUser);
-  const { schedule, fetchSchedule, createOrUpdateSchedule, updateSlot } = useSchedule();
+  const { schedule, fetchSchedule, createOrUpdateSchedule, updateSlot, createRecurringSlots } = useSchedule();
   const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState<boolean>(true);
@@ -69,6 +69,8 @@ const ScheduleScreen: React.FC = () => {
   const [modalAnimation] = useState(new Animated.Value(0));
   const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
   const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
+  const [isEditSlotModalVisible, setIsEditSlotModalVisible] = useState(false);
+  const [editSlot, setEditSlot] = useState<Slot | null>(null);
 
   const showDateTimePicker = () => {
     setDateTimePickerVisibility(true);
@@ -213,6 +215,35 @@ const ScheduleScreen: React.FC = () => {
     }
   };
 
+  const handleCreateRecurringSlots = async () => {
+    if (!selectedDate || !workStartTime || !workEndTime) {
+      console.error('Date, start time, and end time are required.');
+      return;
+    }
+
+    const start = moment(workStartTime);
+    const end = moment(workEndTime);
+
+    const slot = {
+      date: moment(selectedDate).format('YYYY-MM-DD'),
+      startTime: start.format('HH:mm'),
+      endTime: end.format('HH:mm'),
+      isBooked: false,
+      _id: '',
+    };
+
+    try {
+      await createRecurringSlots(user?.professional?._id, [slot], recurrence);
+      setIsSlotModalVisible(false);
+      setWorkStartTime(null);
+      setWorkEndTime(null);
+      setRecurrence('none');
+      setSlotDuration(60);
+    } catch (error) {
+      console.error('Error creating recurring slots:', error);
+    }
+  };
+
   const openModal = () => {
     setIsSlotModalVisible(true);
     Animated.timing(modalAnimation, {
@@ -351,6 +382,38 @@ const ScheduleScreen: React.FC = () => {
     }
   };
 
+  const handleEditSlot = (slot: Slot) => {
+    setEditSlot(slot);
+    setIsEditSlotModalVisible(true);
+  };
+
+  const handleSaveEditSlot = async () => {
+    if (!editSlot) return;
+
+    try {
+      await updateSlot(editSlot._id, {
+        startTime: editSlot.startTime,
+        endTime: editSlot.endTime,
+        isBooked: editSlot.isBooked,
+      });
+
+      setIsEditSlotModalVisible(false);
+      setEditSlot(null);
+      fetchSchedule(user?.professional?._id);
+    } catch (error) {
+      console.error('Error saving edited slot:', error);
+    }
+  };
+
+  const handleDeleteSlot = async (slotId: string) => {
+    try {
+      await axios.delete(`https://medplus-health.onrender.com/api/schedule/slot/${slotId}`);
+      fetchSchedule(user?.professional?._id);
+    } catch (error) {
+      console.error('Error deleting slot:', error);
+    }
+  };
+
   const renderClassItem = ({ item }: { item: Slot }) => (
     <View style={styles.classItem}>
       <View style={styles.timelineContainer}>
@@ -384,11 +447,14 @@ const ScheduleScreen: React.FC = () => {
           <Text style={styles.cardTitle}>Available Slot</Text>
         )}
 
-        {!item.isBooked && (
-          <TouchableOpacity style={styles.updateButton} onPress={() => handleSlotPress(item)}>
-            <Text style={styles.updateButtonText}>Update</Text>
+        <View style={styles.slotActions}>
+          <TouchableOpacity style={styles.updateButton} onPress={() => handleEditSlot(item)}>
+            <Text style={styles.updateButtonText}>Edit</Text>
           </TouchableOpacity>
-        )}
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteSlot(item._id)}>
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -526,10 +592,39 @@ const ScheduleScreen: React.FC = () => {
             <TouchableOpacity style={styles.createButton} onPress={handleCreateSlot}>
               <Text style={styles.createButtonText}>Create</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.createButton} onPress={handleCreateRecurringSlots}>
+              <Text style={styles.createButtonText}>Create Recurring Slots</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </Animated.View>
+        </View>
+      </Modal>
+
+      <Modal visible={isEditSlotModalVisible} transparent={true} animationType="slide">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Slot</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Start Time"
+              value={editSlot?.startTime}
+              onChangeText={(text) => setEditSlot({ ...editSlot, startTime: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="End Time"
+              value={editSlot?.endTime}
+              onChangeText={(text) => setEditSlot({ ...editSlot, endTime: text })}
+            />
+            <TouchableOpacity style={styles.createButton} onPress={handleSaveEditSlot}>
+              <Text style={styles.createButtonText}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditSlotModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -885,6 +980,20 @@ const styles = StyleSheet.create({
   },
   pickerButtonText: {
     // ...existing code...
+  },
+  slotActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    padding: 5,
+    borderRadius: 5,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 
