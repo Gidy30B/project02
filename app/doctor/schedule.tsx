@@ -67,6 +67,8 @@ const ScheduleScreen: React.FC = () => {
   const [recurrence, setRecurrence] = useState<'none' | 'weekly' | 'monthly'>('none');
   const [isDateTimePickerVisible, setDateTimePickerVisibility] = useState(false);
   const [modalAnimation] = useState(new Animated.Value(0));
+  const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
+  const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
 
   const showDateTimePicker = () => {
     setDateTimePickerVisibility(true);
@@ -81,33 +83,134 @@ const ScheduleScreen: React.FC = () => {
     hideDateTimePicker();
   };
 
+  const handleConfirmWorkStartTime = (dateTime: Date) => {
+    setWorkStartTime(dateTime);
+    hideDateTimePicker();
+  };
+
+  const handleConfirmWorkEndTime = (dateTime: Date) => {
+    setWorkEndTime(dateTime);
+    hideDateTimePicker();
+  };
+
+  const renderDateTimePicker = () => {
+    if (Platform.OS === 'web') {
+      return (
+        <DatePicker
+          selected={newSlotDateTime}
+          onChange={(date: Date) => setNewSlotDateTime(date)}
+          showTimeSelect
+          dateFormat="Pp"
+        />
+      );
+    } else {
+      return (
+        <DateTimePickerModal
+          isVisible={isDateTimePickerVisible}
+          mode="datetime"
+          onConfirm={handleConfirmDateTime}
+          onCancel={hideDateTimePicker}
+        />
+      );
+    }
+  };
+
+  const renderWorkTimePicker = (label: string, time: Date | null, onConfirm: (date: Date) => void) => {
+    if (Platform.OS === 'web') {
+      return (
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>{label}</Text>
+          <DatePicker
+            selected={time}
+            onChange={(date: Date) => onConfirm(date)}
+            showTimeSelect
+            showTimeSelectOnly
+            timeIntervals={15}
+            timeCaption="Time"
+            dateFormat="h:mm aa"
+          />
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>{label}</Text>
+          <TouchableOpacity onPress={showDateTimePicker} style={styles.pickerButton}>
+            <Text style={styles.pickerButtonText}>
+              {time ? moment(time).format('h:mm A') : 'Select Time'}
+            </Text>
+          </TouchableOpacity>
+          <DateTimePickerModal
+            isVisible={isDateTimePickerVisible}
+            mode="time"
+            onConfirm={onConfirm}
+            onCancel={hideDateTimePicker}
+          />
+        </View>
+      );
+    }
+  };
+
+  const generateSlots = (start: moment.Moment, end: moment.Moment, duration: number) => {
+    const slots = [];
+    let current = start.clone();
+
+    while (current.add(duration, 'minutes').isBefore(end) || current.isSame(end)) {
+      slots.push({
+        date: moment(selectedDate).format('YYYY-MM-DD'),
+        startTime: current.format('HH:mm'),
+        endTime: current.clone().add(duration, 'minutes').format('HH:mm'),
+        isBooked: false,
+        _id: '',
+      });
+      current.add(duration, 'minutes');
+    }
+
+    return slots;
+  };
+
   const handleCreateSlot = async () => {
-    if (!newSlotDateTime) {
-      console.error('Date and time are required.');
+    if (!selectedDate || !workStartTime || !workEndTime) {
+      console.error('Date, start time, and end time are required.');
       return;
     }
 
-    const start = moment(newSlotDateTime);
-    const end = start.clone().add(slotDuration, 'minutes');
+    const start = moment(workStartTime);
+    const end = moment(workEndTime);
 
-    const availability = [{
-      date: start.format('YYYY-MM-DD'),
-      startTime: start.format('HH:mm'),
-      endTime: end.format('HH:mm'),
-      isBooked: false,
-      _id: '',
-    }];
+    const availability = generateSlots(start, end, slotDuration);
 
-    await axios.post('https://medplus-health.onrender.com/api/schedule/createSlots', {
-      slots: availability,
-      recurrence,
-    });
+    if (availability.length === 0) {
+      console.error('No slots generated.');
+      return;
+    }
 
-    setIsSlotModalVisible(false);
-    setNewSlotDateTime(null);
-    setRecurrence('none');
-    setSlotDuration(60);
-    fetchSchedule(user?.professional?._id);
+    try {
+      const response = await axios.put('https://medplus-health.onrender.com/api/schedule', {
+        professionalId: user?.professional?._id,
+        availability,
+      });
+
+      const { schedule } = response.data;
+      const newItems = { ...items };
+
+      schedule.slots.forEach((slot: Slot) => {
+        const strDate = moment(slot.date).format('YYYY-MM-DD');
+        if (!newItems[strDate]) {
+          newItems[strDate] = [];
+        }
+        newItems[strDate].push(slot);
+      });
+
+      setItems(newItems);
+      setIsSlotModalVisible(false);
+      setWorkStartTime(null);
+      setWorkEndTime(null);
+      setRecurrence('none');
+      setSlotDuration(60);
+    } catch (error) {
+      console.error('Error creating slots:', error);
+    }
   };
 
   const openModal = () => {
@@ -387,15 +490,12 @@ const ScheduleScreen: React.FC = () => {
 
             <TouchableOpacity onPress={showDateTimePicker} style={styles.pickerButton}>
               <Text style={styles.pickerButtonText}>
-                {newSlotDateTime ? moment(newSlotDateTime).format('YYYY-MM-DD HH:mm') : 'Select Date & Time'}
+                {selectedDate ? moment(selectedDate).format('YYYY-MM-DD') : 'Select Date'}
               </Text>
             </TouchableOpacity>
-            <DateTimePickerModal
-              isVisible={isDateTimePickerVisible}
-              mode="datetime"
-              onConfirm={handleConfirmDateTime}
-              onCancel={hideDateTimePicker}
-            />
+
+            {renderWorkTimePicker('Start of Work', workStartTime, handleConfirmWorkStartTime)}
+            {renderWorkTimePicker('End of Work', workEndTime, handleConfirmWorkEndTime)}
 
             <View style={styles.durationContainer}>
               <Text style={styles.durationLabel}>Slot Duration (minutes):</Text>
@@ -771,6 +871,20 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  pickerContainer: {
+    marginBottom: 10,
+  },
+  pickerLabel: {
+    fontSize: 16,
+    color: Colors.primary,
+    marginBottom: 5,
+  },
+  pickerButton: {
+    // ...existing code...
+  },
+  pickerButtonText: {
+    // ...existing code...
   },
 });
 
