@@ -130,7 +130,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       if (!newAppointmentId) {
         throw new Error('Failed to retrieve appointmentId from response');
       }
-      console.log('New appointment ID:', newAppointmentId);
+      console.log('New appointment ID:', newAppointmentId); // Log the appointmentId from the response
       setAppointmentId(newAppointmentId);
 
       // Log the state after setting the appointmentId
@@ -202,16 +202,16 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
     console.log('Payment successful:', response);
 
     try {
-     
-      console.log('State before confirming appointment:', { appointmentId });
+      const currentAppointmentId = appointmentIdRef.current;
+      console.log('State before confirming appointment:', { appointmentId: currentAppointmentId });
 
-      if (!appointmentId) {
+      if (!currentAppointmentId) {
         throw new Error('No appointment ID available for status update.');
       }
-      console.log('Confirming appointment with ID:', appointmentId);
+      console.log('Confirming appointment with ID:', currentAppointmentId);
 
       const confirmResponse = await axios.patch(
-        `https://medplus-health.onrender.com/api/appointments/confirm/${appointmentId}`,
+        `https://medplus-health.onrender.com/api/appointments/confirm/${currentAppointmentId}`,
         { status: 'confirmed' }
       );
       console.log('Confirm response:', confirmResponse.data);
