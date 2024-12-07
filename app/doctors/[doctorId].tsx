@@ -152,7 +152,7 @@ const DoctorProfile: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: Colors.light_gray,
+    backgroundColor: 'linear-gradient(to right, rgb(182, 244, 146), rgb(51, 139, 147))',
   },
   scrollViewContent: {
     padding: 20,
@@ -168,9 +168,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: Colors.light_gray,
+    backgroundColor: 'linear-gradient(to right, rgb(170, 255, 169) 11.2%, rgb(17, 255, 189) 91.1%);',
     borderRadius: 8,
     marginBottom: 20,
+    borderBottomLeftRadius:20,
+    borderBottomRightRadius:20,
   },
   avatar: {
     width: 100,

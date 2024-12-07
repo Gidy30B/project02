@@ -226,7 +226,7 @@ const BookAppointment = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'linear-gradient(to right, rgb(170, 255, 169) 11.2%, rgb(17, 255, 189) 91.1%);',
     paddingHorizontal: 16,
   },
   loadingContainer: {

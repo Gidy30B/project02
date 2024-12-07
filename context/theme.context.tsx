@@ -22,6 +22,7 @@ const DarkTheme = {
 const ThemeContext = createContext({
   theme: LightTheme,
   toggleTheme: () => {},
+  clearTheme: () => {},
 });
 
 export const ThemeProvider = ({ children }:any) => {
@@ -46,8 +47,13 @@ export const ThemeProvider = ({ children }:any) => {
     await AsyncStorage.setItem("userTheme", newTheme.dark ? "dark" : "light");
   };
 
+  const clearTheme = async () => {
+    await AsyncStorage.removeItem("userTheme");
+    setTheme(systemColorScheme === "dark" ? DarkTheme : LightTheme);
+  };
+
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, clearTheme }}>
       {children}
     </ThemeContext.Provider>
   );

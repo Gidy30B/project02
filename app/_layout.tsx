@@ -30,7 +30,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <ThemeProvider value={colorScheme === 'light' ? DarkTheme : DefaultTheme}>
+     
         <AuthProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
@@ -46,7 +46,7 @@ export default function RootLayout() {
 
           </Stack>
         </AuthProvider>
-      </ThemeProvider>
+      
       <StatusBar style="auto" />
     </Provider>
   );
