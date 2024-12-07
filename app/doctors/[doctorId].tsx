@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   FlatList,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
@@ -82,69 +83,62 @@ const DoctorProfile: React.FC = () => {
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="black" />
       </TouchableOpacity>
-      <FlatList
-        data={[]}
-        ListHeaderComponent={
-          <>
-            <View style={styles.profileContainer}>
-              <Avatar
-                source={{ uri: profileImageUri }}
-                containerStyle={styles.avatar}
-                imageProps={{ style: { borderRadius: 50 } }}
-              />
-              <View style={styles.profileInfo}>
-                <Text style={styles.doctorName}>{`${doctor.firstName} ${doctor.lastName}`}</Text>
-                <Text style={styles.categoryName}>{doctor.specialty || 'General'}</Text>
-                <Text style={styles.consultationFee}>{`Consultation Fee: ${doctor.consultationFee || 'N/A'}`}</Text>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
+        <View style={styles.profileContainer}>
+          <Avatar
+            source={{ uri: profileImageUri }}
+            containerStyle={styles.avatar}
+            imageProps={{ style: { borderRadius: 50 } }}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={styles.doctorName}>{`${doctor.firstName} ${doctor.lastName}`}</Text>
+            <Text style={styles.categoryName}>{doctor.specialty || 'General'}</Text>
+            <Text style={styles.consultationFee}>{`Consultation Fee: ${doctor.consultationFee || 'N/A'}`}</Text>
+          </View>
+        </View>
+        <View style={styles.infoContainer}>
+          <View style={styles.infoCard}>
+            <Ionicons name="person" size={20} color={Colors.primary} />
+            <Text style={styles.infoText}>{doctor.user.yearsOfExperience || 'N/A'} Years of Experience</Text>
+          </View>
+          <View style={styles.infoCard}>
+            <Ionicons name="people" size={20} color={Colors.primary} />
+            <Text style={styles.infoText}>{doctor.user.numberOfPatients || 'N/A'} Patients</Text>
+          </View>
+        </View>
+        <BookingSection
+          doctorId={doctor._id}
+          consultationFee={doctor.consultationFee || 'N/A'}
+          insurances={insuranceProviders}
+        />
+        <HorizontalLine />
+        <View style={styles.otherDoctorsContainer}>
+          <Text style={styles.sectionTitle}>Other Doctors</Text>
+          <FlatList
+            data={otherDoctors}
+            horizontal={true}
+            renderItem={({ item }) => (
+              <View style={styles.doctorItem}>
+                <Avatar
+                  source={{ uri: item.profileImage || 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' }}
+                  containerStyle={styles.avatar}
+                  imageProps={{ style: { borderRadius: 50 } }}
+                />
+                <View style={styles.profileInfo}>
+                  <Text style={styles.doctorName}>{`${item.firstName} ${item.lastName}`}</Text>
+                  <Text style={styles.categoryName}>{item.specialty || 'General'}</Text>
+                </View>
+                <TouchableOpacity style={styles.viewButton} onPress={() => router.push(`/doctors/${item._id}`)}>
+                  <Text style={styles.viewButtonText}>View</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-            <View style={styles.infoContainer}>
-              <View style={styles.infoCard}>
-                <Ionicons name="person" size={20} color={Colors.primary} />
-                <Text style={styles.infoText}>{doctor.user.yearsOfExperience || 'N/A'} Years of Experience</Text>
-              </View>
-              <View style={styles.infoCard}>
-                <Ionicons name="people" size={20} color={Colors.primary} />
-                <Text style={styles.infoText}>{doctor.user.numberOfPatients || 'N/A'} Patients</Text>
-              </View>
-            </View>
-            <BookingSection
-              doctorId={doctor._id}
-              consultationFee={doctor.consultationFee || 'N/A'}
-              insurances={insuranceProviders}
-            />
-            <HorizontalLine />
-            <View style={styles.otherDoctorsContainer}>
-              <Text style={styles.sectionTitle}>Other Doctors</Text>
-              <FlatList
-                data={otherDoctors}
-                horizontal={true}
-                renderItem={({ item }) => (
-                  <View style={styles.doctorItem}>
-                    <Avatar
-                      source={{ uri: item.profileImage || 'https://res.cloudinary.com/dws2bgxg4/image/upload/v1726073012/nurse_portrait_hospital_2d1bc0a5fc.jpg' }}
-                      containerStyle={styles.avatar}
-                      imageProps={{ style: { borderRadius: 50 } }}
-                    />
-                    <View style={styles.profileInfo}>
-                      <Text style={styles.doctorName}>{`${item.firstName} ${item.lastName}`}</Text>
-                      <Text style={styles.categoryName}>{item.specialty || 'General'}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.viewButton} onPress={() => router.push(`/doctors/${item._id}`)}>
-                      <Text style={styles.viewButtonText}>View</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                keyExtractor={(item) => item._id}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.flatListContent}
-              />
-            </View>
-          </>
-        }
-        renderItem={null}
-        keyExtractor={() => 'dummy'}
-      />
+            )}
+            keyExtractor={(item) => item._id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.flatListContent}
+          />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

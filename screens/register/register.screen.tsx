@@ -161,7 +161,7 @@ export default function RegisterScreen() {
         <Logo />
         <Header>Create Account</Header>
         {renderStep()}
-        <Animated.View style={{ transform: [{ scale: buttonAnimation }] }}>
+        <Animated.View style={{ transform: [{ scale: buttonAnimation }], marginTop: 16 }}>
           <Button mode="contained" onPress={isVerifying ? handleVerificationPress : handleNext} loading={isRegistering}>
             {isVerifying ? 'Verify' : (step === 3 ? 'Sign Up' : 'Next')}
           </Button>
