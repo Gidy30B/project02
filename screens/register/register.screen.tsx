@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, ScrollView } from 'react-native';
 import { Text, HelperText, Button, TextInput } from 'react-native-paper';
 import { theme } from '../../core/theme';
 import Background from '../../components/login/Background';
@@ -159,30 +159,38 @@ export default function RegisterScreen() {
 
   return (
     <Background>
-      <Logo />
-      <Header>Create Account</Header>
-      {renderStep()}
-      <Animated.View style={{ transform: [{ scale: buttonAnimation }] }}>
-        <Button mode="contained" onPress={isVerifying ? handleVerificationPress : handleNext} loading={isRegistering}>
-          {isVerifying ? 'Verify' : (step === 3 ? 'Sign Up' : 'Next')}
-        </Button>
-      </Animated.View>
-      {!isVerifying && (
-        <View style={styles.row}>
-          <Text>Already have an account? </Text>
-          <Text style={styles.link} onPress={() => router.push('/login')}>
-            Login
-          </Text>
-        </View>
-      )}
+      <ScrollView contentContainerStyle={styles.container}>
+        <Logo />
+        <Header>Create Account</Header>
+        {renderStep()}
+        <Animated.View style={{ transform: [{ scale: buttonAnimation }] }}>
+          <Button mode="contained" onPress={isVerifying ? handleVerificationPress : handleNext} loading={isRegistering}>
+            {isVerifying ? 'Verify' : (step === 3 ? 'Sign Up' : 'Next')}
+          </Button>
+        </Animated.View>
+        {!isVerifying && (
+          <View style={styles.row}>
+            <Text>Already have an account? </Text>
+            <Text style={styles.link} onPress={() => router.push('/login')}>
+              Login
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </Background>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
   row: {
     flexDirection: 'row',
     marginTop: 4,
+    justifyContent: 'center',
   },
   link: {
     fontWeight: 'bold',

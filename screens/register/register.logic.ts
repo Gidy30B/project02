@@ -146,7 +146,6 @@ export const useRegisterLogic = () => {
     countdown, setCountdown,
     timerActive, setTimerActive,
     isRegistering, setIsRegistering,
-    clinicReferenceCode, setClinicReferenceCode,
     animateButton,
     handleSignupPress,
     handleVerificationPress,
