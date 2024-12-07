@@ -105,6 +105,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
         userId: userId,
         patientName: patientName,
         date: moment(selectedDate).format('YYYY-MM-DD'), 
+        timeSlotId: selectedTimeSlot.id, // Ensure timeSlotId is included
         time: selectedTimeSlot.time,
         status: selectedInsurance ? 'pending' : 'pending',
         insurance: selectedInsurance, // Include insurance in the appointment data
