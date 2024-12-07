@@ -111,7 +111,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
         insurance: selectedInsurance, // Include insurance in the appointment data
       });
 
-      const newAppointmentId = appointmentResponse.data.appointment._id;
+      const newAppointmentId = appointmentResponse.data.appointment._id; // Ensure correct path to appointment ID
       if (!newAppointmentId) {
         throw new Error('Failed to retrieve appointmentId from response');
       }
