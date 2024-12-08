@@ -1,1004 +1,503 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, Platform, TextInput, Animated, Easing } from 'react-native';
-import {Picker} from '@react-native-picker/picker';
-import { useSelector } from 'react-redux';
-import moment from 'moment';
-import useSchedule from '../../hooks/useSchedule';
-import useAppointments from '../../hooks/useAppointments'; 
-import { selectUser } from '../store/userSlice';
-import Colors from '../../components/Shared/Colors';
-import axios from 'axios'; 
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import SlotItem from '../../components/SlotItem'; // Import SlotItem component
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  TextInput,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
+import { Calendar } from 'react-native-calendars'; // Import the Calendar component
+import moment from 'moment'; // Install moment.js for easier date manipulation
+import Toast from 'react-native-toast-message';
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import Collapsible from 'react-native-collapsible';
 
-interface Patient {
-  name: string;
-}
-
-interface Appointment {
-  _id: string;
-  patientId: Patient;
-  date: string;
-  time: string;
-  status: string;
-  slotId: string;
-}
-
-interface Slot {
-  _id: string;
+interface Shift {
+  name: string; // Added shift name
+  day: string;
   startTime: string;
-  endTime: string; // Changed from boolean to string
-  isBooked: boolean;
-  patientId?: Patient;
-  date: string;
-  appointment?: Appointment; 
-  color?: string; 
+  endTime: string;
+  maxPatients: number;
+  breaks: { start: string; end: string }[];
+  isRecurring: boolean;
 }
 
-interface User {
-  name: string;
-  professional?: {
-    _id: string;
-  };
-}
-
-
-const bookedSlotColors = ['#e6c39a', '#d4a76c', '#c39156']; 
-
-const ScheduleScreen: React.FC = () => {
-  const user: User = useSelector(selectUser);
-  const { schedule, fetchSchedule, createOrUpdateSchedule, updateSlot, createRecurringSlots } = useSchedule();
-  const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [loading, setLoading] = useState<boolean>(true);
-  const [items, setItems] = useState<{ [key: string]: Slot[] }>({});
-  const [todayAppointments, setTodayAppointments] = useState<Slot[]>([]);
-  const [scheduleFetched, setScheduleFetched] = useState<boolean>(false);
-  const [isEventModalVisible, setIsEventModalVisible] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
-  const [eventTitle, setEventTitle] = useState('');
-  const [eventDescription, setEventDescription] = useState('');
-  const [isSlotModalVisible, setIsSlotModalVisible] = useState(false);
-  const [newSlotDateTime, setNewSlotDateTime] = useState<Date | null>(null);
-  const [slotDuration, setSlotDuration] = useState<number>(60);
-  const [recurrence, setRecurrence] = useState<'none' | 'weekly' | 'monthly'>('none');
-  const [isDateTimePickerVisible, setDateTimePickerVisibility] = useState(false);
-  const [modalAnimation] = useState(new Animated.Value(0));
-  const [workStartTime, setWorkStartTime] = useState<Date | null>(null);
-  const [workEndTime, setWorkEndTime] = useState<Date | null>(null);
-  const [isEditSlotModalVisible, setIsEditSlotModalVisible] = useState(false);
-  const [editSlot, setEditSlot] = useState<Slot | null>(null);
-
-  const showDateTimePicker = () => {
-    setDateTimePickerVisibility(true);
-  };
-
-  const hideDateTimePicker = () => {
-    setDateTimePickerVisibility(false);
-  };
-
-  const handleConfirmDateTime = (dateTime: Date) => {
-    setNewSlotDateTime(dateTime);
-    hideDateTimePicker();
-  };
-
-  const handleConfirmWorkStartTime = (dateTime: Date) => {
-    setWorkStartTime(dateTime);
-    hideDateTimePicker();
-  };
-
-  const handleConfirmWorkEndTime = (dateTime: Date) => {
-    setWorkEndTime(dateTime);
-    hideDateTimePicker();
-  };
-
-  const renderDateTimePicker = () => {
-    if (Platform.OS === 'web') {
-      return (
-        <DatePicker
-          selected={newSlotDateTime}
-          onChange={(date: Date) => setNewSlotDateTime(date)}
-          showTimeSelect
-          dateFormat="Pp"
-        />
-      );
-    } else {
-      return (
-        <DateTimePickerModal
-          isVisible={isDateTimePickerVisible}
-          mode="datetime"
-          onConfirm={handleConfirmDateTime}
-          onCancel={hideDateTimePicker}
-        />
-      );
-    }
-  };
-
-  const renderWorkTimePicker = (label: string, time: Date | null, onConfirm: (date: Date) => void) => {
-    if (Platform.OS === 'web') {
-      return (
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>{label}</Text>
-          <DatePicker
-            selected={time}
-            onChange={(date: Date) => onConfirm(date)}
-            showTimeSelect
-            showTimeSelectOnly
-            timeIntervals={15}
-            timeCaption="Time"
-            dateFormat="h:mm aa"
-          />
-        </View>
-      );
-    } else {
-      return (
-        <View style={styles.pickerContainer}>
-          <Text style={styles.pickerLabel}>{label}</Text>
-          <TouchableOpacity onPress={() => showDateTimePicker()} style={styles.pickerButton}>
-            <Text style={styles.pickerButtonText}>
-              {time ? moment(time).format('h:mm A') : 'Select Time'}
-            </Text>
-          </TouchableOpacity>
-          <DateTimePickerModal
-            isVisible={isDateTimePickerVisible}
-            mode="time"
-            onConfirm={onConfirm}
-            onCancel={hideDateTimePicker}
-          />
-        </View>
-      );
-    }
-  };
-
-  const generateSlots = (start: moment.Moment, end: moment.Moment, duration: number) => {
-    const slots = [];
-    let current = start.clone();
-
-    while (current.add(duration, 'minutes').isBefore(end) || current.isSame(end)) {
-      slots.push({
-        date: moment(selectedDate).format('YYYY-MM-DD'),
-        startTime: current.format('HH:mm'),
-        endTime: current.clone().add(duration, 'minutes').format('HH:mm'),
-        isBooked: false,
-        _id: '',
-      });
-      current.add(duration, 'minutes');
-    }
-
-    return slots;
-  };
-
-  const handleCreateSlot = async () => {
-    if (!selectedDate || !workStartTime || !workEndTime) {
-      console.error('Date, start time, and end time are required.');
-      return;
-    }
-
-    const start = moment(workStartTime);
-    const end = moment(workEndTime);
-
-    const availability = generateSlots(start, end, slotDuration);
-
-    if (availability.length === 0) {
-      console.error('No slots generated.');
-      return;
-    }
-
-    try {
-      const response = await axios.put('https://medplus-health.onrender.com/api/schedule', {
-        professionalId: user?.professional?._id,
-        availability,
-      });
-
-      const { schedule } = response.data;
-      const newItems = { ...items };
-
-      schedule.slots.forEach((slot: Slot) => {
-        const strDate = moment(slot.date).format('YYYY-MM-DD');
-        if (!newItems[strDate]) {
-          newItems[strDate] = [];
-        }
-        newItems[strDate].push(slot);
-      });
-
-      setItems(newItems);
-      setIsSlotModalVisible(false);
-      setWorkStartTime(null);
-      setWorkEndTime(null);
-      setRecurrence('none');
-      setSlotDuration(60);
-    } catch (error) {
-      console.error('Error creating slots:', error);
-    }
-  };
-
-  const handleCreateRecurringSlots = async () => {
-    if (!selectedDate || !workStartTime || !workEndTime) {
-      console.error('Date, start time, and end time are required.');
-      return;
-    }
-
-    const start = moment(workStartTime);
-    const end = moment(workEndTime);
-
-    const slot = {
-      date: moment(selectedDate).format('YYYY-MM-DD'),
-      startTime: start.format('HH:mm'),
-      endTime: end.format('HH:mm'),
-      isBooked: false,
-      _id: '',
-    };
-
-    try {
-      await createRecurringSlots(user?.professional?._id, [slot], recurrence);
-      setIsSlotModalVisible(false);
-      setWorkStartTime(null);
-      setWorkEndTime(null);
-      setRecurrence('none');
-      setSlotDuration(60);
-    } catch (error) {
-      console.error('Error creating recurring slots:', error);
-    }
-  };
-
-  const openModal = () => {
-    setIsSlotModalVisible(true);
-    Animated.timing(modalAnimation, {
-      toValue: 1,
-      duration: 300,
-      easing: Easing.ease,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const closeModal = () => {
-    Animated.timing(modalAnimation, {
-      toValue: 0,
-      duration: 300,
-      easing: Easing.ease,
-      useNativeDriver: true,
-    }).start(() => setIsSlotModalVisible(false));
-  };
-
-  const modalTranslateY = modalAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [300, 0],
+const Schedule: React.FC = () => {
+  const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [newShift, setNewShift] = useState<Shift>({
+    name: '', // Initialize shift name
+    day: '',
+    startTime: '',
+    endTime: '',
+    maxPatients: 0,
+    breaks: [],
+    isRecurring: false,
   });
+  const [isWeekView, setIsWeekView] = useState<boolean>(true);
+  const [currentWeekDates, setCurrentWeekDates] = useState<{ [key: string]: any }>({});
+  const [selectedDay, setSelectedDay] = useState<string | null>(null); // New state for selected day
+  const [shiftStep, setShiftStep] = useState<number>(0); // New state to track steps
+  const [shifts, setShifts] = useState<{ [key: string]: Shift[] }>({}); // Updated state to handle multiple shifts
+  const [isAddShiftCollapsed, setIsAddShiftCollapsed] = useState<boolean>(true);
+  const [editShift, setEditShift] = useState<Shift | null>(null);
 
-  useEffect(() => {
-    const fetchProfessionalId = async () => {
-      try {
-        const professionalId = user?.professional?._id;
-        if (!professionalId) throw new Error('Professional ID not found');
-        await fetchSchedule(professionalId);
-        setScheduleFetched(true);
-      } catch (error) {
-        console.error('Error fetching professional ID:', error);
-      }
-    };
+  // Generate dates for the current week
+  const getCurrentWeek = () => {
+    const startOfWeek = moment().startOf('week');
+    const dates: { [key: string]: any } = {};
 
-    if (user?.professional?._id && !scheduleFetched) {
-      fetchProfessionalId();
+    for (let i = 0; i < 7; i++) {
+      const date = startOfWeek.clone().add(i, 'days').format('YYYY-MM-DD');
+      dates[date] = {
+        marked: false,
+        customStyles: {
+          container: {
+            backgroundColor: date === moment().format('YYYY-MM-DD') ? '#4CAF50' : 'white',
+          },
+          text: {
+            color: date === moment().format('YYYY-MM-DD') ? 'white' : 'black',
+          },
+        },
+      };
     }
-  }, [user, scheduleFetched]);
+    return dates;
+  };
 
   useEffect(() => {
-    const transformSchedule = () => {
-      const newItems: { [key: string]: Slot[] } = {};
-      const todayAppointmentsList: Slot[] = [];
+    setCurrentWeekDates(getCurrentWeek());
+  }, []);
 
-      const appointmentMap: { [key: string]: Appointment } = {};
-      appointments.forEach((appointment) => {
-        if (appointment.timeSlotId) { 
-          appointmentMap[appointment.timeSlotId] = appointment;
-        }
+  const handleAddShift = () => {
+    if (
+      !newShift.day ||
+      !newShift.startTime ||
+      !newShift.endTime ||
+      !newShift.maxPatients
+    ) {
+      Toast.show({
+        type: 'error',
+        text1: 'All fields are required',
       });
+      return;
+    }
+    // Add shift logic...
+  };
 
-      if (Array.isArray(schedule)) {
-        schedule.forEach((slot) => {
-          const strDate = moment(slot.date).format('YYYY-MM-DD');
-          if (!newItems[strDate]) {
-            newItems[strDate] = [];
-          }
+  const handleDayPress = (day: any) => {
+    setSelectedDay(day.dateString);
+    setShiftStep(1); // Move to the first step
+    setIsAddShiftCollapsed(false); // Automatically open add shift section
+  };
 
-          const { _id: slotId, startTime, endTime, isBooked, patientId, date } = slot;
-          const associatedAppointment = appointmentMap[slotId];
+  const toggleAddShift = () => {
+    setIsAddShiftCollapsed(!isAddShiftCollapsed);
+  };
 
-          const slotInfo: Slot = {
-            ...slot,
-            name: isBooked
-              ? associatedAppointment
-                ? `Appointment with ${associatedAppointment.patientId.name}` // Added backticks
-                : 'Booked Slot'
-              : 'Available Slot',
-            type: isBooked ? 'appointment' : 'availability',
-            appointment: associatedAppointment, 
-            color: isBooked
-              ? bookedSlotColors[todayAppointmentsList.length % bookedSlotColors.length]
-              : '#a3de83',
-          };
+  const handleShiftSubmit = () => {
+    if (
+      !newShift.name || // Validate shift name
+      !newShift.startTime ||
+      !newShift.endTime ||
+      !newShift.maxPatients ||
+      newShift.breaks.some(b => !b.start || !b.end)
+    ) {
+      Toast.show({
+        type: 'error',
+        text1: 'All fields are required',
+      });
+      return;
+    }
 
-          newItems[strDate].push(slotInfo);
+    const shiftToAdd = { ...newShift, day: selectedDay! };
 
-          if (strDate === moment().format('YYYY-MM-DD') && isBooked) {
-            todayAppointmentsList.push(slotInfo);
-          }
+    createOrUpdateSchedule(shiftToAdd)
+      .then(() => {
+        Toast.show({
+          type: 'success',
+          text1: 'Shift added successfully',
         });
-      } else {
-        console.warn('Schedule is not an array:', schedule);
-      }
-
-      setItems(newItems);
-      setTodayAppointments(todayAppointmentsList);
-      setLoading(false);
-    };
-
-    if (!appointmentsLoading && !appointmentsError) { 
-      transformSchedule();
-    }
-  }, [schedule, appointments, appointmentsLoading, appointmentsError]);
-
-  useEffect(() => {
-    console.log('Schedule:', schedule);
-    console.log('Appointments:', appointments);
-    console.log('Today\'s Appointments:', todayAppointments);
-    console.log('Selected Date:', selectedDate);
-    
-  }, [schedule, appointments, todayAppointments, selectedDate]);
-
-  const handleSlotPress = (slot: Slot) => {
-    setSelectedSlot(slot);
-    setIsEventModalVisible(true);
-  };
-
-  const handleSaveEvent = async () => {
-    if (!selectedSlot) return;
-
-    const event = {
-      title: eventTitle,
-      description: eventDescription,
-      date: selectedSlot.date,
-      startTime: selectedSlot.startTime,
-      endTime: selectedSlot.endTime,
-    };
-
-    try {
-      const events = JSON.parse(await AsyncStorage.getItem('events') || '[]');
-      events.push(event);
-      await AsyncStorage.setItem('events', JSON.stringify(events));
-
-      // Update the slot to booked
-      await updateSlot(selectedSlot._id, { isBooked: true });
-
-      setIsEventModalVisible(false);
-      setEventTitle('');
-      setEventDescription('');
-      fetchSchedule(user?.professional?._id);
-    } catch (error) {
-      console.error('Error saving event:', error);
-    }
-  };
-
-  const handleEditSlot = (slot: Slot) => {
-    setEditSlot(slot);
-    setIsEditSlotModalVisible(true);
-  };
-
-  const handleSaveEditSlot = async () => {
-    if (!editSlot) return;
-
-    try {
-      await updateSlot(editSlot._id, {
-        startTime: editSlot.startTime,
-        endTime: editSlot.endTime,
-        isBooked: editSlot.isBooked,
+        setShifts((prevShifts) => {
+          const dayShifts = prevShifts[selectedDay!] || [];
+          return {
+            ...prevShifts,
+            [selectedDay!]: [...dayShifts, shiftToAdd],
+          };
+        });
+        setNewShift({
+          name: '',
+          day: '',
+          startTime: '',
+          endTime: '',
+          maxPatients: 0,
+          breaks: [],
+          isRecurring: false,
+        });
+        fetchSchedule();
+      })
+      .catch((error) => {
+        Toast.show({
+          type: 'error',
+          text1: 'Failed to add shift',
+          text2: error.message,
+        });
       });
-
-      setIsEditSlotModalVisible(false);
-      setEditSlot(null);
-      fetchSchedule(user?.professional?._id);
-    } catch (error) {
-      console.error('Error saving edited slot:', error);
-    }
   };
-
-  const handleDeleteSlot = async (slotId: string) => {
-    try {
-      await axios.delete(`https://medplus-health.onrender.com/api/schedule/slot/${slotId}`);
-      fetchSchedule(user?.professional?._id);
-    } catch (error) {
-      console.error('Error deleting slot:', error);
-    }
-  };
-
-  const renderClassItem = ({ item }: { item: Slot }) => (
-    <View style={styles.classItem}>
-      <View style={styles.timelineContainer}>
-        <View style={styles.timelineDot} />
-        <View
-          style={[
-            styles.timelineLine,
-            { backgroundColor: item.isBooked ? item.color || '#e6c39a' : '#226b80' },
-          ]}
-        />
-      </View>
-
-      <View style={styles.classContent}>
-        <Text style={styles.timeText}>
-          {item.startTime} - {item.endTime ? item.endTime : ''}
-        </Text>
-
-        {item.isBooked ? (
-          item.appointment ? (
-            <>
-              <Text style={styles.cardTitle}>{item.appointment.patientId.name}</Text>
-              <Text style={styles.cardDate}>
-                {moment(item.appointment.date).format('DD MMM, HH:mm')}
-              </Text>
-              <Text style={styles.cardStatus}>{item.appointment.status}</Text>
-            </>
-          ) : (
-            <Text style={styles.cardTitle}>Booked Slot</Text>
-          )
-        ) : (
-          <Text style={styles.cardTitle}>Available Slot</Text>
-        )}
-
-        <View style={styles.slotActions}>
-          <TouchableOpacity style={styles.updateButton} onPress={() => handleEditSlot(item)}>
-            <Text style={styles.updateButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteSlot(item._id)}>
-            <Text style={styles.deleteButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderHeader = () => {
-    const now = moment();
-    const upcomingAppointment = todayAppointments.find(
-      (appointment) => appointment.appointment?.status === 'confirmed' && moment(appointment.appointment?.date).isAfter(now)
-    );
-  
-    return (
-      <View style={styles.headerCard}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Today's Appointments</Text>
-          <Text style={styles.headerSubtitle}>{moment().format('DD MMM, YYYY')}</Text>
-        </View>
-        <View style={styles.body}>
-          {upcomingAppointment ? (
-            <>
-              <Image source={{ uri: 'https://bootdey.com/img/Content/avatar/avatar6.png' }} style={styles.avatar} />
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{upcomingAppointment.appointment?.patientId.name}</Text>
-                <Text style={styles.userRole}>{moment(upcomingAppointment.appointment?.date).format('DD MMM, HH:mm')}</Text>
-                <Text style={styles.cardStatus}>{upcomingAppointment.appointment?.status}</Text>
-              </View>
-            </>
-          ) : (
-            <Text style={styles.noAppointments}>No upcoming appointments</Text>
-          )}
-        </View>
-      </View>
-    );
-  };
-  
-
-  const dateOptions = Array.from({ length: 7 }).map((_, i) => moment().add(i, 'days').toDate());
 
   return (
     <View style={styles.container}>
-      
-      {loading ? (
-        <ActivityIndicator size="large" color={Colors.primary} style={styles.loading} />
-      ) : (
-        <>
-                  
-          <View style={styles.dateSelectorContainer}>
-            <FlatList
-              horizontal
-              data={dateOptions}
-              keyExtractor={(item) => item.toISOString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  onPress={() => setSelectedDate(item)}
-                  style={[
-                    styles.dateButton,
-                    selectedDate.toDateString() === item.toDateString() ? styles.selectedDateButton : null,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.dateText,
-                      selectedDate.toDateString() === item.toDateString() ? styles.selectedDateText : null,
-                    ]}
-                  >
-                    {moment(item).format('ddd, DD')}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              showsHorizontalScrollIndicator={false}
-            />
-          </View>
+      <Text style={styles.header}>Manage Your Schedule</Text>
 
-          <Text style={styles.dateTitle}>{moment(selectedDate).format('dddd, MMMM Do YYYY')}</Text>
-
-        
-          <FlatList
-            contentContainerStyle={styles.contentContainer}
-            data={items[moment(selectedDate).format('YYYY-MM-DD')] || []}
-            ListHeaderComponent={renderHeader}
-            renderItem={renderClassItem}
-            keyExtractor={(item, index) => index.toString()}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No time slots available for this date.</Text>
-              </View>
-            }
-          />
-        </>
-      )}
-
-      <TouchableOpacity style={styles.addButton} onPress={openModal}>
-        <Text style={styles.addButtonText}>Create Slot</Text>
+      <TouchableOpacity
+        style={styles.toggleButton}
+        onPress={() => setIsWeekView(!isWeekView)}
+      >
+        <Text style={styles.toggleButtonText}>
+          {isWeekView ? 'Switch to Month View' : 'Switch to Week View'}
+        </Text>
       </TouchableOpacity>
 
-      <Modal visible={isSlotModalVisible} transparent={true} animationType="none">
-        <View style={styles.modalContainer}>
-          <Animated.View style={[styles.modalContent, { transform: [{ translateY: modalTranslateY }] }]}>
-            <Text style={styles.modalTitle}>Create New Slot</Text>
+      {isWeekView ? (
+        <Calendar
+          onDayPress={handleDayPress}
+          markedDates={currentWeekDates}
+          hideExtraDays
+          markingType="custom"
+          theme={{
+            todayTextColor: '#FF5722',
+            arrowColor: '#4CAF50',
+          }}
+          style={{
+            height: 100, // Restrict the calendar to a single line
+          }}
+        />
+      ) : (
+        <Calendar
+          onDayPress={handleDayPress}
+          markedDates={currentWeekDates}
+          hideExtraDays
+          markingType="custom"
+          theme={{
+            todayTextColor: '#FF5722',
+            arrowColor: '#4CAF50',
+          }}
+          style={{
+            height: 100, // Restrict the calendar to a single line
+          }}
+        />
+      )}
 
-            <TouchableOpacity onPress={showDateTimePicker} style={styles.pickerButton}>
-              <Text style={styles.pickerButtonText}>
-                {selectedDate ? moment(selectedDate).format('YYYY-MM-DD') : 'Select Date'}
-              </Text>
-            </TouchableOpacity>
+      {shiftStep === 1 && selectedDay && (
+        <Collapsible collapsed={false}>
+          <ScrollView>
+            <View style={styles.shiftForm}>
+              <Text style={styles.formTitle}>Set Availability for {selectedDay}</Text>
 
-            {renderWorkTimePicker('Start of Work', workStartTime, handleConfirmWorkStartTime)}
-            {renderWorkTimePicker('End of Work', workEndTime, handleConfirmWorkEndTime)}
+              {/* Shift Name Input */}
+              <TextInput
+                placeholder="Shift Name"
+                value={newShift.name}
+                onChangeText={text => setNewShift({ ...newShift, name: text })}
+                style={styles.input}
+              />
 
-            <View style={styles.durationContainer}>
-              <Text style={styles.durationLabel}>Slot Duration (minutes):</Text>
-              <Picker
-                selectedValue={slotDuration}
-                onValueChange={(itemValue) => setSlotDuration(itemValue as number)}
-                style={styles.picker}
-              >
-                <Picker.Item label="30" value={30} />
-                <Picker.Item label="60" value={60} />
-                <Picker.Item label="90" value={90} />
-              </Picker>
+              <DateTimePicker
+                value={new Date()}
+                mode="time"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  const currentTime = selectedDate || new Date();
+                  setNewShift({
+                    ...newShift,
+                    startTime: currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  });
+                }}
+                style={styles.timePicker}
+              />
+
+              <DateTimePicker
+                value={new Date()}
+                mode="time"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  const currentTime = selectedDate || new Date();
+                  setNewShift({
+                    ...newShift,
+                    endTime: currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  });
+                }}
+                style={styles.timePicker}
+              />
+
+              <TextInput
+                placeholder="Max Patients"
+                value={newShift.maxPatients.toString()}
+                onChangeText={text => setNewShift({ ...newShift, maxPatients: Number(text) })}
+                style={styles.input}
+                keyboardType="numeric"
+              />
+
+              <View style={styles.isRecurringContainer}>
+                <Text style={styles.isRecurringText}>Is Recurring?</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.recurringButton,
+                    newShift.isRecurring ? styles.recurringActive : styles.recurringInactive,
+                  ]}
+                  onPress={() => setNewShift({ ...newShift, isRecurring: !newShift.isRecurring })}
+                >
+                  <Text style={styles.recurringButtonText}>
+                    {newShift.isRecurring ? 'Yes' : 'No'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Breaks Section */}
+              <View style={styles.breaksContainer}>
+                <Text style={styles.breaksTitle}>Breaks</Text>
+                {newShift.breaks.map((breakItem, index) => (
+                  <View key={index} style={styles.breakItem}>
+                    <DateTimePicker
+                      value={breakItem.start ? new Date(`1970-01-01T${breakItem.start}:00`) : new Date()}
+                      mode="time"
+                      display="default"
+                      onChange={(event, selectedDate) => {
+                        const currentTime = selectedDate || new Date();
+                        const updatedBreaks = [...newShift.breaks];
+                        updatedBreaks[index].start = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        setNewShift({ ...newShift, breaks: updatedBreaks });
+                      }}
+                      style={styles.timePicker}
+                    />
+                    <DateTimePicker
+                      value={breakItem.end ? new Date(`1970-01-01T${breakItem.end}:00`) : new Date()}
+                      mode="time"
+                      display="default"
+                      onChange={(event, selectedDate) => {
+                        const currentTime = selectedDate || new Date();
+                        const updatedBreaks = [...newShift.breaks];
+                        updatedBreaks[index].end = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                        setNewShift({ ...newShift, breaks: updatedBreaks });
+                      }}
+                      style={styles.timePicker}
+                    />
+                  </View>
+                ))}
+                <TouchableOpacity
+                  style={styles.addBreakButton}
+                  onPress={() =>
+                    setNewShift({
+                      ...newShift,
+                      breaks: [...newShift.breaks, { start: '', end: '' }],
+                    })
+                  }
+                >
+                  <Text style={styles.addBreakButtonText}>Add Break</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity style={styles.submitButton} onPress={handleShiftSubmit}>
+                <Text style={styles.submitButtonText}>Save Availability</Text>
+              </TouchableOpacity>
             </View>
+          </ScrollView>
+        </Collapsible>
+      )}
 
-            <View style={styles.recurrenceContainer}>
-              <Text style={styles.recurrenceLabel}>Repeat:</Text>
-              <Picker
-                selectedValue={recurrence}
-                onValueChange={(itemValue) => setRecurrence(itemValue as 'none' | 'weekly' | 'monthly')}
-                style={styles.picker}
-              >
-                <Picker.Item label="None" value="none" />
-                <Picker.Item label="Weekly" value="weekly" />
-                <Picker.Item label="Monthly" value="monthly" />
-              </Picker>
-            </View>
-
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateSlot}>
-              <Text style={styles.createButtonText}>Create</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateRecurringSlots}>
-              <Text style={styles.createButtonText}>Create Recurring Slots</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={closeModal}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </Animated.View>
+      {/* Display Shifts */}
+      {selectedDay && shifts[selectedDay]?.map((shift, index) => (
+        <View key={index} style={styles.shiftItem}>
+          <Text style={styles.shiftText}>{`Name: ${shift.name}`}</Text>
+          <Text style={styles.shiftText}>{`Time: ${shift.startTime} - ${shift.endTime}`}</Text>
+          <Text style={styles.shiftText}>{`Max Patients: ${shift.maxPatients}`}</Text>
+          <Text style={styles.shiftText}>{`Recurring: ${shift.isRecurring ? 'Yes' : 'No'}`}</Text>
+          {shift.breaks.map((breakItem, breakIndex) => (
+            <Text key={breakIndex} style={styles.shiftText}>{`Break ${breakIndex + 1}: ${breakItem.start} - ${breakItem.end}`}</Text>
+          ))}
+          {/* Add edit and delete options if needed */}
         </View>
-      </Modal>
+      ))}
 
-      <Modal visible={isEditSlotModalVisible} transparent={true} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Slot</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Start Time"
-              value={editSlot?.startTime}
-              onChangeText={(text) => setEditSlot({ ...editSlot, startTime: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="End Time"
-              value={editSlot?.endTime}
-              onChangeText={(text) => setEditSlot({ ...editSlot, endTime: text })}
-            />
-            <TouchableOpacity style={styles.createButton} onPress={handleSaveEditSlot}>
-              <Text style={styles.createButtonText}>Save</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEditSlotModalVisible(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+      {shiftStep === 2 && (
+        <View style={styles.successMessage}>
+          <Text style={styles.successText}>Shift added successfully!</Text>
+          <TouchableOpacity
+            style={styles.addAnotherButton}
+            onPress={() => {
+              setShiftStep(0);
+              setSelectedDay(null);
+              setNewShift({
+                name: '',
+                day: '',
+                startTime: '',
+                endTime: '',
+                maxPatients: 0,
+                breaks: [],
+                isRecurring: false,
+              });
+            }}
+          >
+            <Text style={styles.addAnotherButtonText}>Add Another Shift</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      )}
 
-      <Modal visible={isEventModalVisible} transparent={true} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create Event</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Event Title"
-              value={eventTitle}
-              onChangeText={setEventTitle}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Event Description"
-              value={eventDescription}
-              onChangeText={setEventDescription}
-            />
-            <TouchableOpacity style={styles.createButton} onPress={handleSaveEvent}>
-              <Text style={styles.createButtonText}>Save</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setIsEventModalVisible(false)}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      <Toast />
     </View>
   );
-
 };
+
+export default Schedule;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#c5f0a4',
-    padding: 16, // Added padding for better spacing
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 10,
   },
-   dateSelectorContainer: {
-    height: 80, 
-    paddingVertical: 8,
-    backgroundColor: 'rgba(255, 99, 71, 0.4)', 
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    elevation: 4,
-    marginBottom: 16, // Added margin bottom for spacing
-
-  },
-  dateButton: {
+  toggleButton: {
+    backgroundColor: '#4CAF50',
     padding: 10,
-    
-    marginRight: 8,
-    
-    
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedDateButton: {
-    borderColor: Colors.primary,
-  },
-  dateText: {
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  selectedDateText: {
-    color: Colors.primary,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: Colors.primary,
-    marginHorizontal: 16,
-    marginBottom: 16,
-  },
-  headerCard: {
-    backgroundColor: '#a3de83',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  headerTitle: {
-    fontSize: 18,
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: Colors.primary,
-  },
-  body: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  userRole: {
-    fontSize: 14,
-    color: Colors.primary,
-  },
-
-  dateTitle: {
-    fontSize: 18,
-    color: Colors.primary,
-    marginVertical: 12,
-    marginHorizontal: 16,
-  },
-  classItem: {
-    flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginVertical: 4,
-  },
-  timelineContainer: {
-    width: 40,
-    alignItems: 'center',
-  },
-  timelineDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#346473',
-    marginBottom: 4, 
-  },
-  timelineLine: {
-    width: 2,
-    flex: 1, 
-  },
-  classContent: {
-    flex: 1,
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    marginLeft: 8,
     borderRadius: 8,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-    backgroundColor: '#f7f39a',
+    alignItems: 'center',
+    marginVertical: 10,
   },
-  timeText: {
+  toggleButtonText: {
+    color: '#fff',
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primary,
-    marginBottom: 4,
   },
-  startTime: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-  endTime: {
-    fontSize: 12,
-    color: Colors.PRIMARY,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.primary,
-    marginBottom: 4,
-  },
-  cardDate: {
-    fontSize: 14,
-    color: Colors.primary,
-    marginBottom: 4,
-  },
-  cardStatus: { 
-    fontSize: 12,
-    color: Colors.PRIMARY,
-  },
-  loading: {
+  shiftForm: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 8,
     marginTop: 20,
   },
-  contentContainer: {
-    paddingHorizontal: 16,
-  },
-  noAppointments: {
-    fontSize: 16,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  
-  timeSlotsContainer: {
-    fontSize: 16,
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  
-  emptyContainer: {
-    height: 200, 
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: Colors.primary,
-  },
-  card: {
-    width: '100%',
-    padding: 10,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 99, 71, 0.4)', 
-    padding: 15,
-    borderRadius: 30,
-    elevation: 5,
-  },
-  addButtonText: {
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalTitle: {
+  formTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: '#ddd',
+    borderRadius: 8,
     padding: 10,
-    marginBottom: 10,
-    borderRadius: 5,
+    marginVertical: 5,
   },
-  createButton: {
-    backgroundColor: Colors.gray,
-   
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+  submitButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 10,
+    marginTop: 10,
   },
-  createButtonText: {
+  submitButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
     fontSize: 16,
   },
-  cancelButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+  successMessage: {
+    backgroundColor: '#E8F5E9',
+    padding: 20,
+    borderRadius: 8,
+    marginTop: 20,
     alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  successText: {
     fontSize: 16,
-  },
-  recurrenceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    color: '#388E3C',
     marginBottom: 10,
   },
-  recurrenceLabel: {
-    fontSize: 16,
-    color: Colors.primary,
-    marginRight: 10,
+  addAnotherButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+  },
+  addAnotherButtonText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  addButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontSize: 14,
   },
   picker: {
-    flex: 1,
     height: 50,
+    width: '100%',
   },
-  durationContainer: {
+  timePicker: {
+    width: '100%',
+    marginVertical: 10,
+  },
+  shiftItem: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 8,
+    marginVertical: 5,
+  },
+  shiftText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  isRecurringContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginVertical: 10,
   },
-  durationLabel: {
+  isRecurringText: {
     fontSize: 16,
-    color: Colors.primary,
     marginRight: 10,
   },
-  updateButton: {
-    backgroundColor: Colors.primary,
-    padding: 5,
-    borderRadius: 5,
-    marginTop: 10,
+  recurringButton: {
+    padding: 10,
+    borderRadius: 8,
   },
-  updateButtonText: {
+  recurringActive: {
+    backgroundColor: '#4CAF50',
+  },
+  recurringInactive: {
+    backgroundColor: '#ddd',
+  },
+  recurringButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 14,
   },
-  closeButton: {
-    backgroundColor: Colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginTop: 10,
+  breaksContainer: {
+    marginVertical: 10,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  breaksTitle: {
     fontSize: 16,
-  },
-  pickerContainer: {
-    marginBottom: 10,
-  },
-  pickerLabel: {
-    fontSize: 16,
-    color: Colors.primary,
+    fontWeight: 'bold',
     marginBottom: 5,
   },
-  pickerButton: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  pickerButtonText: {
-    color: Colors.primary,
-    fontWeight: 'bold',
-  },
-  slotActions: {
+  breakItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    alignItems: 'center',
+    marginVertical: 5,
   },
-  deleteButton: {
-    backgroundColor: 'red',
-    padding: 5,
-    borderRadius: 5,
+  addBreakButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
   },
-  deleteButtonText: {
+  addBreakButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
-
-export default ScheduleScreen;
