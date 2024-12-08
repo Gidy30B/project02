@@ -299,23 +299,16 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
               ]}
               disabled={item.isBooked || isPast}
             >
-              <View style={{ position: 'relative' }}>
-                <Text
-                  style={[
-                    styles.slotText,
-                    selectedTimeSlot && selectedTimeSlot.id === item._id
-                      ? { color: Colors.selectedText }
-                      : {},
-                  ]}
-                >
-                  {`${item.startTime} - ${item.endTime}`}
-                </Text>
-                {item.isBooked && (
-                  <View style={styles.overlay}>
-                    <Text style={styles.bookedText}>Booked</Text>
-                  </View>
-                )}
-              </View>
+              <Text
+                style={[
+                  styles.slotText,
+                  selectedTimeSlot && selectedTimeSlot.id === item._id
+                    ? { color: Colors.selectedText }
+                    : {},
+                ]}
+              >
+                {`${item.startTime} - ${item.endTime}`}
+              </Text>
             </TouchableOpacity>
           );
         }}
