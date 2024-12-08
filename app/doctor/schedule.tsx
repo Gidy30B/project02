@@ -1,8 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, Button, Platform } from 'react-native';
 import * as Calendar from 'expo-calendar';
 
 export default function App() {
+  const [calendarId, setCalendarId] = useState<string | null>(null);
+
   useEffect(() => {
     (async () => {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
@@ -43,6 +45,8 @@ async function createCalendar() {
     accessLevel: Calendar.CalendarAccessLevel.OWNER,
   });
   console.log(`Your new calendar ID is: ${newCalendarID}`);
+  setCalendarId(newCalendarID);
+  // You can now use calendarId to build your scheduling logic
 }
 
 const styles = StyleSheet.create({
