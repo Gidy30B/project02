@@ -98,7 +98,24 @@ export default function App() {
         new Date('2023-12-31')
       );
       console.log(events);
-      // Sync events with your state here
+      
+      // Organize events by day
+      const shiftsByDay: { [key: string]: any[] } = {};
+      events.forEach((event) => {
+        const day = event.startDate.toISOString().split('T')[0];
+        if (!shiftsByDay[day]) {
+          shiftsByDay[day] = [];
+        }
+        shiftsByDay[day].push({
+          _id: event.id,
+          startTime: event.startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          endTime: event.endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          maxPatients: event.notes ? parseInt(event.notes.split(': ')[1]) : 0,
+        });
+      });
+      // Update state or handle shiftsByDay as needed
+      console.log(shiftsByDay);
+      // Example: setShifts(shiftsByDay);
     } catch (error) {
       console.error('Error fetching events:', error);
     }
@@ -109,6 +126,11 @@ export default function App() {
       fetchEvents();
     }
   }, [calendarId]);
+
+  const onDayPress = (day: any) => {
+    // Filter shifts for the selected day and update state as needed
+    // Example: setSelectedDayShifts(filteredShifts);
+  };
 
   return (
     <View style={styles.container}>
