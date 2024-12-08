@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Badge } from 'react-native-elements';
 import io from 'socket.io-client';
+import { addNotification } from '../../app/store/appointmentSlice'; // Import the addNotification action
+import Colors from '../Shared/Colors';
 
 const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   const dispatch = useDispatch();
@@ -18,6 +20,8 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
     socket.on('newAppointment', ({ appointment, userId: appointmentUserId }) => {
       if (appointmentUserId === userId) {
         setNotificationCount((prevCount) => prevCount + 1);
+        // Notify the tab bar about the new notification
+        dispatch(addNotification({ type: 'newAppointment' }));
       }
     });
 
@@ -67,7 +71,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#4CAF50',
+    backgroundColor: Colors.ligh_gray,
     paddingHorizontal: 16,
     paddingVertical: 12,
     paddingTop: 24,

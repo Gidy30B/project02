@@ -1,3 +1,4 @@
+
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface Doctor {
@@ -45,14 +46,13 @@ interface Appointment {
   consultationFee?: number;
   emailNotifications?: boolean;
   pushNotifications?: boolean;
- 
 }
 
 interface Notification {
-  _id: string; 
-  patientName: string; 
-  time: string; 
-  status: string; 
+  _id: string;
+  patientName: string;
+  time: string;
+  status: string;
 }
 
 interface AppointmentsState {
@@ -60,7 +60,7 @@ interface AppointmentsState {
   upcomingAppointments: Appointment[];
   requestedAppointments: Appointment[];
   completedAppointments: Appointment[];
-  notifications: Notification[]; 
+  notifications: Notification[];
   loading: boolean;
   error: string | null;
 }
@@ -98,10 +98,10 @@ const appointmentsSlice = createSlice({
       state.error = action.payload;
     },
     setNotifications: (state, action: PayloadAction<Notification[]>) => {
-      state.notifications = action.payload; 
+      state.notifications = action.payload;
     },
     addNotification: (state, action: PayloadAction<Notification>) => {
-      state.notifications.push(action.payload); 
+      state.notifications.push(action.payload);
     },
     clearNotifications: (state) => {
       state.notifications = [];

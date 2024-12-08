@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, TouchableOpacity, Image, StyleSheet, ScrollView, Animated } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
@@ -21,13 +21,11 @@ const BookAppointment = () => {
   const dispatch = useDispatch();
   const clinic = useSelector(selectClinicDetails);
   const clinicImages = clinic ? clinic.clinicImages : [];
-  const clinicImageUri = clinicImages.length > 0 ? clinicImages[0] : 'https://via.placeholder.com/80';
-
+  const [currentImage, setCurrentImage] = useState(null);
+  const imageFadeAnim = useRef(new Animated.Value(1)).current;
   const loading = useSelector(selectClinicLoading);
   const error = useSelector(selectClinicError);
-
   const [showFullDesc, setShowFullDesc] = useState(false);
-  const [aboutFocused, setAboutFocused] = useState(false);
 
   useEffect(() => {
     if (clinicId) {
@@ -38,6 +36,34 @@ const BookAppointment = () => {
   useEffect(() => {
     console.log('Clinic Data:', clinic);
   }, [clinic]);
+
+  useEffect(() => {
+    if (clinicImages.length > 0) {
+      setCurrentImage(clinicImages[0]);
+
+      if (clinicImages.length > 1) {
+        let imageIndex = 0;
+        const interval = setInterval(() => {
+          imageIndex = (imageIndex + 1) % clinicImages.length;
+
+          Animated.timing(imageFadeAnim, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }).start(() => {
+            setCurrentImage(clinicImages[imageIndex]);
+            Animated.timing(imageFadeAnim, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start();
+          });
+        }, 10000);
+
+        return () => clearInterval(interval);
+      }
+    }
+  }, [clinicImages, imageFadeAnim]);
 
   const handleBookPress = () => {
     if (bookingSectionRef.current && scrollViewRef.current) {
@@ -112,7 +138,17 @@ const BookAppointment = () => {
 
       {/* Clinic Info */}
       <View style={styles.clinicInfo}>
-        <Image source={{ uri: clinicImageUri }} style={styles.clinicImage} />
+        {currentImage ? (
+          <Animated.Image
+            source={{ uri: currentImage }}
+            style={[styles.clinicImage, { opacity: imageFadeAnim }]}
+          />
+        ) : (
+          <Image
+            source={{ uri: 'https://via.placeholder.com/80' }}
+            style={styles.clinicImage}
+          />
+        )}
         <View style={styles.clinicDetails}>
           <Text style={styles.clinicName}>{clinic?.name}</Text>
           <Text style={styles.clinicAddress}>{clinic?.address}</Text>

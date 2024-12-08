@@ -46,7 +46,8 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: 'linear-gradient(to right, rgb(182, 244, 146), rgb(51, 139, 147))',
+    backgroundColor: '#dce775',
+    padding: 20,
   },
   container: {
     flex: 1,

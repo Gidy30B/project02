@@ -2,8 +2,13 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import ClientHeader from '../../components/client/ClientHeader'; // Adjust the path if needed
+import { useSelector } from 'react-redux';
+import { Badge } from 'react-native-elements';
+import { View } from 'react-native'; // Import View from react-native
 
 export default function ClientLayout() {
+  const notifications = useSelector((state) => state.appointments.notifications); // Ensure correct path to notifications
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -12,23 +17,41 @@ export default function ClientLayout() {
         
         // Dynamically changing tab icons
         tabBarIcon: ({ color, size }) => {
+          let iconName;
           switch (route.name) {
             case 'home':
-              return <MaterialIcons name="home" size={size} color={color} />;
+              iconName = 'home';
+              break;
             case 'appointments':
-              return <MaterialIcons name="event" size={size} color={color} />;
+              iconName = 'event';
+              break;
             case 'health':
-              return <MaterialIcons name="health-and-safety" size={size} color={color} />;
+              iconName = 'health-and-safety';
+              break;
             case 'settings':
-              return <MaterialIcons name="settings" size={size} color={color} />;
+              iconName = 'settings';
+              break;
             default:
               return null;
           }
+
+          return (
+            <View>
+              <MaterialIcons name={iconName} size={size} color={color} />
+              {route.name === 'appointments' && notifications.some(n => n.type === 'newAppointment') && (
+                <Badge
+                  status="error"
+                  containerStyle={{ position: 'absolute', top: -4, right: -4 }}
+                />
+              )}
+            </View>
+          );
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: 'bold' }, // Style for tab labels
+        tabBarLabelStyle: { fontSize: 12 }, // Style for tab labels
         tabBarStyle: {
-          backgroundColor: '#f0f0f0', // Custom background color for tab bar
-          paddingVertical: 10,
+          backgroundColor: '#dce775', // Custom background color for tab bar
+          borderTopColor: 'transparent',
+          height: 60,
         },
         headerMode: 'float', // Ensure the header scrolls smoothly with the content
       })}

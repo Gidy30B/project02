@@ -137,7 +137,7 @@ const ScheduleScreen: React.FC = () => {
       return (
         <View style={styles.pickerContainer}>
           <Text style={styles.pickerLabel}>{label}</Text>
-          <TouchableOpacity onPress={showDateTimePicker} style={styles.pickerButton}>
+          <TouchableOpacity onPress={() => showDateTimePicker()} style={styles.pickerButton}>
             <Text style={styles.pickerButtonText}>
               {time ? moment(time).format('h:mm A') : 'Select Time'}
             </Text>
@@ -661,11 +661,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#c5f0a4',
-  
+    padding: 16, // Added padding for better spacing
   },
   header: {
     marginBottom: 16,
-    
   },
    dateSelectorContainer: {
     height: 80, 
@@ -673,7 +672,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 99, 71, 0.4)', 
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
-    elevation: 4
+    elevation: 4,
+    marginBottom: 16, // Added margin bottom for spacing
 
   },
   dateButton: {
@@ -976,10 +976,14 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   pickerButton: {
-    // ...existing code...
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
   },
   pickerButtonText: {
-    // ...existing code...
+    color: Colors.primary,
+    fontWeight: 'bold',
   },
   slotActions: {
     flexDirection: 'row',

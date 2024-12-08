@@ -50,7 +50,7 @@ const styles = {
     marginBottom: 10,
   },
   title: {
-    fontSize: 10,
+    fontSize: 20,
     fontWeight: 'bold',
     fontFamily: 'Poppins_700Bold',
   },

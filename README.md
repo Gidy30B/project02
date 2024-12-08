@@ -1,211 +1,291 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import Colors from '../../../components/Shared/Colors';
-import { fetchClinicById, selectClinicDetails, selectClinicLoading, selectClinicError } from '../../store/clinicSlice';
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  TextInput,
+  SafeAreaView,
+  View,
+  TouchableOpacity,
+  StatusBar,
+  FlatList,
+  Text,
+  Image,
+  ScrollView,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
+import { Picker } from '@react-native-picker/picker';
+import Colors from '@/components/Shared/Colors';
+import { selectClinics } from '../store/clinicSlice';
 
-const BookAppointment = () => {
-  const { id: clinicId } = useLocalSearchParams();
+const ClinicSearch = () => {
   const router = useRouter();
-  const dispatch = useDispatch();
-  const clinic = useSelector(selectClinicDetails);
-  const loading = useSelector(selectClinicLoading);
-  const error = useSelector(selectClinicError);
+  const [filteredClinics, setFilteredClinics] = useState([]);
+  const [filteredProfessionals, setFilteredProfessionals] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedSpecialty, setSelectedSpecialty] = useState('');
+  const [selectedInsurance, setSelectedInsurance] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [showFullDesc, setShowFullDesc] = useState(false);
+  const clinics = useSelector(selectClinics);
 
   useEffect(() => {
-    if (clinicId) {
-      dispatch(fetchClinicById(clinicId));
+    try {
+      if (clinics.length > 0) {
+        const allProfessionals = clinics.flatMap((clinic) =>
+          clinic.professionals?.map((professional) => ({
+            ...professional,
+            clinicName: clinic.name,
+            clinicAddress: clinic.address,
+            clinicInsurances: clinic.insuranceCompanies,
+          })) || []
+        );
+        setFilteredProfessionals(allProfessionals);
+        setFilteredClinics(clinics);
+      }
+    } catch (err) {
+      setError('Failed to load data');
+    } finally {
+      setLoading(false);
     }
-  }, [clinicId, dispatch]);
+  }, [clinics]);
+
+  const resetFilters = () => {
+    setSelectedLocation('');
+    setSelectedSpecialty('');
+    setSelectedInsurance('');
+    setFilteredClinics(clinics);
+    setFilteredProfessionals(
+      clinics.flatMap((clinic) =>
+        clinic.professionals?.map((professional) => ({
+          ...professional,
+          clinicName: clinic.name,
+          clinicAddress: clinic.address,
+          clinicInsurances: clinic.insuranceCompanies,
+        })) || []
+      )
+    );
+  };
+
+  const handleLocationChange = (location) => {
+    setSelectedLocation(location);
+    const locationFilteredClinics = clinics.filter((clinic) =>
+      clinic.address?.toLowerCase().includes(location.toLowerCase())
+    );
+    setFilteredClinics(locationFilteredClinics);
+    setFilteredProfessionals(
+      locationFilteredClinics.flatMap((clinic) =>
+        clinic.professionals?.map((professional) => ({
+          ...professional,
+          clinicName: clinic.name,
+          clinicAddress: clinic.address,
+          clinicInsurances: clinic.insuranceCompanies,
+        })) || []
+      )
+    );
+  };
+
+  const handleSpecialtyChange = (specialty) => {
+    setSelectedSpecialty(specialty);
+    const specialtyFilteredProfessionals = filteredProfessionals.filter(
+      (professional) =>
+        professional.specialty?.toLowerCase().includes(specialty.toLowerCase())
+    );
+    setFilteredProfessionals(specialtyFilteredProfessionals);
+  };
+
+  const handleInsuranceChange = (insurance) => {
+    setSelectedInsurance(insurance);
+    const insuranceFilteredClinics = filteredClinics.filter((clinic) =>
+      clinic.insuranceCompanies?.some((provider) =>
+        provider?.toLowerCase().includes(insurance.toLowerCase())
+      )
+    );
+    setFilteredProfessionals(
+      insuranceFilteredClinics.flatMap((clinic) =>
+        clinic.professionals?.map((professional) => ({
+          ...professional,
+          clinicName: clinic.name,
+          clinicAddress: clinic.address,
+          clinicInsurances: clinic.insuranceCompanies,
+        })) || []
+      )
+    );
+  };
+
+  const uniqueLocations = [...new Set(clinics.map((clinic) => clinic.address?.split(',')[0] || ''))];
+  const uniqueSpecialties = [
+    ...new Set(
+      clinics.flatMap((clinic) => clinic.professionals?.map((professional) => professional.specialty) || [])
+    ),
+  ];
+  const uniqueInsurances = [
+    ...new Set(clinics.flatMap((clinic) => clinic.insuranceCompanies || [])),
+  ];
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={styles.centered}>
+        <Text>Loading...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load clinic data.</Text>
+      <View style={styles.centered}>
+        <Text>{error}</Text>
       </View>
     );
   }
 
-  const handleConsult = (doctorId) => {
-    router.push(`/doctors/${doctorId}`);
-  };
-
-  const truncatedDesc = showFullDesc
-    ? clinic.bio || 'No bio available.'
-    : (clinic.bio ? clinic.bio.split(' ').slice(0, 18).join(' ') : 'No bio available.');
-
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/client/home')}>
-          <Ionicons name="arrow-back" size={24} color={Colors.PRIMARY} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{clinic?.name || 'Clinic'}</Text>
-      </View>
-
-      {/* Clinic Info */}
-      <View style={styles.clinicInfo}>
-        <Image source={{ uri: clinic?.images[0] }} style={styles.clinicImage} />
-        <View style={styles.clinicDetails}>
-          <Text style={styles.clinicName}>{clinic?.name}</Text>
-          <Text style={styles.clinicAddress}>{clinic?.address}</Text>
-          <Text style={styles.clinicContact}>{clinic?.contactInfo}</Text>
-        </View>
-      </View>
-
-      {/* Description */}
-      <View style={styles.descriptionContainer}>
-        <Text style={styles.descriptionText}>{truncatedDesc}</Text>
-        <TouchableOpacity onPress={() => setShowFullDesc(!showFullDesc)}>
-          <Text style={styles.showMoreText}>{showFullDesc ? 'Show Less' : 'Show More'}</Text>
+        <TextInput
+          placeholder="Search clinics or professionals"
+          style={styles.searchBox}
+          editable={false}
+        />
+        <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
+          <Text style={styles.resetButtonText}>Reset</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Doctors List */}
-      <Text style={styles.sectionTitle}>Doctors</Text>
-      <FlatList
-        data={clinic?.doctors}
-        keyExtractor={(item) => item._id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.doctorCard}>
-            <Image source={{ uri: item.profileImage }} style={styles.doctorImage} />
-            <Text style={styles.doctorName}>{item.name}</Text>
-            <Text style={styles.doctorSpecialties}>{item.specialties?.join(', ')}</Text>
-            <Text style={styles.consultationFee}>Fee: {item.consultationFee} KES</Text>
-            <TouchableOpacity onPress={() => handleConsult(item._id)} style={styles.consultButton}>
-              <Text style={styles.consultButtonText}>View</Text>
-            </TouchableOpacity>
-          </View>
+      <ScrollView>
+        <Picker selectedValue={selectedLocation} onValueChange={handleLocationChange} style={styles.picker}>
+          <Picker.Item label="Select Location" value="" />
+          {uniqueLocations.map((location, index) => (
+            <Picker.Item key={index} label={location} value={location} />
+          ))}
+        </Picker>
+        {selectedLocation && (
+          <Picker selectedValue={selectedSpecialty} onValueChange={handleSpecialtyChange} style={styles.picker}>
+            <Picker.Item label="Select Specialty" value="" />
+            {uniqueSpecialties.map((specialty, index) => (
+              <Picker.Item key={index} label={specialty} value={specialty} />
+            ))}
+          </Picker>
         )}
-        contentContainerStyle={styles.doctorsList}
-      />
-    </ScrollView>
+        {selectedSpecialty && (
+          <Picker selectedValue={selectedInsurance} onValueChange={handleInsuranceChange} style={styles.picker}>
+            <Picker.Item label="Select Insurance" value="" />
+            {uniqueInsurances.map((insurance, index) => (
+              <Picker.Item key={index} label={insurance} value={insurance} />
+            ))}
+          </Picker>
+        )}
+        <View>
+          <Text style={styles.sectionTitle}>Professionals</Text>
+          <FlatList
+            data={filteredProfessionals}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => router.push(`/doctor/${item._id}`)}
+                style={styles.cardContainer}
+              >
+                <Image
+                  source={{ uri: item.profileImage || 'https://via.placeholder.com/100' }}
+                  style={styles.cardImage}
+                />
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>{item.firstName} {item.lastName}</Text>
+                  <Text>{item.specialty}</Text>
+                  <Text>{item.clinicName}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item._id}
+          />
+          <Text style={styles.sectionTitle}>Clinics</Text>
+          <FlatList
+            data={filteredClinics}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => router.push(`/clinics/${item._id}`)}
+                style={styles.cardContainer}
+              >
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  <Text>{item.address}</Text>
+                  <Text>{item.insuranceCompanies.join(', ')}</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            keyExtractor={(item) => item._id}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
-    paddingHorizontal: 16,
+    backgroundColor: '#dce775',
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  clinicInfo: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
     padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
   },
-  clinicImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
-    marginRight: 16,
-  },
-  clinicDetails: {
+  searchBox: {
     flex: 1,
-    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: 10,
+    borderColor: '#ccc',
+    paddingHorizontal: 12,
+    height: 40,
   },
-  clinicName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+  resetButton: {
+    backgroundColor: Colors.PRIMARY,
+    padding: 10,
+    marginLeft: 8,
+    borderRadius: 5,
   },
-  clinicAddress: {
-    fontSize: 14,
-    color: '#555',
+  resetButtonText: {
+    color: '#fff',
   },
-  clinicContact: {
-    fontSize: 14,
-    color: Colors.PRIMARY,
-  },
-  descriptionContainer: {
+  picker: {
     backgroundColor: '#fff',
-    padding: 16,
+    marginVertical: 10,
+    paddingHorizontal: 10,
     borderRadius: 8,
-    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  descriptionText: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 8,
+  cardContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#fff',
+    margin: 8,
+    borderRadius: 8,
   },
-  showMoreText: {
-    fontSize: 14,
-    color: Colors.PRIMARY,
+  cardImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 10,
+  },
+  cardContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  cardTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginVertical: 10,
+    paddingLeft: 10,
   },
-  doctorCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  doctorImage: {
-    width: '100%',
-    height: 150,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  doctorName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  doctorSpecialties: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 4,
-  },
-  consultationFee: {
-    fontSize: 14,
-    color: Colors.PRIMARY,
-    marginBottom: 8,
-  },
-  consultButton: {
-    backgroundColor: Colors.PRIMARY,
-    paddingVertical: 8,
-    borderRadius: 4,
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  consultButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  doctorsList: {
-    paddingBottom: 16,
   },
 });
 
-export default BookAppointment;
+export default ClinicSearch;

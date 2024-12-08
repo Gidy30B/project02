@@ -11,7 +11,7 @@ import {
     setRequestedAppointments,
     setCompletedAppointments,
     addNotification,
-} from '@/app/store/appointmentsSlice';
+} from '../app/store/appointmentSlice';
 import { selectUser } from '../app/store/userSlice';
 
 // Configure Notifications
