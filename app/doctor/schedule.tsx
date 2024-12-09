@@ -1,6 +1,12 @@
 import { StyleSheet, Text, View, Switch, ScrollView } from 'react-native';
 import React, { useState, useCallback, memo } from 'react';
-import { Agenda, AgendaEntry } from 'react-native-calendars';
+import { Agenda, AgendaEntry as OriginalAgendaEntry } from 'react-native-calendars';
+
+interface AgendaEntry extends OriginalAgendaEntry {
+  startTime: string;
+  endTime: string;
+  breaks: string;
+}
 import { TouchableOpacity, TextInput, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // For plus icon
 import { Button, Card } from 'react-native-paper';
@@ -28,6 +34,7 @@ const Schedule = () => {
   const [selectedPredefinedShift, setSelectedPredefinedShift] = useState<string>(''); // Existing state
 
   const [breakTime, setBreakTime] = useState<Date | null>(null);
+  const [showBreakTimePicker, setShowBreakTimePicker] = useState(false);
 
   // Define predefined shifts including "Custom Shift"
   const predefinedShifts = [
@@ -241,18 +248,33 @@ const Schedule = () => {
               )}
             </>
           )}
-  
-          {/* DateTimePickers */}
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={startTime || new Date()}
-              mode="time"
-              is24Hour={false}
-              display="default"
-              onChange={onStartTimeChange}
-            />
+
+          {/* Step 2 */}
+          {currentStep === 2 && (
+            <View>
+              <TouchableOpacity
+                onPress={() => setShowStartTimePicker(true)}
+                style={styles.timePickerButton}
+              >
+                <Text style={styles.timePickerText}>
+                  {startTime
+                    ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                    : 'Work starts at ?'}
+                </Text>
+              </TouchableOpacity>
+              {showStartTimePicker && (
+                <DateTimePicker
+                  value={startTime || new Date()}
+                  mode="time"
+                  is24Hour={false}
+                  display="default"
+                  onChange={onStartTimeChange}
+                />
+              )}
+            </View>
           )}
-  
+
+          {/* Step 3 */}
           {currentStep === 3 && (
             <TouchableOpacity
               onPress={() => setShowEndTimePicker(true)}
@@ -265,12 +287,58 @@ const Schedule = () => {
               </Text>
             </TouchableOpacity>
           )}
-  
+
+          {/* Step 4 */}
+          {currentStep === 4 && (
+            <View>
+              <TouchableOpacity
+                onPress={() => setShowBreakTimePicker(true)}
+                style={styles.timePickerButton}
+              >
+                <Text style={styles.timePickerText}>
+                  {breakTime
+                    ? breakTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                    : 'Set Break Duration'}
+                </Text>
+              </TouchableOpacity>
+              {showBreakTimePicker && (
+                <DateTimePicker
+                  value={breakTime || new Date()}
+                  mode="time"
+                  is24Hour={false}
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setShowBreakTimePicker(false);
+                    if (selectedDate) {
+                      setBreakTime(selectedDate);
+                      setShiftDetails({
+                        ...shiftDetails,
+                        breaks: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+                      });
+                    }
+                  }}
+                />
+              )}
+            </View>
+          )}
+
           {/* Step 5 */}
           {currentStep === 5 && (
             <View>
               <Text>Repeat the schedule?</Text>
               <Switch value={isRecurring} onValueChange={setIsRecurring} />
+            </View>
+          )}
+
+          {/* Step 6 */}
+          {currentStep === 6 && (
+            <View>
+              <Button mode="contained" onPress={handleSaveShift} style={styles.button}>
+                Save
+              </Button>
+              <Button mode="outlined" onPress={handleSaveAndAddAnotherShift} style={styles.button}>
+                Save and Add Another Shift
+              </Button>
             </View>
           )}
   
@@ -442,6 +510,7 @@ const styles = StyleSheet.create({
   shiftDetailText: {
     fontSize: 14,
     color: '#555',
+
   },
   navigationButtons: {
     flexDirection: 'row',
@@ -485,10 +554,21 @@ const styles = StyleSheet.create({
     fontSize: 16,       // Merged fontSize
     color: '#555',      // Merged color
   },
+  timePickerButton: {
+    padding: 10,
+    backgroundColor: '#f0f2f5',
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
   orText: {
     textAlign: 'center',
     marginVertical: 10,
     fontSize: 16,
     color: '#555',
+  },
+  timePickerText: {
+    fontSize: 16,
+    color: '#333',
   },
 });
