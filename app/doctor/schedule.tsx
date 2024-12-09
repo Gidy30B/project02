@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, Switch } from 'react-native';
+import { StyleSheet, Text, View, Switch, ScrollView } from 'react-native';
 import React, { useState, useCallback, memo } from 'react';
 import { Agenda, AgendaEntry } from 'react-native-calendars';
-import { TouchableOpacity, TextInput, Animated, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { TouchableOpacity, TextInput, Animated, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // For plus icon
 import { Button, Card } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -26,6 +26,8 @@ const Schedule = () => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [selectedPredefinedShift, setSelectedPredefinedShift] = useState<string>(''); // Existing state
+
+  const [breakTime, setBreakTime] = useState<Date | null>(null);
 
   // Define predefined shifts including "Custom Shift"
   const predefinedShifts = [
@@ -147,9 +149,13 @@ const Schedule = () => {
 
   const onEndTimeChange = (event: any, selectedDate?: Date) => {
     setShowEndTimePicker(false);
+    setShowEndTimePicker(false);
     if (selectedDate) {
       setEndTime(selectedDate);
-      setShiftDetails({ ...shiftDetails, endTime: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+      setShiftDetails({ 
+        ...shiftDetails, 
+        endTime: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) 
+      });
     }
   };
 
@@ -189,169 +195,130 @@ const Schedule = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Agenda
-          items={agendaItems}
-          onDayPress={onDayPress}
-          renderItem={renderItem}
-          renderEmptyData={renderEmptyData}
-        />
-
-        {isFormVisible && selectedDay && (
-          <Animated.View style={[
-            styles.formContainer, 
-            { 
+      <Agenda
+        items={agendaItems}
+        onDayPress={onDayPress}
+        renderItem={renderItem}
+        renderEmptyData={renderEmptyData}
+      />
+  
+      {isFormVisible && selectedDay && (
+        <Animated.View
+          style={[
+            styles.formContainer,
+            {
               transform: [{ scaleY: animation }],
               backgroundColor: stepBackgroundColors[currentStep - 1] || '#ffffff', // Dynamic background
-            }
-          ]}>
-            <View style={styles.formHeader}>
-              <Ionicons name="calendar" size={24} color="#333" />
-              <Text style={styles.formTitle}>Proceed to Schedule Your Day</Text>
-            </View>
-            {/* Step forms are rendered conditionally based on currentStep */}
-            {currentStep === 1 && (
-              <>
-                <Picker
-                  selectedValue={selectedPredefinedShift}
-                  onValueChange={(itemValue) => handlePredefinedShiftChange(itemValue)}
-                  style={styles.picker}
-                  prompt="Select a Shift"
-                >
-                  <Picker.Item label="Select a predefined shift..." value="" />
-                  {predefinedShifts.map((shift, index) => (
-                    <Picker.Item key={index} label={shift.label} value={shift.value} />
-                  ))}
-                </Picker>
-                {selectedPredefinedShift === 'Custom Shift' && (
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter custom shift name"
-                    value={shiftDetails.name}
-                    onChangeText={(text) => setShiftDetails({ ...shiftDetails, name: text })}
-                  />
-                )}
-              </>
-            )}
-            {currentStep === 2 && (
-              <View>
-                <TouchableOpacity onPress={() => setShowStartTimePicker(true)} style={styles.timePickerButton}>
-                  <Text style={styles.timePickerText}>
-                    {startTime ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Work starts at ?'}
-                  </Text>
-                </TouchableOpacity>
-                {showStartTimePicker && (
-                  <DateTimePicker
-                    value={startTime || new Date()}
-                    mode="time"
-                    is24Hour={false}
-                    display="default"
-                    onChange={onStartTimeChange}
-                  />
-                )}
-              </View>
-            )}
-            {currentStep === 3 && (
-              <View>
-                <TouchableOpacity onPress={() => setShowEndTimePicker(true)} style={styles.timePickerButton}>
-                  <Text style={styles.timePickerText}>
-                    {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Work ends at ?'}
-                  </Text>
-                </TouchableOpacity>
-                {showEndTimePicker && (
-                  <DateTimePicker
-                    value={endTime || new Date()}
-                    mode="time"
-                    is24Hour={false}
-                    display="default"
-                    onChange={onEndTimeChange}
-                  />
-                )}
-              </View>
-            )}
-              {currentStep === 4 && (
-              <View>
-                <TouchableOpacity onPress={() => setShowEndTimePicker(true)} style={styles.timePickerButton}>
-                  <Text style={styles.timePickerText}>
-                    {endTime ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'set up your break ?'}
-                  </Text>
-                </TouchableOpacity>
-                {showEndTimePicker && (
-                  <DateTimePicker
-                    value={endTime || new Date()}
-                    mode="time"
-                    is24Hour={false}
-                    display="default"
-                    onChange={onEndTimeChange}
-                  />
-                )}
-              </View>
-            )}
-            
-            
-            {currentStep === 5 && (
-              <View>
-                <Text>Repeat the schedule?</Text>
-                <Switch value={isRecurring} onValueChange={setIsRecurring} />
-              </View>
-            )}
-            {currentStep === 6 && (
-              <View>
-                <Button mode="contained" onPress={handleSaveShift} style={styles.button}>
-                  Save
-                </Button>
-                <Button mode="outlined" onPress={handleSaveAndAddAnotherShift} style={styles.button}>
-                  Save and Add Another Shift
-                </Button>
-              </View>
-            )}
-      {shifts.length > 0 && (
-  <View style={styles.shiftPreviewContainer}>
-    <Text style={styles.previewTitle}>Added Shifts:</Text>
-    <ScrollView style={styles.scrollableShifts}>
-      {shifts.map((shift, index) => (
-        <Card key={index} style={styles.shiftPreviewCard}>
-          <Card.Content>
-            <View style={styles.shiftHeader}>
-              <Ionicons name="briefcase" size={20} color="#555" />
-              <Text style={styles.shiftName}>{shift.name}</Text>
-            </View>
-            <View style={styles.shiftDetails}>
-              <Text style={styles.shiftDetailText}>Start: {shift.startTime}</Text>
-              <Text style={styles.shiftDetailText}>End: {shift.endTime}</Text>
-              <Text style={styles.shiftDetailText}>Breaks: {shift.breaks}</Text>
-            </View>
-          </Card.Content>
-        </Card>
-      ))}
-    </ScrollView>
-  </View>
-)}
-
-            <View style={styles.navigationButtons}>
-              <TouchableOpacity onPress={handlePrevious} style={styles.navButton}>
-                <Ionicons name="arrow-back-circle" size={30} color="#333" />
-                <Text style={styles.navButtonText}>Previous</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleNext} style={styles.navButton}>
-                <Ionicons name="arrow-forward-circle" size={30} color="#333" />
-                <Text style={styles.navButtonText}>Next</Text>
-              </TouchableOpacity>
-            </View>
-            <Button 
-              mode="text" 
-              onPress={handleCancel} 
-              style={styles.cancelButton}
-              icon="cancel"
+            },
+          ]}
+        >
+          <View style={styles.formHeader}>
+            <Ionicons name="calendar" size={24} color="#333" />
+            <Text style={styles.formTitle}>Proceed to Schedule Your Day</Text>
+          </View>
+  
+          {/* Step 1 */}
+          {currentStep === 1 && (
+            <>
+              <Picker
+                selectedValue={selectedPredefinedShift}
+                onValueChange={(itemValue) => handlePredefinedShiftChange(itemValue)}
+                style={styles.picker}
+                prompt="Select a Shift"
+              >
+                <Picker.Item label="Select a predefined shift..." value="" />
+                {predefinedShifts.map((shift, index) => (
+                  <Picker.Item key={index} label={shift.label} value={shift.value} />
+                ))}
+              </Picker>
+              {selectedPredefinedShift === 'Custom Shift' && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter custom shift name"
+                  value={shiftDetails.name}
+                  onChangeText={(text) => setShiftDetails({ ...shiftDetails, name: text })}
+                />
+              )}
+            </>
+          )}
+  
+          {/* DateTimePickers */}
+          {showStartTimePicker && (
+            <DateTimePicker
+              value={startTime || new Date()}
+              mode="time"
+              is24Hour={false}
+              display="default"
+              onChange={onStartTimeChange}
+            />
+          )}
+  
+          {currentStep === 3 && (
+            <TouchableOpacity
+              onPress={() => setShowEndTimePicker(true)}
+              style={styles.timePickerButton}
             >
-              Cancel
-            </Button>
-          </Animated.View>
-        )}
-      </ScrollView>
+              <Text style={styles.timePickerText}>
+                {endTime
+                  ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+                  : 'Work ends at ?'}
+              </Text>
+            </TouchableOpacity>
+          )}
+  
+          {/* Step 5 */}
+          {currentStep === 5 && (
+            <View>
+              <Text>Repeat the schedule?</Text>
+              <Switch value={isRecurring} onValueChange={setIsRecurring} />
+            </View>
+          )}
+  
+          {/* Added Shifts */}
+          {shifts.length > 0 && (
+            <View style={styles.shiftPreviewContainer}>
+              <Text style={styles.previewTitle}>Added Shifts:</Text>
+              <ScrollView style={styles.scrollableShifts}>
+                {shifts.map((shift, index) => (
+                  <Card key={index} style={styles.shiftPreviewCard}>
+                    <Card.Content>
+                      <View style={styles.shiftHeader}>
+                        <Ionicons name="briefcase" size={20} color="#555" />
+                        <Text style={styles.shiftName}>{shift.name}</Text>
+                      </View>
+                      <View style={styles.shiftDetails}>
+                        <Text style={styles.shiftDetailText}>Start: {shift.startTime}</Text>
+                        <Text style={styles.shiftDetailText}>End: {shift.endTime}</Text>
+                        <Text style={styles.shiftDetailText}>Breaks: {shift.breaks}</Text>
+                      </View>
+                    </Card.Content>
+                  </Card>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+  
+          {/* Navigation Buttons */}
+          <View style={styles.navigationButtons}>
+            <TouchableOpacity onPress={handlePrevious} style={styles.navButton}>
+              <Ionicons name="arrow-back-circle" size={30} color="#333" />
+              <Text style={styles.navButtonText}>Previous</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleNext} style={styles.navButton}>
+              <Ionicons name="arrow-forward-circle" size={30} color="#333" />
+              <Text style={styles.navButtonText}>Next</Text>
+            </TouchableOpacity>
+          </View>
+  
+          {/* Cancel Button */}
+          <Button mode="text" onPress={handleCancel} style={styles.cancelButton} icon="cancel">
+            Cancel
+          </Button>
+        </Animated.View>
+      )}
     </KeyboardAvoidingView>
   );
-};
+};  
 
 export default Schedule;
 
@@ -371,8 +338,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 3,
-    
-    
   },
   agendaItemContainer: {
     flexDirection: 'column',
@@ -384,11 +349,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
   },
-  agendaItemText: { fontSize: 16, fontWeight: 'bold' },
-  agendaItemSubText: { fontSize: 14, color: '#555' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  emptyText: { fontSize: 16, color: '#555' },
+  agendaItemText: { 
+    fontSize: 16, 
+    fontWeight: 'bold',
+    color: '#004d40', // Darker color for emphasis
+    marginBottom: 3,
+  },
+  agendaItemSubText: { 
+    fontSize: 14, 
+    color: '#555' 
+  },
+  emptyContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 20 
+  },
+  emptyText: { 
+    fontSize: 16, 
+    color: '#555' 
+  },
   formContainer: { 
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -398,6 +384,9 @@ const styles = StyleSheet.create({
     padding: 15,
     overflow: 'hidden',
     transformOrigin: 'top', // Optional: Ensure scaling starts from the top
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff', // Ensure a default background color
   },
   formHeader: {
     flexDirection: 'row',
@@ -492,6 +481,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f2f5',
     borderRadius: 8,
     marginBottom: 10,
+    marginVertical: 10, // Merged marginVertical
+    fontSize: 16,       // Merged fontSize
+    color: '#555',      // Merged color
   },
   orText: {
     textAlign: 'center',
