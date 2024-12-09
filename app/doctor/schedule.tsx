@@ -1,6 +1,9 @@
 import { StyleSheet, Text, View, Switch, ScrollView } from 'react-native';
 import React, { useState, useCallback, memo } from 'react';
 import { Agenda, AgendaEntry as OriginalAgendaEntry } from 'react-native-calendars';
+import TimeSelector from '../../components/doctor/timeselector/TimeSelector';
+import ShiftPicker from '../../components/doctor/shiftpicker/ShiftPicker';
+import ShiftPreview from '../../components/doctor/shiftpreview/ShiftPreview';
 
 interface AgendaEntry extends OriginalAgendaEntry {
   startTime: string;
@@ -226,100 +229,40 @@ const Schedule = () => {
   
           {/* Step 1 */}
           {currentStep === 1 && (
-            <>
-              <Picker
-                selectedValue={selectedPredefinedShift}
-                onValueChange={(itemValue) => handlePredefinedShiftChange(itemValue)}
-                style={styles.picker}
-                prompt="Select a Shift"
-              >
-                <Picker.Item label="Select a predefined shift..." value="" />
-                {predefinedShifts.map((shift, index) => (
-                  <Picker.Item key={index} label={shift.label} value={shift.value} />
-                ))}
-              </Picker>
-              {selectedPredefinedShift === 'Custom Shift' && (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter custom shift name"
-                  value={shiftDetails.name}
-                  onChangeText={(text) => setShiftDetails({ ...shiftDetails, name: text })}
-                />
-              )}
-            </>
+            <ShiftPicker
+              predefinedShifts={predefinedShifts}
+              selectedPredefinedShift={selectedPredefinedShift}
+              shiftDetails={shiftDetails}
+              handlePredefinedShiftChange={handlePredefinedShiftChange}
+              setShiftDetails={setShiftDetails}
+            />
           )}
 
-          {/* Step 2 */}
-          {currentStep === 2 && (
-            <View>
-              <TouchableOpacity
-                onPress={() => setShowStartTimePicker(true)}
-                style={styles.timePickerButton}
-              >
-                <Text style={styles.timePickerText}>
-                  {startTime
-                    ? startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                    : 'Work starts at ?'}
-                </Text>
-              </TouchableOpacity>
-              {showStartTimePicker && (
-                <DateTimePicker
-                  value={startTime || new Date()}
-                  mode="time"
-                  is24Hour={false}
-                  display="default"
-                  onChange={onStartTimeChange}
-                />
-              )}
-            </View>
-          )}
-
-          {/* Step 3 */}
-          {currentStep === 3 && (
-            <TouchableOpacity
-              onPress={() => setShowEndTimePicker(true)}
-              style={styles.timePickerButton}
-            >
-              <Text style={styles.timePickerText}>
-                {endTime
-                  ? endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                  : 'Work ends at ?'}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Step 4 */}
-          {currentStep === 4 && (
-            <View>
-              <TouchableOpacity
-                onPress={() => setShowBreakTimePicker(true)}
-                style={styles.timePickerButton}
-              >
-                <Text style={styles.timePickerText}>
-                  {breakTime
-                    ? breakTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-                    : 'Set Break Duration'}
-                </Text>
-              </TouchableOpacity>
-              {showBreakTimePicker && (
-                <DateTimePicker
-                  value={breakTime || new Date()}
-                  mode="time"
-                  is24Hour={false}
-                  display="default"
-                  onChange={(event, selectedDate) => {
-                    setShowBreakTimePicker(false);
-                    if (selectedDate) {
-                      setBreakTime(selectedDate);
-                      setShiftDetails({
-                        ...shiftDetails,
-                        breaks: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
-                      });
-                    }
-                  }}
-                />
-              )}
-            </View>
+          {/* Step 2, 3, 4 */}
+          {(currentStep === 2 || currentStep === 3 || currentStep === 4) && (
+            <TimeSelector
+              startTime={startTime}
+              endTime={endTime}
+              breakTime={breakTime}
+              showStartTimePicker={showStartTimePicker}
+              showEndTimePicker={showEndTimePicker}
+              showBreakTimePicker={showBreakTimePicker}
+              onStartTimeChange={onStartTimeChange}
+              onEndTimeChange={onEndTimeChange}
+              onBreakTimeChange={(event, selectedDate) => {
+                setShowBreakTimePicker(false);
+                if (selectedDate) {
+                  setBreakTime(selectedDate);
+                  setShiftDetails({
+                    ...shiftDetails,
+                    breaks: selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }),
+                  });
+                }
+              }}
+              setShowStartTimePicker={setShowStartTimePicker}
+              setShowEndTimePicker={setShowEndTimePicker}
+              setShowBreakTimePicker={setShowBreakTimePicker}
+            />
           )}
 
           {/* Step 5 */}
@@ -342,29 +285,8 @@ const Schedule = () => {
             </View>
           )}
   
-          {/* Added Shifts */}
-          {shifts.length > 0 && (
-            <View style={styles.shiftPreviewContainer}>
-              <Text style={styles.previewTitle}>Added Shifts:</Text>
-              <ScrollView style={styles.scrollableShifts}>
-                {shifts.map((shift, index) => (
-                  <Card key={index} style={styles.shiftPreviewCard}>
-                    <Card.Content>
-                      <View style={styles.shiftHeader}>
-                        <Ionicons name="briefcase" size={20} color="#555" />
-                        <Text style={styles.shiftName}>{shift.name}</Text>
-                      </View>
-                      <View style={styles.shiftDetails}>
-                        <Text style={styles.shiftDetailText}>Start: {shift.startTime}</Text>
-                        <Text style={styles.shiftDetailText}>End: {shift.endTime}</Text>
-                        <Text style={styles.shiftDetailText}>Breaks: {shift.breaks}</Text>
-                      </View>
-                    </Card.Content>
-                  </Card>
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          {/* Use ShiftPreview Component */}
+          <ShiftPreview shifts={shifts} />
   
           {/* Navigation Buttons */}
           <View style={styles.navigationButtons}>
@@ -393,7 +315,7 @@ export default Schedule;
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
-    backgroundColor: '#f5f5f5', // Existing background color
+    backgroundColor: '#f5f5f5',
   },
   scrollContainer: { flexGrow: 1 },
   agendaItem: { 
@@ -420,7 +342,7 @@ const styles = StyleSheet.create({
   agendaItemText: { 
     fontSize: 16, 
     fontWeight: 'bold',
-    color: '#004d40', // Darker color for emphasis
+    color: '#004d40',
     marginBottom: 3,
   },
   agendaItemSubText: { 
@@ -451,10 +373,10 @@ const styles = StyleSheet.create({
     elevation: 8,
     padding: 15,
     overflow: 'hidden',
-    transformOrigin: 'top', // Optional: Ensure scaling starts from the top
+    transformOrigin: 'top',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff', // Ensure a default background color
+    backgroundColor: '#ffffff',
   },
   formHeader: {
     flexDirection: 'row',
@@ -464,7 +386,7 @@ const styles = StyleSheet.create({
   formTitle: { 
     fontSize: 18, 
     fontWeight: 'bold', 
-    marginLeft: 8, // Space between icon and text
+    marginLeft: 8,
     color: '#333',
   },
   shiftPreviewContainer: {
@@ -477,9 +399,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
+    width: '100%',
   },
   scrollableShifts: {
-    maxHeight: 200, // Limit the height to 200px
+    maxHeight: 200,
   },
   shiftPreviewCard: {
     marginBottom: 10,
@@ -487,6 +410,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     elevation: 2,
+    width: '100%',
   },
   previewTitle: {
     fontSize: 16,
@@ -510,12 +434,12 @@ const styles = StyleSheet.create({
   shiftDetailText: {
     fontSize: 14,
     color: '#555',
-
   },
   navigationButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 15,
+    width: '100%',
   },
   navButton: {
     flexDirection: 'row',
@@ -543,6 +467,7 @@ const styles = StyleSheet.create({
     color: '#333',
     backgroundColor: '#f0f2f5',
     marginBottom: 10,
+    width: '100%',
   },
   picker: {
     height: 50,
@@ -550,9 +475,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f2f5',
     borderRadius: 8,
     marginBottom: 10,
-    marginVertical: 10, // Merged marginVertical
-    fontSize: 16,       // Merged fontSize
-    color: '#555',      // Merged color
+    marginVertical: 10,
+    fontSize: 16,
+    color: '#555',
   },
   timePickerButton: {
     padding: 10,
@@ -560,6 +485,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginVertical: 10,
+    width: '100%',
   },
   orText: {
     textAlign: 'center',
