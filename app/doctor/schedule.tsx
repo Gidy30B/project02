@@ -53,7 +53,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 1,
       duration: 300,
-      useNativeDriver: false, // Changed from true to false
+      useNativeDriver: true,
     }).start();
   };
 
@@ -89,7 +89,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: false, // Changed from true to false
+      useNativeDriver: true,
     }).start(() => {
       setIsFormVisible(false);
       setShifts([]);
