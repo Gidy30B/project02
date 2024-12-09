@@ -5,6 +5,7 @@ import { TouchableOpacity, TextInput, Animated, ScrollView, KeyboardAvoidingView
 import { Ionicons } from '@expo/vector-icons'; // For plus icon
 import { Button, Card } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker'; // Import Picker component
 
 const Schedule = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -24,6 +25,26 @@ const Schedule = () => {
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
+  const [selectedPredefinedShift, setSelectedPredefinedShift] = useState<string>(''); // Existing state
+
+  // Define predefined shifts including "Custom Shift"
+  const predefinedShifts = [
+    { label: 'Morning Shift', value: 'Morning Shift' },
+    { label: 'Afternoon Shift', value: 'Afternoon Shift' },
+    { label: 'Night Shift', value: 'Night Shift' },
+    { label: 'Custom Shift', value: 'Custom Shift' }, // Added Custom Shift
+    // ...existing predefined shifts...
+  ];
+
+  // Define an array of subtle background colors for each step
+  const stepBackgroundColors = [
+    '#ffffff', // Step 1
+    '#f9f9ff', // Step 2
+    '#f0f0ff', // Step 3
+    '#e9e9ff', // Step 4
+    '#e0e0ff', // Step 5
+    '#d9d9ff', // Step 6
+  ];
 
   const onDayPress = (day: any) => {
     setSelectedDay(day.dateString);
@@ -132,6 +153,15 @@ const Schedule = () => {
     }
   };
 
+  const handlePredefinedShiftChange = (value: string) => {
+    setSelectedPredefinedShift(value);
+    if (value !== 'Custom Shift') {
+      setShiftDetails({ ...shiftDetails, name: value });
+    } else {
+      setShiftDetails({ ...shiftDetails, name: '' });
+    }
+  };
+
   const renderEmptyData = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>Please select a day to schedule your availability.</Text>
@@ -173,18 +203,40 @@ const Schedule = () => {
         />
 
         {isFormVisible && selectedDay && (
-          <Animated.View style={[styles.formContainer, { height: formHeight }]}>
-            <Text style={styles.formTitle}>Proceed to Schedule Your Day</Text>
+          <Animated.View style={[
+            styles.formContainer, 
+            { 
+              height: formHeight,
+              backgroundColor: stepBackgroundColors[currentStep - 1] || '#ffffff', // Dynamic background
+            }
+          ]}>
+            <View style={styles.formHeader}>
+              <Ionicons name="calendar" size={24} color="#333" />
+              <Text style={styles.formTitle}>Proceed to Schedule Your Day</Text>
+            </View>
             {/* Step forms are rendered conditionally based on currentStep */}
             {currentStep === 1 && (
-              <View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Name this Shift"
-                  value={shiftDetails.name}
-                  onChangeText={(text) => setShiftDetails({ ...shiftDetails, name: text })}
-                />
-              </View>
+              <>
+                <Picker
+                  selectedValue={selectedPredefinedShift}
+                  onValueChange={(itemValue) => handlePredefinedShiftChange(itemValue)}
+                  style={styles.picker}
+                  prompt="Select a Shift"
+                >
+                  <Picker.Item label="Select a predefined shift..." value="" />
+                  {predefinedShifts.map((shift, index) => (
+                    <Picker.Item key={index} label={shift.label} value={shift.value} />
+                  ))}
+                </Picker>
+                {selectedPredefinedShift === 'Custom Shift' && (
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter custom shift name"
+                    value={shiftDetails.name}
+                    onChangeText={(text) => setShiftDetails({ ...shiftDetails, name: text })}
+                  />
+                )}
+              </>
             )}
             {currentStep === 2 && (
               <View>
@@ -281,13 +333,20 @@ const Schedule = () => {
             )}
             <View style={styles.navigationButtons}>
               <TouchableOpacity onPress={handlePrevious} style={styles.navButton}>
-                <Ionicons name="arrow-back" size={24} color="black" />
+                <Ionicons name="arrow-back-circle" size={30} color="#333" />
+                <Text style={styles.navButtonText}>Previous</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleNext} style={styles.navButton}>
-                <Ionicons name="arrow-forward" size={24} color="black" />
+                <Ionicons name="arrow-forward-circle" size={30} color="#333" />
+                <Text style={styles.navButtonText}>Next</Text>
               </TouchableOpacity>
             </View>
-            <Button mode="text" onPress={handleCancel} style={styles.cancelButton}>
+            <Button 
+              mode="text" 
+              onPress={handleCancel} 
+              style={styles.cancelButton}
+              icon="cancel"
+            >
               Cancel
             </Button>
           </Animated.View>
@@ -300,14 +359,23 @@ const Schedule = () => {
 export default Schedule;
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { 
+    flex: 1,
+    
+  },
   scrollContainer: { flexGrow: 1 },
   agendaItem: { 
     padding: 10, 
     margin: 5, 
     backgroundColor: '#fff', 
     borderRadius: 5,
-    // ...additional styles for multiple shifts...
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 3,
+    
+    
   },
   agendaItemContainer: {
     flexDirection: 'column',
@@ -324,7 +392,6 @@ const styles = StyleSheet.create({
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   emptyText: { fontSize: 16, color: '#555' },
   formContainer: { 
-    backgroundColor: '#ffffff',
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -334,17 +401,17 @@ const styles = StyleSheet.create({
     padding: 15,
     overflow: 'hidden',
   },
-  input: { 
-    borderWidth: 1, 
-    borderColor: '#ddd', 
-    borderRadius: 8, 
-    paddingHorizontal: 15, 
-    paddingVertical: 12, 
-    fontSize: 16, 
-    color: '#333',
-    backgroundColor: '#f0f2f5',
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  formTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  formTitle: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginLeft: 8, // Space between icon and text
+    color: '#333',
+  },
   shiftPreviewContainer: {
     marginTop: 20,
     padding: 10,
@@ -392,13 +459,43 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 10,
+  },
+  navButtonText: {
+    marginLeft: 5,
+    fontSize: 16,
+    color: '#333',
   },
   cancelButton: {
     marginTop: 10,
     alignSelf: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  button: {
-    marginVertical: 5,
+  input: { 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    borderRadius: 8, 
+    paddingHorizontal: 15, 
+    paddingVertical: 12, 
+    fontSize: 16, 
+    color: '#333',
+    backgroundColor: '#f0f2f5',
+    marginBottom: 10,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    backgroundColor: '#f0f2f5',
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  orText: {
+    textAlign: 'center',
+    marginVertical: 10,
+    fontSize: 16,
+    color: '#555',
   },
 });
