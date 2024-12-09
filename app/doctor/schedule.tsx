@@ -53,7 +53,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 1,
       duration: 300,
-      useNativeDriver: false, // Changed from true to false
+      useNativeDriver: true, // Keep useNativeDriver as true
     }).start();
   };
 
@@ -89,7 +89,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: false, // Changed from true to false
+      useNativeDriver: true, // Keep useNativeDriver as true
     }).start(() => {
       setIsFormVisible(false);
       setShifts([]);
@@ -113,7 +113,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: false, // Change to false
+      useNativeDriver: true, // Keep useNativeDriver as true
     }).start(() => {
       setIsFormVisible(false);
       setShiftDetails({
@@ -168,11 +168,6 @@ const Schedule = () => {
     </View>
   );
 
-  const formHeight = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 500],
-  });
-
   // Adjusted AgendaItem component to handle a single AgendaEntry
   const AgendaItem = memo(({ item }: { item: AgendaEntry }) => (
     <View style={styles.agendaItemContainer}>
@@ -206,7 +201,7 @@ const Schedule = () => {
           <Animated.View style={[
             styles.formContainer, 
             { 
-              height: formHeight,
+              transform: [{ scaleY: animation }],
               backgroundColor: stepBackgroundColors[currentStep - 1] || '#ffffff', // Dynamic background
             }
           ]}>
@@ -363,7 +358,7 @@ export default Schedule;
 const styles = StyleSheet.create({
   container: { 
     flex: 1,
-    
+    backgroundColor: '#f5f5f5', // Existing background color
   },
   scrollContainer: { flexGrow: 1 },
   agendaItem: { 
@@ -402,6 +397,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     padding: 15,
     overflow: 'hidden',
+    transformOrigin: 'top', // Optional: Ensure scaling starts from the top
   },
   formHeader: {
     flexDirection: 'row',
