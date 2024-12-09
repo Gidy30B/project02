@@ -53,7 +53,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 1,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false, // Changed from true to false
     }).start();
   };
 
@@ -89,7 +89,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false, // Changed from true to false
     }).start(() => {
       setIsFormVisible(false);
       setShifts([]);
@@ -185,7 +185,7 @@ const Schedule = () => {
     </View>
   ));
 
-  // Memoized renderItem function passing a single AgendaEntry
+ 
   const renderItem = useCallback((item: AgendaEntry) => <AgendaItem item={item} />, []);
 
   return (
