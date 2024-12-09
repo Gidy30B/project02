@@ -113,7 +113,7 @@ const Schedule = () => {
     Animated.timing(animation, {
       toValue: 0,
       duration: 300,
-      useNativeDriver: true,
+      useNativeDriver: false, // Change to false
     }).start(() => {
       setIsFormVisible(false);
       setShiftDetails({
