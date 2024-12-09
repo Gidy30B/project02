@@ -310,27 +310,29 @@ const Schedule = () => {
                 </Button>
               </View>
             )}
-            {/* Preview Added Shifts */}
-            {shifts.length > 0 && (
-              <View style={styles.shiftPreviewContainer}>
-                <Text style={styles.previewTitle}>Added Shifts:</Text>
-                {shifts.map((shift, index) => (
-                  <Card key={index} style={styles.shiftPreviewCard}>
-                    <Card.Content>
-                      <View style={styles.shiftHeader}>
-                        <Ionicons name="briefcase" size={20} color="#555" />
-                        <Text style={styles.shiftName}>{shift.name}</Text>
-                      </View>
-                      <View style={styles.shiftDetails}>
-                        <Text style={styles.shiftDetailText}>Start: {shift.startTime}</Text>
-                        <Text style={styles.shiftDetailText}>End: {shift.endTime}</Text>
-                        <Text style={styles.shiftDetailText}>Breaks: {shift.breaks}</Text>
-                      </View>
-                    </Card.Content>
-                  </Card>
-                ))}
-              </View>
-            )}
+      {shifts.length > 0 && (
+  <View style={styles.shiftPreviewContainer}>
+    <Text style={styles.previewTitle}>Added Shifts:</Text>
+    <ScrollView style={styles.scrollableShifts}>
+      {shifts.map((shift, index) => (
+        <Card key={index} style={styles.shiftPreviewCard}>
+          <Card.Content>
+            <View style={styles.shiftHeader}>
+              <Ionicons name="briefcase" size={20} color="#555" />
+              <Text style={styles.shiftName}>{shift.name}</Text>
+            </View>
+            <View style={styles.shiftDetails}>
+              <Text style={styles.shiftDetailText}>Start: {shift.startTime}</Text>
+              <Text style={styles.shiftDetailText}>End: {shift.endTime}</Text>
+              <Text style={styles.shiftDetailText}>Breaks: {shift.breaks}</Text>
+            </View>
+          </Card.Content>
+        </Card>
+      ))}
+    </ScrollView>
+  </View>
+)}
+
             <View style={styles.navigationButtons}>
               <TouchableOpacity onPress={handlePrevious} style={styles.navButton}>
                 <Ionicons name="arrow-back-circle" size={30} color="#333" />
@@ -415,24 +417,28 @@ const styles = StyleSheet.create({
   shiftPreviewContainer: {
     marginTop: 20,
     padding: 10,
-    backgroundColor: '#fafafa',
-    borderRadius: 8,
+    borderRadius: 10,
+    backgroundColor: '#f9f9f9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
     elevation: 3,
+  },
+  scrollableShifts: {
+    maxHeight: 200, // Limit the height to 200px
+  },
+  shiftPreviewCard: {
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 10,
+    elevation: 2,
   },
   previewTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  shiftPreviewCard: {
-    marginBottom: 10,
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    elevation: 2,
   },
   shiftHeader: {
     flexDirection: 'row',
@@ -440,18 +446,17 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   shiftName: {
-    fontSize: 16,
+    marginLeft: 10,
     fontWeight: 'bold',
-    marginLeft: 8,
+    fontSize: 16,
     color: '#333',
   },
   shiftDetails: {
-    marginLeft: 28,
+    marginTop: 5,
   },
   shiftDetailText: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 2,
   },
   navigationButtons: {
     flexDirection: 'row',
