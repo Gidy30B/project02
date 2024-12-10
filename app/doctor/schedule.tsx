@@ -86,6 +86,7 @@ const Schedule: React.FC = () => {
             selected={selectedDay}
             onDayPress={(day) => setSelectedDay(day.dateString)}
             renderEmptyData={() => <Text style={styles.emptyText}>No events</Text>}
+            style={styles.agenda}
           />
           <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
             Next
@@ -179,13 +180,13 @@ export default Schedule;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#f5f5f5',
   },
   stepContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
   },
   stepTitle: {
     fontSize: 22,
@@ -220,5 +221,14 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: '#d32f2f',
+  },
+  agenda: {
+    flex: 1,
+    width: '100%',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#999',
   },
 });
