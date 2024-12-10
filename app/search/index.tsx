@@ -16,7 +16,9 @@ import { useRouter } from 'expo-router';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Picker } from '@react-native-picker/picker';
+import { Icon } from 'react-native-elements';
 import Colors from '@/components/Shared/Colors';
+import { debounce } from 'lodash';
 
 import {
   fetchClinics,
@@ -132,6 +134,53 @@ const ClinicSearch = () => {
     );
   };
 
+  const handleCombinedFilters = () => {
+    const filtered = clinics.filter(
+      (clinic) =>
+        clinic.address.toLowerCase().includes(selectedLocation.toLowerCase()) &&
+        clinic.insuranceCompanies.some((ins) =>
+          ins.toLowerCase().includes(selectedInsurance.toLowerCase())
+        ) &&
+        clinic.professionals.some((prof) =>
+          prof.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase())
+        )
+    );
+    setFilteredClinics(filtered);
+    setFilteredProfessionals(
+      filtered.flatMap((clinic) =>
+        clinic.professionals?.map((professional) => ({
+          ...professional,
+          clinicName: clinic.name,
+          clinicAddress: clinic.address,
+          clinicInsurances: clinic.insuranceCompanies,
+        })) || []
+      )
+    );
+  };
+
+  const handleSearchChange = debounce((text) => {
+    const searchQuery = text.toLowerCase();
+    const searchedClinics = clinics.filter((clinic) =>
+      clinic.name.toLowerCase().includes(searchQuery) ||
+      clinic.address.toLowerCase().includes(searchQuery) ||
+      clinic.professionals.some((prof) =>
+        prof.firstName.toLowerCase().includes(searchQuery) ||
+        prof.lastName.toLowerCase().includes(searchQuery)
+      )
+    );
+    setFilteredClinics(searchedClinics);
+    setFilteredProfessionals(
+      searchedClinics.flatMap((clinic) =>
+        clinic.professionals?.map((professional) => ({
+          ...professional,
+          clinicName: clinic.name,
+          clinicAddress: clinic.address,
+          clinicInsurances: clinic.insuranceCompanies,
+        })) || []
+      )
+    );
+  }, 300);
+
   const ClinicItem = ({ item }) => {
     const [currentImage, setCurrentImage] = useState(null);
     const imageFadeAnim = useRef(new Animated.Value(1)).current;
@@ -200,7 +249,19 @@ const ClinicSearch = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
+        {/* Skeleton Loader */}
         <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (filteredClinics.length === 0 && filteredProfessionals.length === 0 && !loading) {
+    return (
+      <View style={styles.centered}>
+        <Text>No results found.</Text>
+        <TouchableOpacity onPress={resetFilters} style={styles.refreshButton}>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -209,6 +270,9 @@ const ClinicSearch = () => {
     return (
       <View style={styles.centered}>
         <Text>{error}</Text>
+        <TouchableOpacity onPress={resetFilters} style={styles.refreshButton}>
+          <Text style={styles.refreshButtonText}>Refresh</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -217,24 +281,27 @@ const ClinicSearch = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
-        <TextInput
-          placeholder="Search clinics or professionals"
-          style={styles.searchBox}
-          editable={false}
-        />
+        <View style={styles.searchBar}>
+          <Icon name="search" size={20} color="#ccc" />
+          <TextInput
+            placeholder="Search clinics or professionals"
+            style={styles.searchInput}
+            onChangeText={handleSearchChange}
+          />
+        </View>
         <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
           <Text style={styles.resetButtonText}>Reset</Text>
         </TouchableOpacity>
       </View>
       <ScrollView>
-        <Picker selectedValue={selectedLocation} onValueChange={handleLocationChange} style={styles.picker}>
+        <Picker selectedValue={selectedLocation} onValueChange={(value) => { setSelectedLocation(value); handleCombinedFilters(); }} style={styles.picker}>
           <Picker.Item label="Select Location" value="" />
           {uniqueLocations.map((location, index) => (
             <Picker.Item key={index} label={location} value={location} />
           ))}
         </Picker>
         {selectedLocation && (
-          <Picker selectedValue={selectedSpecialty} onValueChange={handleSpecialtyChange} style={styles.picker}>
+          <Picker selectedValue={selectedSpecialty} onValueChange={(value) => { setSelectedSpecialty(value); handleCombinedFilters(); }} style={styles.picker}>
             <Picker.Item label="Select Specialty" value="" />
             {uniqueSpecialties.map((specialty, index) => (
               <Picker.Item key={index} label={specialty} value={specialty} />
@@ -242,7 +309,7 @@ const ClinicSearch = () => {
           </Picker>
         )}
         {selectedSpecialty && (
-          <Picker selectedValue={selectedInsurance} onValueChange={handleInsuranceChange} style={styles.picker}>
+          <Picker selectedValue={selectedInsurance} onValueChange={(value) => { setSelectedInsurance(value); handleCombinedFilters(); }} style={styles.picker}>
             <Picker.Item label="Select Insurance" value="" />
             {uniqueInsurances.map((insurance, index) => (
               <Picker.Item key={index} label={insurance} value={insurance} />
@@ -286,19 +353,26 @@ const ClinicSearch = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#dce775',
+    backgroundColor: '#f0f0f0',
   },
   header: {
     flexDirection: 'row',
     padding: 16,
   },
-  searchBox: {
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
     flex: 1,
     borderWidth: 1,
-    borderRadius: 10,
     borderColor: '#ccc',
-    paddingHorizontal: 12,
+  },
+  searchInput: {
+    flex: 1,
     height: 40,
+    paddingHorizontal: 10,
   },
   resetButton: {
     backgroundColor: Colors.PRIMARY,
@@ -322,7 +396,12 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#fff',
     margin: 8,
-    borderRadius: 8,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   cardImage: {
     width: 60,
@@ -348,6 +427,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  noResults: {
+    fontSize: 18,
+    color: 'red',
+  },
+  refreshButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: Colors.PRIMARY,
+    borderRadius: 5,
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

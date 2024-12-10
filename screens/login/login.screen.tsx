@@ -16,6 +16,7 @@ import { useDispatch } from 'react-redux'
 import { login } from '../../app/store/userSlice'
 import { AuthContext } from '../../context/AuthContext'
 import Icon from 'react-native-vector-icons/Ionicons'
+import Colors from '@/components/Shared/Colors'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState({ value: '', error: '' })
@@ -108,22 +109,27 @@ export default function LoginScreen() {
   }
 
   return (
-    <Background>
-      <Logo />
-      <Header>Welcome back.</Header>
-      <TextInput
-        label="Email"
-        returnKeyType="next"
-        value={email.value}
-        onChangeText={(text) => setEmail({ value: text, error: '' })}
-        error={!!email.error}
-        errorText={email.error}
-        autoCapitalize="none"
-        autoCompleteType="email"
-        textContentType="emailAddress"
-        keyboardType="email-address"
-      />
-      <View style={styles.passwordContainer}>
+    <View style={styles.container}>
+      <Logo style={styles.logo} />
+      <Header style={styles.title}>Welcome back.</Header>
+      <View style={styles.inputContainer}>
+        <Icon name="mail" size={20} color="#333" style={styles.icon} />
+        <TextInput
+          label="Email"
+          returnKeyType="next"
+          value={email.value}
+          onChangeText={(text) => setEmail({ value: text, error: '' })}
+          error={!!email.error}
+          errorText={email.error}
+          autoCapitalize="none"
+          autoCompleteType="email"
+          textContentType="emailAddress"
+          keyboardType="email-address"
+          style={styles.input}
+        />
+      </View>
+      <View style={styles.inputContainer}>
+        <Icon name="lock-closed" size={20} color="#333" style={styles.icon} />
         <TextInput
           label="Password"
           returnKeyType="done"
@@ -132,59 +138,97 @@ export default function LoginScreen() {
           error={!!password.error}
           errorText={password.error}
           secureTextEntry={!showPassword}
+          style={styles.input}
         />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.icon}>
           <Icon name={showPassword ? "eye" : "eye-off"} size={20} color="#333" />
         </TouchableOpacity>
       </View>
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
-      <View style={styles.forgotPassword}>
-        <TouchableOpacity onPress={() => {}}>
-          <Text style={styles.forgot}>Forgot your password?</Text>
-        </TouchableOpacity>
-      </View>
-      <Button mode="contained" onPress={onLoginPressed} disabled={isLoggingIn}>
-        {isLoggingIn ? <ActivityIndicator size="small" color="#fff" /> : 'Login'}
-      </Button>
+      <TouchableOpacity onPress={() => {}}>
+        <Text style={styles.forgotPassword}>Forgot your password?</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={onLoginPressed} disabled={isLoggingIn}>
+        {isLoggingIn ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
+      </TouchableOpacity>
       <View style={styles.row}>
-        <Text>Don’t have an account? </Text>
+        <Text style={styles.signUp}>Don’t have an account? </Text>
         <TouchableOpacity onPress={() => router.push('/register')}>
-          <Text style={styles.link}>Sign up</Text>
+          <Text style={styles.signUpLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
-    </Background>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
-  forgotPassword: {
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#a3de83',
+    paddingHorizontal: 20,
+  },
+  logo: {
+    height: 200,
+    width: 200,
+    resizeMode: 'contain',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 32,
+    marginBottom: 40,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     width: '100%',
-    alignItems: 'flex-end',
-    marginBottom: 24,
+    height: 50,
+    backgroundColor: '#f1f1f1',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  icon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+    color: '#000',
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#1E90FF',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+  },
+  signUp: {
+    color: Colors.PRIMARY,
+  },
+  signUpLink: {
+    color: '#1E90FF',
+  },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
+    marginBottom: 10,
   },
   row: {
     flexDirection: 'row',
     marginTop: 4,
-  },
-  forgot: {
-    fontSize: 13,
-    color: theme.colors.secondary,
-  },
-  link: {
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-  },
-  passwordContainer: {
-    position: 'relative',
-  },
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    top: 35, // Adjusted to align with the password placeholder
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginTop: 10,
   },
 })
