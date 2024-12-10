@@ -1,14 +1,11 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, TextInput } from 'react-native';
+import React, { useState } from 'react'; 
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, TextInput, ScrollView } from 'react-native';
 import { Button, Chip, Snackbar } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import EnhancedCalendar from '../../components/doctor/calendar/EnhancedCalendar';
 import axios from 'axios';
 
-const timeToString = (time) => {
-  const date = new Date(time);
-  return date.toISOString().split('T')[0];
-};
+const timeToString = (time: Date) => time.toISOString().split('T')[0];
 
 const Schedule: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -19,20 +16,35 @@ const Schedule: React.FC = () => {
     location: '',
     consultations: 0,
     address: '',
-    breaks: [],
+    breaks: [] as { start: string; end: string }[],
   });
+  const [breakInput, setBreakInput] = useState({ start: '', end: '' });
   const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState({ show: false, type: '' });
 
-  const onTimeChange = (event: Event, selectedDate: Date | undefined) => {
+  const onTimeChange = (event: any, selectedDate: Date | undefined) => {
     if (selectedDate) {
       const formattedTime = selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      updateShiftDetails((prev) => ({
-        ...prev,
-        [showTimePicker.type]: formattedTime,
-      }));
+      if (showTimePicker.type === 'breakStart' || showTimePicker.type === 'breakEnd') {
+        setBreakInput((prev) => ({ ...prev, [showTimePicker.type === 'breakStart' ? 'start' : 'end']: formattedTime }));
+      } else {
+        updateShiftDetails((prev) => ({
+          ...prev,
+          [showTimePicker.type]: formattedTime,
+        }));
+      }
     }
     setShowTimePicker({ show: false, type: '' });
+  };
+
+  const addBreak = () => {
+    if (breakInput.start && breakInput.end) {
+      updateShiftDetails((prev) => ({
+        ...prev,
+        breaks: [...prev.breaks, breakInput],
+      }));
+      setBreakInput({ start: '', end: '' });
+    }
   };
 
   const handleSaveShift = async () => {
@@ -71,10 +83,12 @@ const Schedule: React.FC = () => {
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Select a Day</Text>
           <View style={styles.calendarContainer}>
-            <EnhancedCalendar onDayPress={(date) => {
-              setSelectedDay(timeToString(date));
-              setCurrentStep(2);
-            }} />
+            <EnhancedCalendar
+              onDayPress={(date) => {
+                setSelectedDay(timeToString(date));
+                setCurrentStep(2);
+              }}
+            />
           </View>
         </View>
       );
@@ -100,6 +114,18 @@ const Schedule: React.FC = () => {
               {shiftDetails.endTime || 'End Time'}
             </Chip>
           </View>
+          <Text style={styles.breakTitle}>Set Break Times</Text>
+          <View style={styles.timeRow}>
+            <Chip onPress={() => setShowTimePicker({ show: true, type: 'breakStart' })}>
+              {breakInput.start || 'Start Break'}
+            </Chip>
+            <Chip onPress={() => setShowTimePicker({ show: true, type: 'breakEnd' })}>
+              {breakInput.end || 'End Break'}
+            </Chip>
+          </View>
+          <Button onPress={addBreak} mode="outlined" style={styles.addBreakButton}>
+            Add Break
+          </Button>
           <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
             Next
           </Button>
@@ -110,25 +136,21 @@ const Schedule: React.FC = () => {
     if (currentStep === 3) {
       return (
         <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Select Your Location</Text>
-          <FlatList
-            data={['Clinic A', 'Clinic B', 'Home Office', 'Remote']}
-            keyExtractor={(item) => item}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.locationCard,
-                  shiftDetails.location === item && styles.selectedCard,
-                ]}
-                onPress={() => updateShiftDetails((prev) => ({ ...prev, location: item }))}
-              >
-                <Text style={styles.cardText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            horizontal
-            showsHorizontalScrollIndicator={false}
+          <Text style={styles.stepTitle}>Consultation Details</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Location"
+            value={shiftDetails.location}
+            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, location: text }))}
           />
-          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            placeholder="Enter Number of Consultations"
+            value={shiftDetails.consultations.toString()}
+            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, consultations: parseInt(text) }))}
+          />
+          <Button mode="contained" onPress={() => setCurrentStep(4)} style={styles.nextButton}>
             Next
           </Button>
         </View>
@@ -136,23 +158,6 @@ const Schedule: React.FC = () => {
     }
 
     if (currentStep === 4) {
-      return (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Set Number of Consultations</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={shiftDetails.consultations.toString()}
-            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, consultations: parseInt(text) }))}
-          />
-          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
-            Next
-          </Button>
-        </View>
-      );
-    }
-
-    if (currentStep === 5) {
       return (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Set Your Address</Text>
@@ -171,7 +176,9 @@ const Schedule: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {renderStep()}
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {renderStep()}
+      </ScrollView>
       {showTimePicker.show && (
         <DateTimePicker
           mode="time"
@@ -193,12 +200,13 @@ const Schedule: React.FC = () => {
   );
 };
 
-export default Schedule;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#ffffff',
+  },
+  scrollContainer: {
+    paddingBottom: 20,
   },
   stepContainer: {
     flex: 1,
@@ -208,39 +216,31 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   stepTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    textAlign: 'center',
   },
   calendarContainer: {
-    flex: 1,
     width: '100%',
   },
   timeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    width: '100%',
-    marginVertical: 16,
+    justifyContent: 'space-between',
+    width: '90%',
+    marginVertical: 10,
+  },
+  breakTitle: {
+    fontSize: 18,
+    marginVertical: 8,
+  },
+  addBreakButton: {
+    marginTop: 8,
+    alignSelf: 'flex-end',
   },
   nextButton: {
-    marginTop: 16,
+    marginTop: 20,
+    width: '80%',
     alignSelf: 'center',
-  },
-  locationCard: {
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    margin: 8,
-  },
-  selectedCard: {
-    borderColor: '#6200ea',
-    backgroundColor: '#e0e0e0',
-  },
-  cardText: {
-    fontSize: 16,
   },
   snackbar: {
     backgroundColor: '#d32f2f',
@@ -254,3 +254,5 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
 });
+
+export default Schedule;
