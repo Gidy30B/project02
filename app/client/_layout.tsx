@@ -12,10 +12,10 @@ export default function ClientLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        // Custom header with dynamic title
+       
         header: () => <ClientHeader title={getTitle(route.name)} />,
         
-        // Dynamically changing tab icons
+        
         tabBarIcon: ({ color, size }) => {
           let iconName;
           switch (route.name) {
