@@ -8,10 +8,13 @@ const timeToString = (time) => {
   const date = new Date(time);
   return date.toISOString().split('T')[0];
 };
+
 const Schedule: React.FC = () => {
+  const [items, setItems] = useState({});
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [shiftDetails, setShiftDetails] = useState({
+    name: '',
     startTime: '',
     endTime: '',
     location: '',
@@ -19,7 +22,21 @@ const Schedule: React.FC = () => {
   const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState({ show: false, type: '' });
 
-  const onTimeChange = (event: Event, selectedDate: Date | undefined) => {
+  const loadItems = (day) => {
+    setTimeout(() => {
+      const newItems = { ...items };
+      for (let i = -15; i < 85; i++) {
+        const time = day.timestamp + i * 24 * 60 * 60 * 1000;
+        const strTime = timeToString(time);
+        if (!newItems[strTime]) {
+          newItems[strTime] = [];
+        }
+      }
+      setItems(newItems);
+    }, 1000);
+  };
+
+  const onTimeChange = (event, selectedDate) => {
     if (selectedDate) {
       const formattedTime = selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       setShiftDetails((prev) => ({
@@ -31,13 +48,17 @@ const Schedule: React.FC = () => {
   };
 
   const handleSaveShift = () => {
-    if (!shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.location || !selectedDay) {
+    if (!shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.location) {
       setIsSnackbarVisible(true);
       return;
     }
 
-    console.log('Shift saved:', { ...shiftDetails, day: selectedDay });
-    setShiftDetails({ startTime: '', endTime: '', location: '' });
+    setItems((prev) => ({
+      ...prev,
+      [selectedDay!]: [...(prev[selectedDay!] || []), { ...shiftDetails, id: Date.now() }],
+    }));
+
+    setShiftDetails({ name: '', startTime: '', endTime: '', location: '' });
     setCurrentStep(1);
     setSelectedDay(null);
   };
@@ -59,9 +80,7 @@ const Schedule: React.FC = () => {
       return (
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Select a Day</Text>
-          <EnhancedCalendar
-            onDayPress={(date) => setSelectedDay(date)}
-          />
+          <EnhancedCalendar onDayPress={(day) => setSelectedDay(timeToString(day))} />
           <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
             Next
           </Button>
@@ -195,5 +214,14 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: '#d32f2f',
+  },
+  agenda: {
+    flex: 1,
+    width: '100%',
+  },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 20,
+    color: '#999',
   },
 });
