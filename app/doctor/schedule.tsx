@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, FlatList } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { Button, Chip, Snackbar } from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import EnhancedCalendar from '../../components/doctor/calendar/EnhancedCalendar';
+import axios from 'axios';
 
 const timeToString = (time) => {
   const date = new Date(time);
@@ -12,10 +13,13 @@ const timeToString = (time) => {
 const Schedule: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [shiftDetails, setShiftDetails] = useState({
+  const [shiftDetails, updateShiftDetails] = useState({
     startTime: '',
     endTime: '',
     location: '',
+    consultations: 0,
+    address: '',
+    breaks: [],
   });
   const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState({ show: false, type: '' });
@@ -23,7 +27,7 @@ const Schedule: React.FC = () => {
   const onTimeChange = (event: Event, selectedDate: Date | undefined) => {
     if (selectedDate) {
       const formattedTime = selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      setShiftDetails((prev) => ({
+      updateShiftDetails((prev) => ({
         ...prev,
         [showTimePicker.type]: formattedTime,
       }));
@@ -31,23 +35,29 @@ const Schedule: React.FC = () => {
     setShowTimePicker({ show: false, type: '' });
   };
 
-  const handleSaveShift = () => {
-    if (!shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.location || !selectedDay) {
+  const handleSaveShift = async () => {
+    if (!shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.location || !selectedDay || !shiftDetails.consultations || !shiftDetails.address) {
       setIsSnackbarVisible(true);
       return;
     }
 
-    console.log('Shift saved:', { ...shiftDetails, day: selectedDay });
-    setShiftDetails({ startTime: '', endTime: '', location: '' });
+    const availability = [{ ...shiftDetails, date: selectedDay, isBooked: false }];
+    try {
+      const response = await axios.post('/api/schedule', {
+        professionalId: 'your-professional-id',
+        availability,
+      });
+      console.log('Shift saved:', response.data);
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+    }
+
+    updateShiftDetails({ startTime: '', endTime: '', location: '', consultations: 0, address: '', breaks: [] });
     setCurrentStep(1);
     setSelectedDay(null);
   };
 
   const goToNextStep = () => {
-    if (currentStep === 1 && !selectedDay) {
-      setIsSnackbarVisible(true);
-      return;
-    }
     if (currentStep === 2 && (!shiftDetails.startTime || !shiftDetails.endTime)) {
       setIsSnackbarVisible(true);
       return;
@@ -61,11 +71,11 @@ const Schedule: React.FC = () => {
         <View style={styles.stepContainer}>
           <Text style={styles.stepTitle}>Select a Day</Text>
           <View style={styles.calendarContainer}>
-            <EnhancedCalendar onDayPress={(date) => setSelectedDay(timeToString(date))} />
+            <EnhancedCalendar onDayPress={(date) => {
+              setSelectedDay(timeToString(date));
+              setCurrentStep(2);
+            }} />
           </View>
-          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
-            Next
-          </Button>
         </View>
       );
     }
@@ -110,13 +120,46 @@ const Schedule: React.FC = () => {
                   styles.locationCard,
                   shiftDetails.location === item && styles.selectedCard,
                 ]}
-                onPress={() => setShiftDetails((prev) => ({ ...prev, location: item }))}
+                onPress={() => updateShiftDetails((prev) => ({ ...prev, location: item }))}
               >
                 <Text style={styles.cardText}>{item}</Text>
               </TouchableOpacity>
             )}
             horizontal
             showsHorizontalScrollIndicator={false}
+          />
+          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
+            Next
+          </Button>
+        </View>
+      );
+    }
+
+    if (currentStep === 4) {
+      return (
+        <View style={styles.stepContainer}>
+          <Text style={styles.stepTitle}>Set Number of Consultations</Text>
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={shiftDetails.consultations.toString()}
+            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, consultations: parseInt(text) }))}
+          />
+          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
+            Next
+          </Button>
+        </View>
+      );
+    }
+
+    if (currentStep === 5) {
+      return (
+        <View style={styles.stepContainer}>
+          <Text style={styles.stepTitle}>Set Your Address</Text>
+          <TextInput
+            style={styles.input}
+            value={shiftDetails.address}
+            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, address: text }))}
           />
           <Button mode="contained" onPress={handleSaveShift} style={styles.nextButton}>
             Save Schedule
@@ -161,8 +204,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 32,
-    padding: 16,
+    marginTop: 50,
+    padding: 20,
   },
   stepTitle: {
     fontSize: 22,
@@ -201,5 +244,13 @@ const styles = StyleSheet.create({
   },
   snackbar: {
     backgroundColor: '#d32f2f',
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    marginVertical: 16,
   },
 });
