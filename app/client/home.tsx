@@ -46,7 +46,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: '#dce775',
+    backgroundColor: '#f7f39a',
     padding: 20,
   },
   container: {

@@ -43,6 +43,38 @@ export const useRegisterLogic = () => {
     ]).start();
   };
 
+  const createFhirPatient = async (userData) => {
+    const fhirPatient = {
+      resourceType: "Patient",
+      name: [
+        {
+          use: "official",
+          family: userData.lastName,
+          given: [userData.firstName],
+        },
+      ],
+      gender: userData.gender.toLowerCase(),
+      telecom: [
+        {
+          system: "email",
+          value: userData.email,
+          use: "home",
+        },
+      ],
+    };
+  
+    try {
+      const response = await axios.post('http://hapi.fhir.org/baseR4/Patient', fhirPatient, {
+        headers: {
+          'Content-Type': 'application/fhir+json',
+        },
+      });
+      console.log('FHIR Patient created:', response.data);
+    } catch (error) {
+      console.error('Error creating FHIR Patient:', error);
+    }
+  };
+
   const handleSignupPress = async () => {
     if (
       firstName === '' ||
@@ -82,6 +114,9 @@ export const useRegisterLogic = () => {
       };
 
       await registerUser(userData);
+      if (userType === 'client') {
+        await createFhirPatient(userData);
+      }
       setErrorMessage(null);
       setSuccessMessage('Signup successful! Please check your email for verification.');
       setIsVerifying(true);

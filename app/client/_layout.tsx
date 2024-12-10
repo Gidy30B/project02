@@ -49,7 +49,7 @@ export default function ClientLayout() {
         },
         tabBarLabelStyle: { fontSize: 12 }, // Style for tab labels
         tabBarStyle: {
-          backgroundColor: '#dce775', // Custom background color for tab bar
+          backgroundColor: '#a3de83', // Custom background color for tab bar
           borderTopColor: 'transparent',
           height: 60,
         },
