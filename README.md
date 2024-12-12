@@ -1,373 +1,242 @@
 import React, { useState, useEffect } from 'react';
-import {
-  StyleSheet,
-  TextInput,
-  SafeAreaView,
-  View,
-  TouchableOpacity,
-  StatusBar,
-  FlatList,
-  Text,
-  Image,
-  ScrollView,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSelector } from 'react-redux';
-import { Picker } from '@react-native-picker/picker';
-import Colors from '@/components/Shared/Colors';
-import { selectClinics } from '../store/clinicSlice';
+import { View, ScrollView, Text, StyleSheet } from 'react-native';
+import { Button, Snackbar, Card, TextInput, Dialog, Portal } from 'react-native-paper';
+import axios from 'axios';
+import EnhancedCalendar from '@/components/doctor/calendar/EnhancedCalendar';
 
-const ClinicSearch = () => {
-  const router = useRouter();
-  const [filteredClinics, setFilteredClinics] = useState([]);
-  const [filteredProfessionals, setFilteredProfessionals] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('');
-  const [selectedInsurance, setSelectedInsurance] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+// Types for the schedule data
+interface Break {
+  start: string;
+  end: string;
+}
 
-  const clinics = useSelector(selectClinics);
+interface Shift {
+  name: string;
+  startTime: string;
+  endTime: string;
+  consultationDuration: string;
+  breaks: Break[];
+}
+
+interface ScheduleResponse {
+  schedule: Shift[];
+}
+
+const timeToString = (time: Date): string => time.toISOString().split('T')[0];
+
+const Schedule: React.FC = () => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<Shift[]>([]);
+  const [shiftDetails, setShiftDetails] = useState<Shift>({
+    name: '',
+    startTime: '',
+    endTime: '',
+    consultationDuration: '',
+    breaks: [],
+  });
+  const [isDialogVisible, setIsDialogVisible] = useState<boolean>(false);
+  const [editingShiftIndex, setEditingShiftIndex] = useState<number | null>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [isSnackbarVisible, setIsSnackbarVisible] = useState<boolean>(false);
+  const [currentBreak, setCurrentBreak] = useState<Break>({ start: '', end: '' });
+  const [editingBreakIndex, setEditingBreakIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    try {
-      if (clinics.length > 0) {
-        const allProfessionals = clinics.flatMap((clinic) =>
-          clinic.professionals?.map((professional) => ({
-            ...professional,
-            clinicName: clinic.name,
-            clinicAddress: clinic.address,
-            clinicInsurances: clinic.insuranceCompanies,
-          })) || []
-        );
-        setFilteredProfessionals(allProfessionals);
-        setFilteredClinics(clinics);
+    if (!selectedDate) return;
+
+    const fetchSchedule = async () => {
+      try {
+        const response = await axios.get<ScheduleResponse>(`/api/schedule?date=${selectedDate}`);
+        setSchedule(response.data.schedule || []);
+      } catch (error) {
+        console.error('Failed to fetch schedule:', error);
       }
-    } catch (err) {
-      setError('Failed to load data');
-    } finally {
-      setLoading(false);
+    };
+
+    fetchSchedule();
+  }, [selectedDate]);
+
+  const handleSaveSchedule = async (): Promise<void> => {
+    if (!selectedDate) {
+      setSnackbarMessage('No date selected.');
+      setIsSnackbarVisible(true);
+      return;
     }
-  }, [clinics]);
 
-  const resetFilters = () => {
-    setSelectedLocation('');
-    setSelectedSpecialty('');
-    setSelectedInsurance('');
-    setFilteredClinics(clinics);
-    setFilteredProfessionals(
-      clinics.flatMap((clinic) =>
-        clinic.professionals?.map((professional) => ({
-          ...professional,
-          clinicName: clinic.name,
-          clinicAddress: clinic.address,
-          clinicInsurances: clinic.insuranceCompanies,
-        })) || []
-      )
-    );
+    try {
+      await axios.post('/api/schedule', { date: selectedDate, schedule });
+      setSnackbarMessage('Schedule saved successfully!');
+      setIsSnackbarVisible(true);
+    } catch (error) {
+      console.error('Failed to save schedule:', error);
+      setSnackbarMessage('Failed to save schedule. Please try again.');
+      setIsSnackbarVisible(true);
+    }
   };
 
-  const handleLocationChange = (location) => {
-    setSelectedLocation(location);
-    const locationFilteredClinics = clinics.filter((clinic) =>
-      clinic.address?.toLowerCase().includes(location.toLowerCase())
-    );
-    setFilteredClinics(locationFilteredClinics);
-    setFilteredProfessionals(
-      locationFilteredClinics.flatMap((clinic) =>
-        clinic.professionals?.map((professional) => ({
-          ...professional,
-          clinicName: clinic.name,
-          clinicAddress: clinic.address,
-          clinicInsurances: clinic.insuranceCompanies,
-        })) || []
-      )
-    );
+  const handleAddOrUpdateShift = (): void => {
+    if (!shiftDetails.name || !shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.consultationDuration) {
+      setSnackbarMessage('Please fill out all fields for the shift.');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    const newShift = { ...shiftDetails };
+
+    setSchedule((prev) => {
+      const updatedSchedule = [...prev];
+      if (editingShiftIndex !== null) {
+        updatedSchedule[editingShiftIndex] = newShift;
+      } else {
+        updatedSchedule.push(newShift);
+      }
+      return updatedSchedule;
+    });
+
+    setShiftDetails({ name: '', startTime: '', endTime: '', consultationDuration: '', breaks: [] });
+    setEditingShiftIndex(null);
+    setIsDialogVisible(false);
   };
 
-  const handleSpecialtyChange = (specialty) => {
-    setSelectedSpecialty(specialty);
-    const specialtyFilteredProfessionals = filteredProfessionals.filter(
-      (professional) =>
-        professional.specialty?.toLowerCase().includes(specialty.toLowerCase())
-    );
-    setFilteredProfessionals(specialtyFilteredProfessionals);
+  const handleAddOrUpdateBreak = (): void => {
+    if (!currentBreak.start || !currentBreak.end) {
+      setSnackbarMessage('Please fill out all fields for the break.');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    const updatedBreaks = [...shiftDetails.breaks];
+    if (editingBreakIndex !== null) {
+      updatedBreaks[editingBreakIndex] = currentBreak;
+    } else {
+      updatedBreaks.push(currentBreak);
+    }
+
+    setShiftDetails((prev) => ({ ...prev, breaks: updatedBreaks }));
+    setCurrentBreak({ start: '', end: '' });
+    setEditingBreakIndex(null);
   };
 
-  const handleInsuranceChange = (insurance) => {
-    setSelectedInsurance(insurance);
-    const insuranceFilteredClinics = filteredClinics.filter((clinic) =>
-      clinic.insuranceCompanies?.some((provider) =>
-        provider?.toLowerCase().includes(insurance.toLowerCase())
-      )
-    );
-    setFilteredProfessionals(
-      insuranceFilteredClinics.flatMap((clinic) =>
-        clinic.professionals?.map((professional) => ({
-          ...professional,
-          clinicName: clinic.name,
-          clinicAddress: clinic.address,
-          clinicInsurances: clinic.insuranceCompanies,
-        })) || []
-      )
-    );
+  const handleDeleteBreak = (index: number): void => {
+    setShiftDetails((prev) => ({
+      ...prev,
+      breaks: prev.breaks.filter((_, i) => i !== index),
+    }));
   };
-
-  const uniqueLocations = [...new Set(clinics.map((clinic) => clinic.address?.split(',')[0] || ''))];
-  const uniqueSpecialties = [
-    ...new Set(
-      clinics.flatMap((clinic) => clinic.professionals?.map((professional) => professional.specialty) || [])
-    ),
-  ];
-  const uniqueInsurances = [
-    ...new Set(clinics.flatMap((clinic) => clinic.insuranceCompanies || [])),
-  ];
-
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <Text>Loading...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text>{error}</Text>
-      </View>
-    );
-  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.header}>
-        <TextInput
-          placeholder="Search clinics or professionals"
-          style={styles.searchBox}
-          editable={false}
-        />
-        <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
-          <Text style={styles.resetButtonText}>Reset</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView>
-        <Picker selectedValue={selectedLocation} onValueChange={handleLocationChange} style={styles.picker}>
-          <Picker.Item label="Select Location" value="" />
-          {uniqueLocations.map((location, index) => (
-            <Picker.Item key={index} label={location} value={location} />
-          ))}
-        </Picker>
-        {selectedLocation && (
-          <Picker selectedValue={selectedSpecialty} onValueChange={handleSpecialtyChange} style={styles.picker}>
-            <Picker.Item label="Select Specialty" value="" />
-            {uniqueSpecialties.map((specialty, index) => (
-              <Picker.Item key={index} label={specialty} value={specialty} />
-            ))}
-          </Picker>
-        )}
-        {selectedSpecialty && (
-          <Picker selectedValue={selectedInsurance} onValueChange={handleInsuranceChange} style={styles.picker}>
-            <Picker.Item label="Select Insurance" value="" />
-            {uniqueInsurances.map((insurance, index) => (
-              <Picker.Item key={index} label={insurance} value={insurance} />
-            ))}
-          </Picker>
-        )}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>How would you like to schedule your day?</Text>
+      <EnhancedCalendar onDayPress={(date) => setSelectedDate(timeToString(date))} />
+
+      {selectedDate && (
         <View>
-          <Text style={styles.sectionTitle}>Professionals</Text>
-          <FlatList
-            data={filteredProfessionals}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => router.push(`/doctor/${item._id}`)}
-                style={styles.cardContainer}
-              >
-                <Image
-                  source={{ uri: item.profileImage || 'https://via.placeholder.com/100' }}
-                  style={styles.cardImage}
-                />
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{item.firstName} {item.lastName}</Text>
-                  <Text>{item.specialty}</Text>
-                  <Text>{item.clinicName}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item._id}
-          />
-          <Text style={styles.sectionTitle}>Clinics</Text>
-          <FlatList
-            data={filteredClinics}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() => router.push(`/clinics/${item._id}`)}
-                style={styles.cardContainer}
-              >
-                <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{item.name}</Text>
-                  <Text>{item.address}</Text>
-                  <Text>{item.insuranceCompanies.join(', ')}</Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            keyExtractor={(item) => item._id}
-          />
+          <Text style={styles.sectionTitle}>Schedule for {selectedDate}</Text>
+
+          {schedule.map((shift, index) => (
+            <Card key={index} style={styles.card}>
+              <Card.Content>
+                <Text style={styles.shiftTitle}>{shift.name}</Text>
+                <Text>
+                  {shift.startTime} - {shift.endTime} ({shift.consultationDuration} min consultation)
+                </Text>
+                {shift.breaks.length > 0 && (
+                  <Text>Breaks: {shift.breaks.map((b, i) => `${b.start} - ${b.end}`).join(', ')}</Text>
+                )}
+              </Card.Content>
+            </Card>
+          ))}
+
+          <Button onPress={() => setIsDialogVisible(true)} mode="contained" style={styles.button}>
+            Add Shift
+          </Button>
+
+          <Button onPress={handleSaveSchedule} mode="contained" style={styles.saveButton}>
+            Save Schedule
+          </Button>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      )}
+
+      <Snackbar
+        visible={isSnackbarVisible}
+        onDismiss={() => setIsSnackbarVisible(false)}
+        duration={3000}
+      >
+        {snackbarMessage}
+      </Snackbar>
+
+      <Portal>
+        <Dialog visible={isDialogVisible} onDismiss={() => setIsDialogVisible(false)}>
+          <Dialog.Title>{editingShiftIndex !== null ? 'Edit Shift' : 'Add Shift'}</Dialog.Title>
+          <Dialog.Content>
+            <TextInput
+              label="Shift Name"
+              value={shiftDetails.name}
+              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, name: text }))}
+            />
+            <TextInput
+              label="Start Time"
+              placeholder="HH:mm"
+              value={shiftDetails.startTime}
+              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, startTime: text }))}
+            />
+            <TextInput
+              label="End Time"
+              placeholder="HH:mm"
+              value={shiftDetails.endTime}
+              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, endTime: text }))}
+            />
+            <TextInput
+              label="Consultation Duration (min)"
+              keyboardType="numeric"
+              value={shiftDetails.consultationDuration}
+              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, consultationDuration: text }))}
+            />
+
+            <Text style={styles.sectionTitle}>Breaks</Text>
+            {shiftDetails.breaks.map((b, i) => (
+              <View key={i} style={styles.breakRow}>
+                <Text>{b.start} - {b.end}</Text>
+                <Button onPress={() => { setEditingBreakIndex(i); setCurrentBreak(b); }}>Edit</Button>
+                <Button onPress={() => handleDeleteBreak(i)} color="red">Delete</Button>
+              </View>
+            ))}
+
+            <TextInput
+              label="Break Start Time"
+              placeholder="HH:mm"
+              value={currentBreak.start}
+              onChangeText={(text) => setCurrentBreak((prev) => ({ ...prev, start: text }))}
+            />
+            <TextInput
+              label="Break End Time"
+              placeholder="HH:mm"
+              value={currentBreak.end}
+              onChangeText={(text) => setCurrentBreak((prev) => ({ ...prev, end: text }))}
+            />
+            <Button onPress={handleAddOrUpdateBreak} mode="outlined">
+              {editingBreakIndex !== null ? 'Update Break' : 'Add Break'}
+            </Button>
+          </Dialog.Content>
+
+          <Dialog.Actions>
+            <Button onPress={() => setIsDialogVisible(false)}>Cancel</Button>
+            <Button onPress={handleAddOrUpdateShift}>Save</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#dce775',
-  },
-  header: {
-    flexDirection: 'row',
-    padding: 16,
-  },
-  searchBox: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: '#ccc',
-    paddingHorizontal: 12,
-    height: 40,
-  },
-  resetButton: {
-    backgroundColor: Colors.PRIMARY,
-    padding: 10,
-    marginLeft: 8,
-    borderRadius: 5,
-  },
-  resetButtonText: {
-    color: '#fff',
-  },
-  picker: {
-    backgroundColor: '#fff',
-    marginVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  cardContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    backgroundColor: '#fff',
-    margin: 8,
-    borderRadius: 8,
-  },
-  cardImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 10,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginVertical: 10,
-    paddingLeft: 10,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { padding: 16 },
+  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+  sectionTitle: { fontSize: 16, marginVertical: 8 },
+  card: { marginBottom: 8 },
+  shiftTitle: { fontSize: 16, fontWeight: 'bold' },
+  button: { marginTop: 16 },
+  saveButton: { marginTop: 16, backgroundColor: 'green' },
 });
 
-export default ClinicSearch;
-
-
-
-import { current } from '@reduxjs/toolkit';
-import { eachWeekOfInterval, subDays, addDays, eachDayOfInterval, format } from 'date-fns';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import PagerView from 'react-native-pager-view';
-
-
-const dates = eachWeekOfInterval(
-  {
-
-  start: subDays(new Date(), 14) ,
-  end: addDays(new Date(), 14),
- },
-  { 
-    weekStartsOn: 1
-   },
-
-).reduce((acc: Date[][], cur) => {
-  const allDays = eachDayOfInterval({
-    start: cur,
-    end: addDays(cur, 6),
-  });
-
-  acc.push(allDays);
-
-  return acc;
-
-}, []); 
-
-// console.log(dates);
-
-export const Schedule = () => {
-  return (
-    <PagerView style={styles.pagerView} >
-      {dates.map((week, i) => {
-        return (
-          <View key={i}>
-            {dates.map((week, i) => {
-              return (
-                <View key={i}>
-                  <View style={styles.row}>
-                    {week.map(day => {
-                      const txt = format(day, 'EEEEE');
-
-
-                      return (
-                        <View key={i} style={styles.cell}>
-                          <Text>{txt}</Text>
-                          <Text>{day.getDate()}</Text>
-                        </View>
-                      );
-                    })}
-                  </View>
-                  
-                </View>
-              );
-            })}
-          </View>
-        );
-      })}
-    </PagerView>
-  );
-}
-
-const styles = StyleSheet.create({
-  pagerView: {
-    flex: 1,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  cell: {
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+export default Schedule;

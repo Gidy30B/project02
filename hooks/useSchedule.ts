@@ -19,6 +19,7 @@ interface UseScheduleHook {
   createRecurringSlots: (professionalId: string, slot: Slot, recurrence: string) => Promise<void>;
   subscribeToScheduleUpdates: (professionalId: string) => void;
   updateSlot: (slotId: string, updates: Partial<Slot>) => Promise<void>;
+  fetchScheduleForDate: (professionalId: string, date: string) => Promise<Slot[]>; // Added fetchScheduleForDate to the interface
 }
 
 const useSchedule = (): UseScheduleHook => {
@@ -98,6 +99,21 @@ const useSchedule = (): UseScheduleHook => {
     }
   };
 
+  const fetchScheduleForDate = async (professionalId: string, date: string) => {
+    try {
+      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${professionalId}/${date}`);
+      if (response.status === 200 && response.data.slots) {
+        return response.data.slots;
+      } else {
+        console.error('Failed to fetch schedule for date:', response.data.message);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching schedule for date:', axios.isAxiosError(error) ? error.message : error);
+      return [];
+    }
+  };
+
   return {
     schedule,
     fetchSchedule,
@@ -105,6 +121,7 @@ const useSchedule = (): UseScheduleHook => {
     createRecurringSlots,
     subscribeToScheduleUpdates,
     updateSlot,
+    fetchScheduleForDate, // Added fetchScheduleForDate to the return object
   };
 };
 

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-
 import { View, Text, TouchableOpacity, FlatList, Alert, StyleSheet } from 'react-native';
 import moment from 'moment';
 import AwesomeAlert from 'react-native-awesome-alerts';
@@ -7,9 +6,10 @@ import { Paystack, PayStackRef } from 'react-native-paystack-webview';
 import axios from 'axios';
 import Colors from './Shared/Colors';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectUser, updateUserProfile } from '../app/store/userSlice';
+import { selectUser } from '../app/store/userSlice';
 import useSchedule from '../hooks/useSchedule'; // Import the useSchedule hook
 import io from 'socket.io-client';
+import EnhancedCalendar from '../../components/doctor/calendar/EnhancedCalendar'; // Import EnhancedCalendar
 
 const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insurances?: string[]; selectedInsurance?: string }> = ({
   doctorId,
@@ -33,7 +33,7 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   const userEmail = useSelector((state) => state.user.email);
   const patientName = useSelector((state) => state.user.name);
   const dispatch = useDispatch();
-  const { schedule, fetchSchedule, clearCache, updateSlot } = useSchedule();
+  const { schedule, fetchSchedule, updateSlot, fetchScheduleForDate } = useSchedule();
  
   const socket = useRef(io('https://medplus-health.onrender.com')).current;
 
@@ -50,24 +50,23 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
     };
   }, [user.userId, doctorId]);
 
- 
-  const [dateOptions, setDateOptions] = useState<Array<Date>>(
-    Array.from({ length: 7 }).map((_, i) => moment().add(i, 'days').toDate())
-  );
-
   useEffect(() => {
     fetchSchedule(doctorId);
-    
- 
-    const today = new Date();
-    const availableDates = dateOptions.filter(date => moment(date).isSameOrAfter(today, 'day'));
-    setDateOptions(availableDates);
   }, [doctorId]);
 
- 
   useEffect(() => {
     console.log('Fetched schedule:', schedule);
   }, [schedule]);
+
+  useEffect(() => {
+    const fetchScheduleForSelectedDate = async () => {
+      const formattedDate = moment(selectedDate).format('YYYY-MM-DD');
+      const slots = await fetchScheduleForDate(doctorId, formattedDate);
+      setGroupedSlots({ [formattedDate]: slots });
+    };
+
+    fetchScheduleForSelectedDate();
+  }, [selectedDate, doctorId]);
 
   const handleBookPress = async () => {
     if (!selectedTimeSlot) {
@@ -255,63 +254,59 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Book an Appointment</Text>
-      <FlatList
-        horizontal
-        data={dateOptions}
-        keyExtractor={(item) => item.toISOString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            onPress={() => setSelectedDate(item)}
-            style={[
-              styles.dateButton,
-              selectedDate.toDateString() === item.toDateString() ? { backgroundColor: Colors.goofy } : null,
-            ]}
-          >
-            <Text style={styles.dateText}>{moment(item).format('ddd, DD')}</Text>
-          </TouchableOpacity>
-        )}
-        showsHorizontalScrollIndicator={false}
+      <EnhancedCalendar
+        markedDates={markedDates}
+        onDayPress={(date) => setSelectedDate(date)}
       />
       <Text style={styles.dateTitle}>{moment(selectedDate).format('dddd, MMMM Do YYYY')}</Text>
       <FlatList
-        horizontal
         data={groupedSlots[moment(selectedDate).format('YYYY-MM-DD')] || []}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => {
-          const slotTime = moment(`${moment(selectedDate).format('YYYY-MM-DD')} ${item.startTime}`, 'YYYY-MM-DD HH:mm');
-          const isPast = slotTime.isBefore(moment());
-        
-          return (
-            <TouchableOpacity
-              onPress={() => {
-                if (item.isBooked || isPast) {
-                  Alert.alert(item.isBooked ? 'Slot already booked' : 'Invalid slot', item.isBooked ? 'Please choose another time slot.' : 'Cannot select a past time slot.');
-                } else {
-                  setSelectedTimeSlot({ id: item._id, time: `${item.startTime} - ${item.endTime}` });
-                }
+        renderItem={({ item }) => (
+          <View style={styles.shiftContainer}>
+            <Text style={styles.shiftTitle}>{item.name}</Text>
+            <Text style={styles.availableSlotsTitle}>Available Time Slots:</Text>
+            <FlatList
+              horizontal
+              data={item.timeSlots}
+              keyExtractor={(slot, index) => index.toString()}
+              renderItem={({ slot }) => {
+                const slotTime = moment(`${moment(selectedDate).format('YYYY-MM-DD')} ${slot.start}`, 'YYYY-MM-DD HH:mm');
+                const isPast = slotTime.isBefore(moment());
+                return (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (isPast) {
+                        Alert.alert('Invalid slot', 'Cannot select a past time slot.');
+                      } else {
+                        setSelectedTimeSlot({ id: item._id, time: `${slot.start} - ${slot.end}` });
+                      }
+                    }}
+                    style={[
+                      styles.slotButton,
+                      isPast ? { backgroundColor: Colors.SECONDARY } : { backgroundColor: Colors.goofy },
+                      selectedTimeSlot && selectedTimeSlot.id === item._id
+                        ? { borderColor: Colors.SECONDARY, borderWidth: 2, backgroundColor: Colors.selectedBackground }
+                        : {},
+                    ]}
+                    disabled={isPast}
+                  >
+                    <Text
+                      style={[
+                        styles.slotText,
+                        selectedTimeSlot && selectedTimeSlot.id === item._id
+                          ? { color: Colors.selectedText }
+                          : {},
+                      ]}
+                    >
+                      {`${slot.start} - ${slot.end}`}
+                    </Text>
+                  </TouchableOpacity>
+                );
               }}
-              style={[
-                styles.slotButton,
-                item.isBooked || isPast ? { backgroundColor: Colors.SECONDARY } : { backgroundColor: Colors.goofy },
-                selectedTimeSlot && selectedTimeSlot.id === item._id
-                  ? { borderColor: Colors.SECONDARY, borderWidth: 2, backgroundColor: Colors.selectedBackground }
-                  : {},
-              ]}
-              disabled={item.isBooked || isPast}
-            >
-              <Text
-                style={[
-                  styles.slotText,
-                  selectedTimeSlot && selectedTimeSlot.id === item._id
-                    ? { color: Colors.selectedText }
-                    : {},
-                ]}
-              >
-                {`${item.startTime} - ${item.endTime}`}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
+            />
+          </View>
+        )}
       />
       <Text style={styles.insuranceTitle}>Accepted Insurances</Text>
       {insurances.length > 0 ? (
@@ -341,7 +336,6 @@ const BookingSection: React.FC<{ doctorId: string; consultationFee: number; insu
       <TouchableOpacity style={styles.bookButton} onPress={handleBookPress} disabled={isSubmitting}>
         <Text style={styles.bookButtonText}>Book Appointment</Text>
       </TouchableOpacity>
-
 
       <AwesomeAlert
         show={showAlert}
@@ -393,6 +387,18 @@ const styles = StyleSheet.create({
   dateTitle: {
     fontSize: 18,
     marginVertical: 20,
+  },
+  shiftContainer: {
+    marginBottom: 20,
+  },
+  shiftTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  availableSlotsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 10,
   },
   slotButton: {
     padding: 10,

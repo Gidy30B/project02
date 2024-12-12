@@ -1,258 +1,299 @@
-import React, { useState } from 'react'; 
-import { StyleSheet, Text, View, TouchableOpacity, FlatList, TextInput, ScrollView } from 'react-native';
-import { Button, Chip, Snackbar } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  ScrollView,
+  Text,
+  StyleSheet,
+  Dimensions,
+  TextInput,
+} from 'react-native';
+import {
+  Button,
+  Snackbar,
+  Card,
+  Dialog,
+  Portal,
+} from 'react-native-paper';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import EnhancedCalendar from '../../components/doctor/calendar/EnhancedCalendar';
 import axios from 'axios';
 
-const timeToString = (time: Date) => time.toISOString().split('T')[0];
+// Types for the schedule data
+interface Break {
+  start: string;
+  end: string;
+}
+
+interface Shift {
+  name: string;
+  startTime: string;
+  endTime: string;
+  consultationDuration: string;
+  breaks: Break[];
+}
 
 const Schedule: React.FC = () => {
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [shiftDetails, updateShiftDetails] = useState({
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [schedule, setSchedule] = useState<Shift[]>([]);
+  const [isDialogVisible, setIsDialogVisible] = useState<boolean>(false);
+  const [shiftDetails, setShiftDetails] = useState<Shift>({
+    name: '',
     startTime: '',
     endTime: '',
-    location: '',
-    consultations: 0,
-    address: '',
-    breaks: [] as { start: string; end: string }[],
+    consultationDuration: '',
+    breaks: [],
   });
-  const [breakInput, setBreakInput] = useState({ start: '', end: '' });
-  const [isSnackbarVisible, setIsSnackbarVisible] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState({ show: false, type: '' });
+  const [showTimePicker, setShowTimePicker] = useState<{
+    mode: 'startTime' | 'endTime' | 'breakStart' | 'breakEnd';
+    visible: boolean;
+  }>({ mode: 'startTime', visible: false });
 
-  const onTimeChange = (event: any, selectedDate: Date | undefined) => {
-    if (selectedDate) {
-      const formattedTime = selectedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      if (showTimePicker.type === 'breakStart' || showTimePicker.type === 'breakEnd') {
-        setBreakInput((prev) => ({ ...prev, [showTimePicker.type === 'breakStart' ? 'start' : 'end']: formattedTime }));
+  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+  const [isSnackbarVisible, setIsSnackbarVisible] = useState<boolean>(false);
+  const [editingShiftIndex, setEditingShiftIndex] = useState<number | null>(null);
+  const [currentBreak, setCurrentBreak] = useState<Break>({ start: '', end: '' });
+  const [editingBreakIndex, setEditingBreakIndex] = useState<number | null>(null);
+
+  const handleAddOrUpdateShift = (): void => {
+    if (!shiftDetails.name || !shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.consultationDuration) {
+      setSnackbarMessage('Please fill out all fields for the shift.');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    const newShift = { ...shiftDetails };
+
+    setSchedule((prev) => {
+      const updatedSchedule = [...prev];
+      if (editingShiftIndex !== null) {
+        updatedSchedule[editingShiftIndex] = newShift;
       } else {
-        updateShiftDetails((prev) => ({
-          ...prev,
-          [showTimePicker.type]: formattedTime,
-        }));
+        updatedSchedule.push(newShift);
       }
-    }
-    setShowTimePicker({ show: false, type: '' });
+      return updatedSchedule;
+    });
+
+    setShiftDetails({ name: '', startTime: '', endTime: '', consultationDuration: '', breaks: [] });
+    setEditingShiftIndex(null);
+    setIsDialogVisible(false);
   };
 
-  const addBreak = () => {
-    if (breakInput.start && breakInput.end) {
-      updateShiftDetails((prev) => ({
+  const handleAddOrUpdateBreak = (): void => {
+    if (!currentBreak.start || !currentBreak.end) {
+      setSnackbarMessage('Please fill out all fields for the break.');
+      setIsSnackbarVisible(true);
+      return;
+    }
+
+    const updatedBreaks = [...shiftDetails.breaks];
+    if (editingBreakIndex !== null) {
+      updatedBreaks[editingBreakIndex] = currentBreak;
+    } else {
+      updatedBreaks.push(currentBreak);
+    }
+
+    setShiftDetails((prev) => ({ ...prev, breaks: updatedBreaks }));
+    setCurrentBreak({ start: '', end: '' });
+    setEditingBreakIndex(null);
+  };
+
+  const handleDeleteBreak = (index: number): void => {
+    setShiftDetails((prev) => ({
+      ...prev,
+      breaks: prev.breaks.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
+    if (!selectedTime) return setShowTimePicker((prev) => ({ ...prev, visible: false }));
+
+    const time = selectedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (showTimePicker.mode === 'breakStart' || showTimePicker.mode === 'breakEnd') {
+      setCurrentBreak((prev) => ({
         ...prev,
-        breaks: [...prev.breaks, breakInput],
+        [showTimePicker.mode === 'breakStart' ? 'start' : 'end']: time,
       }));
-      setBreakInput({ start: '', end: '' });
+    } else {
+      setShiftDetails((prev) => ({
+        ...prev,
+        [showTimePicker.mode]: time,
+      }));
     }
+
+    setShowTimePicker({ mode: 'startTime', visible: false });
   };
 
-  const handleSaveShift = async () => {
-    if (!shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.location || !selectedDay || !shiftDetails.consultations || !shiftDetails.address) {
+  const handleSaveSchedule = async (): Promise<void> => {
+    if (!selectedDate) {
+      setSnackbarMessage('No date selected.');
       setIsSnackbarVisible(true);
       return;
     }
-
-    const availability = [{ ...shiftDetails, date: selectedDay, isBooked: false }];
+  
     try {
-      const response = await axios.post('/api/schedule', {
-        professionalId: 'your-professional-id',
-        availability,
-      });
-      console.log('Shift saved:', response.data);
-    } catch (error) {
-      console.error('Error saving schedule:', error);
-    }
-
-    updateShiftDetails({ startTime: '', endTime: '', location: '', consultations: 0, address: '', breaks: [] });
-    setCurrentStep(1);
-    setSelectedDay(null);
-  };
-
-  const goToNextStep = () => {
-    if (currentStep === 2 && (!shiftDetails.startTime || !shiftDetails.endTime)) {
+      await axios.post('/api/schedule', { date: selectedDate, schedule });
+      setSnackbarMessage('Schedule saved successfully!');
       setIsSnackbarVisible(true);
-      return;
-    }
-    setCurrentStep(currentStep + 1);
-  };
-
-  const renderStep = () => {
-    if (currentStep === 1) {
-      return (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Select a Day</Text>
-          <View style={styles.calendarContainer}>
-            <EnhancedCalendar
-              onDayPress={(date) => {
-                setSelectedDay(timeToString(date));
-                setCurrentStep(2);
-              }}
-            />
-          </View>
-        </View>
-      );
-    }
-
-    if (currentStep === 2) {
-      return (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Set Your Work Hours</Text>
-          <View style={styles.timeRow}>
-            <Chip
-              mode="outlined"
-              onPress={() => setShowTimePicker({ show: true, type: 'startTime' })}
-              selected={!!shiftDetails.startTime}
-            >
-              {shiftDetails.startTime || 'Start Time'}
-            </Chip>
-            <Chip
-              mode="outlined"
-              onPress={() => setShowTimePicker({ show: true, type: 'endTime' })}
-              selected={!!shiftDetails.endTime}
-            >
-              {shiftDetails.endTime || 'End Time'}
-            </Chip>
-          </View>
-          <Text style={styles.breakTitle}>Set Break Times</Text>
-          <View style={styles.timeRow}>
-            <Chip onPress={() => setShowTimePicker({ show: true, type: 'breakStart' })}>
-              {breakInput.start || 'Start Break'}
-            </Chip>
-            <Chip onPress={() => setShowTimePicker({ show: true, type: 'breakEnd' })}>
-              {breakInput.end || 'End Break'}
-            </Chip>
-          </View>
-          <Button onPress={addBreak} mode="outlined" style={styles.addBreakButton}>
-            Add Break
-          </Button>
-          <Button mode="contained" onPress={goToNextStep} style={styles.nextButton}>
-            Next
-          </Button>
-        </View>
-      );
-    }
-
-    if (currentStep === 3) {
-      return (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Consultation Details</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Location"
-            value={shiftDetails.location}
-            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, location: text }))}
-          />
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            placeholder="Enter Number of Consultations"
-            value={shiftDetails.consultations.toString()}
-            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, consultations: parseInt(text) }))}
-          />
-          <Button mode="contained" onPress={() => setCurrentStep(4)} style={styles.nextButton}>
-            Next
-          </Button>
-        </View>
-      );
-    }
-
-    if (currentStep === 4) {
-      return (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Set Your Address</Text>
-          <TextInput
-            style={styles.input}
-            value={shiftDetails.address}
-            onChangeText={(text) => updateShiftDetails((prev) => ({ ...prev, address: text }))}
-          />
-          <Button mode="contained" onPress={handleSaveShift} style={styles.nextButton}>
-            Save Schedule
-          </Button>
-        </View>
-      );
+    } catch (error) {
+      console.error('Failed to save schedule:', error);
+      setSnackbarMessage('Failed to save schedule. Please try again.');
+      setIsSnackbarVisible(true);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {renderStep()}
-      </ScrollView>
-      {showTimePicker.show && (
-        <DateTimePicker
-          mode="time"
-          value={new Date()}
-          is24Hour={false}
-          display="spinner"
-          onChange={onTimeChange}
-        />
-      )}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Schedule Your Day</Text>
+
+      {/* Schedule Cards */}
+      {schedule.map((shift, index) => (
+        <Card key={index} style={styles.card}>
+          <Card.Content>
+            <Text style={styles.shiftTitle}>{shift.name}</Text>
+            <Text>{shift.startTime} - {shift.endTime}</Text>
+            <Text>Consultation Duration: {shift.consultationDuration} min</Text>
+            {shift.breaks.length > 0 && (
+              <Text>Breaks: {shift.breaks.map((b, i) => `${b.start} - ${b.end}`).join(', ')}</Text>
+            )}
+          </Card.Content>
+        </Card>
+      ))}
+
+      {/* Add Shift Button */}
+      <Button
+        onPress={() => setIsDialogVisible(true)}
+        mode="contained"
+        style={styles.button}
+      >
+        Add Shift
+      </Button>
+
+      {/* Save Schedule Button */}
+      <Button
+        onPress={handleSaveSchedule}
+        mode="contained"
+        style={styles.saveButton}
+      >
+        Save Schedule
+      </Button>
+
+      {/* Snackbar */}
       <Snackbar
         visible={isSnackbarVisible}
         onDismiss={() => setIsSnackbarVisible(false)}
         duration={3000}
-        style={styles.snackbar}
       >
-        Please complete the required fields!
+        {snackbarMessage}
       </Snackbar>
-    </View>
+
+      {/* Add/Edit Shift Dialog */}
+      <Portal>
+        <Dialog visible={isDialogVisible} onDismiss={() => setIsDialogVisible(false)}>
+          <Dialog.Title>{editingShiftIndex !== null ? 'Edit Shift' : 'Add Shift'}</Dialog.Title>
+          <Dialog.Content>
+            <Text>Name:</Text>
+            <TextInput
+              placeholder="Shift Name"
+              value={shiftDetails.name}
+              onChangeText={(text) =>
+                setShiftDetails((prev) => ({ ...prev, name: text }))
+              }
+              style={styles.input}
+            />
+            <Text>Start Time:</Text>
+            <Button
+              mode="outlined"
+              onPress={() =>
+                setShowTimePicker({ mode: 'startTime', visible: true })
+              }
+            >
+              {shiftDetails.startTime || 'Select Start Time'}
+            </Button>
+
+            <Text>End Time:</Text>
+            <Button
+              mode="outlined"
+              onPress={() =>
+                setShowTimePicker({ mode: 'endTime', visible: true })
+              }
+            >
+              {shiftDetails.endTime || 'Select End Time'}
+            </Button>
+
+            <Text>Consultation Duration:</Text>
+            <TextInput
+              placeholder="Duration in Minutes"
+              value={shiftDetails.consultationDuration}
+              onChangeText={(text) =>
+                setShiftDetails((prev) => ({
+                  ...prev,
+                  consultationDuration: text,
+                }))
+              }
+              keyboardType="numeric"
+              style={styles.input}
+            />
+
+            <Text style={styles.sectionTitle}>Breaks</Text>
+            {shiftDetails.breaks.map((b, i) => (
+              <View key={i} style={styles.breakRow}>
+                <Text>{b.start} - {b.end}</Text>
+                <Button onPress={() => { setEditingBreakIndex(i); setCurrentBreak(b); }}>Edit</Button>
+                <Button onPress={() => handleDeleteBreak(i)} color="red">Delete</Button>
+              </View>
+            ))}
+
+            <Text>Break Start Time:</Text>
+            <Button
+              mode="outlined"
+              onPress={() =>
+                setShowTimePicker({ mode: 'breakStart', visible: true })
+              }
+            >
+              {currentBreak.start || 'Select Break Start Time'}
+            </Button>
+
+            <Text>Break End Time:</Text>
+            <Button
+              mode="outlined"
+              onPress={() =>
+                setShowTimePicker({ mode: 'breakEnd', visible: true })
+              }
+            >
+              {currentBreak.end || 'Select Break End Time'}
+            </Button>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setIsDialogVisible(false)}>Cancel</Button>
+            <Button onPress={handleAddOrUpdateShift}>Save</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Time Picker */}
+      {showTimePicker.visible && (
+        <DateTimePicker
+          value={new Date()}
+          mode="time"
+          is24Hour={true}
+          display="default"
+          onChange={handleTimeChange}
+        />
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-  },
-  scrollContainer: {
-    paddingBottom: 20,
-  },
-  stepContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 50,
-    padding: 20,
-  },
-  stepTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  calendarContainer: {
-    width: '100%',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '90%',
-    marginVertical: 10,
-  },
-  breakTitle: {
-    fontSize: 18,
-    marginVertical: 8,
-  },
-  addBreakButton: {
-    marginTop: 8,
-    alignSelf: 'flex-end',
-  },
-  nextButton: {
-    marginTop: 20,
-    width: '80%',
-    alignSelf: 'center',
-  },
-  snackbar: {
-    backgroundColor: '#d32f2f',
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    marginVertical: 16,
-  },
+  container: { padding: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 },
+  card: { marginVertical: 8, padding: 10 },
+  shiftTitle: { fontSize: 16, fontWeight: 'bold' },
+  input: { marginVertical: 8 },
+  button: { marginTop: 16, backgroundColor: '#6200EE' },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginTop: 16 },
+  breakRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
+  saveButton: { marginTop: 16, backgroundColor: '#03DAC6' },
 });
 
 export default Schedule;
