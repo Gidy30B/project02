@@ -39,6 +39,9 @@ export default function RootLayout() {
             <Stack.Screen name="hospital/book-appointment/[id]" options={{ title: '', headerShown: false }} />
             <Stack.Screen name="client/tabs" /> 
             <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} /> 
+            <Stack.Screen name="tasks" options={{ title: 'Tasks', headerShown: true }} />
+            <Stack.Screen name="income" options={{ title: 'Wallet', headerShown: true }} />
+            <Stack.Screen name="consultations" options={{ title: 'Patients', headerShown: true }} />
             <Stack.Screen name="doctor/[doctorId]" options={{ title: 'Doctor Profile' }} />
             <Stack.Screen name="doctor" />
             <Stack.Screen name="addclinic" />

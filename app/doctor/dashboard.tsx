@@ -180,7 +180,10 @@ const DashboardScreen: React.FC = () => {
               <Icon name="tasks" size={24} color="#ff7f50" style={styles.icon} />
               <Text style={styles.overviewLabel}>Tasks ({tasks.length})</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.overviewItem}>
+            <TouchableOpacity
+             style={styles.overviewItem}
+             onPress={() => router.push('/income')}
+            >
               <Icon name="money" size={24} color="#4CAF50" style={styles.icon} />
               <Text style={styles.overviewLabel}>Income</Text>
             </TouchableOpacity>

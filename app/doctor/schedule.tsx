@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -160,6 +160,10 @@ const Schedule: React.FC = () => {
     setShiftDetails((prev) => ({ ...prev, name: text }));
   };
 
+  const handleTouchStart = (event) => {
+    // Handle touch start event if needed
+  };
+
   const renderItem = useCallback(({ item, index }) => (
     <Card key={index} style={styles.card}>
       <Card.Content>
@@ -174,7 +178,7 @@ const Schedule: React.FC = () => {
   ), []);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} onTouchStart={handleTouchStart}>
       <AgendaScreen onDayPress={handleDayPress} />
       {/* Schedule List */}
       <FlatList
