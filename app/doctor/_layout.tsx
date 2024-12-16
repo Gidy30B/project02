@@ -1,7 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import ClientHeader from '../../components/client/ClientHeader'; // Adjust the path if needed
+import ClientHeader from '@/components/ClientHeader';
+
 
 export default function DoctorLayout() {
   return (

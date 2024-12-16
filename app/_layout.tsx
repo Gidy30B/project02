@@ -9,7 +9,7 @@ import { Provider } from 'react-redux';
 import { store } from './store/configureStore';
 import { AuthProvider } from '../context/AuthContext'; // Import AuthContext for user state
 import { useColorScheme } from '@/hooks/useColorScheme';
-
+import { PaperProvider } from 'react-native-paper';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -32,6 +32,7 @@ export default function RootLayout() {
     <Provider store={store}>
      
         <AuthProvider>
+        <PaperProvider>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
             <Stack.Screen name="client" options={{ title: 'Welcome', headerShown: false}} />
@@ -45,6 +46,7 @@ export default function RootLayout() {
             <Stack.Screen name="addpharmacy" />
 
           </Stack>
+          </PaperProvider>
         </AuthProvider>
       
       <StatusBar style="auto" />
