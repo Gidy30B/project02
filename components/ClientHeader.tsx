@@ -21,7 +21,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
 
   const handleLogout = () => {
     dispatch(logout());
-    router.push('/login');
+    router.push('/auth/login');
   };
 
   return (

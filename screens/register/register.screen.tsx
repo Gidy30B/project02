@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Animated, ScrollView } from 'react-native';
-import { Text, HelperText, Button, TextInput } from 'react-native-paper';
+import { Text, HelperText } from 'react-native-paper';
 import { theme } from '../../core/theme';
 import Background from '../../components/login/Background';
 import Logo from '../../components/login/Logo';
 import Header from '../../components/login/Header';
+import InputField from '../../components/InputField';
+import CustomButton from '../../components/CustomButton';
 import { useRouter } from 'expo-router';
 import { useRegisterLogic } from './register.logic';
 
@@ -18,7 +20,6 @@ export default function RegisterScreen() {
     password, setPassword,
     confirmPassword, setConfirmPassword,
     gender, setGender,
-    userType, setUserType,
     profession, setProfession,
     title, setTitle,
     verificationCode, setVerificationCode,
@@ -27,7 +28,6 @@ export default function RegisterScreen() {
     isVerifying,
     buttonAnimation,
     isRegistering,
-    clinicReferenceCode, setClinicReferenceCode,
     handleSignupPress,
     handleVerificationPress,
   } = useRegisterLogic();
@@ -40,10 +40,8 @@ export default function RegisterScreen() {
       case 'password': setPassword(value); break;
       case 'confirmPassword': setConfirmPassword(value); break;
       case 'gender': setGender(value); break;
-      case 'userType': setUserType(value); break;
       case 'profession': setProfession(value); break;
       case 'title': setTitle(value); break;
-      case 'clinicReferenceCode': setClinicReferenceCode(value); break;
       case 'verificationCode': setVerificationCode(value); break;
       default: break;
     }
@@ -51,7 +49,6 @@ export default function RegisterScreen() {
 
   const handleNext = () => {
     if (step === 3) {
-      // Validate and submit
       handleSignupPress();
     } else {
       setStep(step + 1);
@@ -62,7 +59,7 @@ export default function RegisterScreen() {
     if (isVerifying) {
       return (
         <>
-          <TextInput
+          <InputField
             label="Verification Code"
             value={verificationCode}
             onChangeText={(value) => handleInputChange('verificationCode', value)}
@@ -75,7 +72,7 @@ export default function RegisterScreen() {
       case 1:
         return (
           <>
-            <TextInput
+            <InputField
               label="First Name"
               value={firstName}
               onChangeText={(value) => handleInputChange('firstName', value)}
@@ -83,7 +80,7 @@ export default function RegisterScreen() {
             <HelperText type="error" visible={!!errorMessage}>
               {errorMessage}
             </HelperText>
-            <TextInput
+            <InputField
               label="Last Name"
               value={lastName}
               onChangeText={(value) => handleInputChange('lastName', value)}
@@ -93,20 +90,20 @@ export default function RegisterScreen() {
       case 2:
         return (
           <>
-            <TextInput
+            <InputField
               label="Email"
               value={email}
               onChangeText={(value) => handleInputChange('email', value)}
               keyboardType="email-address"
               autoCapitalize="none"
             />
-            <TextInput
+            <InputField
               label="Password"
               value={password}
               onChangeText={(value) => handleInputChange('password', value)}
               secureTextEntry
             />
-            <TextInput
+            <InputField
               label="Confirm Password"
               value={confirmPassword}
               onChangeText={(value) => handleInputChange('confirmPassword', value)}
@@ -117,36 +114,22 @@ export default function RegisterScreen() {
       case 3:
         return (
           <>
-            <TextInput
+            <InputField
               label="Gender"
               value={gender}
               onChangeText={(value) => handleInputChange('gender', value)}
             />
-            <TextInput
-              label="User Type"
-              value={userType}
-              onChangeText={(value) => handleInputChange('userType', value)}
+            <InputField
+              label="Profession"
+              value={profession}
+              onChangeText={(value) => handleInputChange('profession', value)}
             />
-            {userType === 'professional' && (
-              <>
-                <TextInput
-                  label="Profession"
-                  value={profession}
-                  onChangeText={(value) => handleInputChange('profession', value)}
-                />
-                {profession === 'doctor' && (
-                  <TextInput
-                    label="Title"
-                    value={title}
-                    onChangeText={(value) => handleInputChange('title', value)}
-                  />
-                )}
-                <TextInput
-                  label="Clinic Reference Code"
-                  value={clinicReferenceCode}
-                  onChangeText={(value) => handleInputChange('clinicReferenceCode', value)}
-                />
-              </>
+            {profession === 'doctor' && (
+              <InputField
+                label="Title"
+                value={title}
+                onChangeText={(value) => handleInputChange('title', value)}
+              />
             )}
           </>
         );
@@ -162,9 +145,9 @@ export default function RegisterScreen() {
         <Header>Create Account</Header>
         {renderStep()}
         <Animated.View style={{ transform: [{ scale: buttonAnimation }], marginTop: 16 }}>
-          <Button mode="contained" onPress={isVerifying ? handleVerificationPress : handleNext} loading={isRegistering}>
+          <CustomButton mode="contained" onPress={isVerifying ? handleVerificationPress : handleNext} loading={isRegistering}>
             {isVerifying ? 'Verify' : (step === 3 ? 'Sign Up' : 'Next')}
-          </Button>
+          </CustomButton>
         </Animated.View>
         {!isVerifying && (
           <View style={styles.row}>

@@ -5,37 +5,24 @@ import { AuthContext } from '../context/AuthContext';
 export default function Index() {
   const { user } = useContext(AuthContext); // Access user object from AuthContext
   const [loading, setLoading] = useState(true); // Track loading state
-  const [redirectPath, setRedirectPath] = useState(null); // Redirect path state
+  const [redirectPath, setRedirectPath] = useState<string | null>(null); // Redirect path state
 
   useEffect(() => {
-    if (user) {
-      // Ensure user is authenticated and decide redirect path
-      const { userType, professional } = user;
+    if (user && user.userType === 'professional') {
+      // Ensure user is authenticated and is a professional
+      const { professional } = user;
 
-      switch (userType) {
-        case 'client':
-          setRedirectPath('/client/home');
-          break;
-        case 'professional':
-          if (professional && professional.profession === 'doctor') {
-            setRedirectPath(professional.attachedToClinic ? '/doctor' : '/addclinic');
-          } else if (professional && professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
-            setRedirectPath('/addpharmacy');
-          } else if (professional && professional.profession === 'pharmacist') {
-            setRedirectPath('/pharmacist/tabs');
-          } else {
-            setRedirectPath('/professional');
-          }
-          break;
-        case 'pharmacist':
-          setRedirectPath('/pharmacist/tabs');
-          break;
-        default:
-          setRedirectPath('/(routes)/onboarding'); // Default fallback
-          break;
+      if (professional && professional.profession === 'doctor') {
+        setRedirectPath(professional.attachedToClinic ? '/doctor' : '/addclinic');
+      } else if (professional && professional.profession === 'pharmacist' && !professional.attachedToPharmacy) {
+        setRedirectPath('/addpharmacy');
+      } else if (professional && professional.profession === 'pharmacist') {
+        setRedirectPath('/pharmacist/tabs');
+      } else {
+        setRedirectPath('/professional');
       }
     } else {
-      setRedirectPath('/(routes)/onboarding'); // Redirect to onboarding if no user
+      setRedirectPath('/(routes)/onboarding'); // Redirect to onboarding if no user or not a professional
     }
     setLoading(false); // Mark loading as complete
   }, [user]);

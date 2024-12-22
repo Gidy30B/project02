@@ -18,7 +18,7 @@ const DashboardScreen: React.FC = () => {
   const router = useRouter();
   const route = useRoute();
   const user = useSelector(selectUser);
-  const { appointments, loading, error } = useAppointments();
+  const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments();
   const professionalId = user.professional?._id;
   const { schedule, fetchSchedule } = useSchedule();
   const [tasks, setTasks] = useState<{ description: string, startTime: string, endTime: string }[]>([]);
@@ -60,8 +60,13 @@ const DashboardScreen: React.FC = () => {
     if (professionalId) {
       setScheduleLoading(true);
       fetchSchedule(professionalId)
-        .catch((error) => setScheduleError(error.message))
+        .catch((error) => {
+          console.error('Failed to fetch schedule:', error);
+          setScheduleError(error.message);
+        })
         .finally(() => setScheduleLoading(false));
+    } else {
+      setScheduleLoading(false); // Ensure loading state is set to false if professionalId is not available
     }
   }, [professionalId]);
 
@@ -90,7 +95,7 @@ const DashboardScreen: React.FC = () => {
   const requestedAppointments = appointments.filter(appointment => appointment.status === 'requested');
   const completedAppointments = appointments.filter(appointment => appointment.status === 'completed');
 
-  if (loading || scheduleLoading) {
+  if (appointmentsLoading || scheduleLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -98,10 +103,10 @@ const DashboardScreen: React.FC = () => {
     );
   }
 
-  if (error || scheduleError) {
+  if (appointmentsError || scheduleError) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{error || scheduleError}</Text>
+        <Text style={styles.errorText}>{appointmentsError || scheduleError}</Text>
       </View>
     );
   }

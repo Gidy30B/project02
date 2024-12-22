@@ -38,7 +38,7 @@ import {
   
     const handlePress = (index: number, setIndex: (index: number) => void) => {
       if (index === 2) {
-        router.push('/register'); // Navigate to the login screen
+        router.push('/auth/login'); // Navigate to the login screen
       } else {
         setIndex(index + 1);
       }

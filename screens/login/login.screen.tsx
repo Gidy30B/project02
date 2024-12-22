@@ -4,10 +4,6 @@ import { Text } from 'react-native-paper'
 import Background from '../../components/login/Background'
 import Logo from '../../components/login/Logo'
 import Header from '../../components/login/Header'
-import Button from '../../components/login/Button'
-import TextInput from '../../components/login/TextInput'
-import BackButton from '../../components/login/BackButton'
-import { theme } from '../../core/theme'
 import { emailValidator } from '../../helpers/emailValidator'
 import { passwordValidator } from '../../helpers/passwordValidator'
 import { useRouter } from 'expo-router'
@@ -15,8 +11,11 @@ import GlobalApi from '../../Services/GlobalApi'
 import { useDispatch } from 'react-redux'
 import { login } from '../../app/store/userSlice'
 import { AuthContext } from '../../context/AuthContext'
-import Icon from 'react-native-vector-icons/Ionicons'
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import Ionicons from 'react-native-vector-icons/Ionicons'
 import Colors from '@/components/Shared/Colors'
+import InputField from '@/components/InputField'
+import CustomButton from '../../components/CustomButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState({ value: '', error: '' })
@@ -113,44 +112,45 @@ export default function LoginScreen() {
       <Logo style={styles.logo} />
       <Header style={styles.title}>Welcome back.</Header>
       <View style={styles.inputContainer}>
-        <Icon name="mail" size={20} color="#333" style={styles.icon} />
-        <TextInput
+        <InputField
           label="Email"
-          returnKeyType="next"
-          value={email.value}
-          onChangeText={(text) => setEmail({ value: text, error: '' })}
-          error={!!email.error}
-          errorText={email.error}
-          autoCapitalize="none"
-          autoCompleteType="email"
-          textContentType="emailAddress"
+          icon={<MaterialIcons name="alternate-email" size={20} color="#333" />}
+          inputType="text"
           keyboardType="email-address"
-          style={styles.input}
+          fieldButtonLabel=""
+          fieldButtonFunction={() => {}}
+          onChangeText={(text) => setEmail({ value: text, error: '' })}
+          onBlur={() => {}}
+          value={email.value}
         />
       </View>
       <View style={styles.inputContainer}>
-        <Icon name="lock-closed" size={20} color="#333" style={styles.icon} />
-        <TextInput
+        <InputField
           label="Password"
-          returnKeyType="done"
-          value={password.value}
+          icon={<Ionicons name="lock-closed-outline" size={20} color="#333" />}
+          inputType="password"
+          keyboardType="default"
+          fieldButtonLabel=""
+          fieldButtonFunction={() => setShowPassword(!showPassword)}
           onChangeText={(text) => setPassword({ value: text, error: '' })}
-          error={!!password.error}
-          errorText={password.error}
-          secureTextEntry={!showPassword}
-          style={styles.input}
+          onBlur={() => {}}
+          value={password.value}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.icon}>
-          <Icon name={showPassword ? "eye" : "eye-off"} size={20} color="#333" />
+          <Ionicons name={showPassword ? "eye" : "eye-off"} size={20} color="#333" />
         </TouchableOpacity>
       </View>
       {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
       <TouchableOpacity onPress={() => {}}>
         <Text style={styles.forgotPassword}>Forgot your password?</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={onLoginPressed} disabled={isLoggingIn}>
-        {isLoggingIn ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
-      </TouchableOpacity>
+      <CustomButton
+        label="Login"
+        onPress={onLoginPressed}
+        isPending={isLoggingIn}
+        isError={!!errorMessage}
+        isSuccess={false}
+      />
       <View style={styles.row}>
         <Text style={styles.signUp}>Don’t have an account? </Text>
         <TouchableOpacity onPress={() => router.push('/register')}>

@@ -15,7 +15,6 @@ export const useRegisterLogic = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [gender, setGender] = useState<'Male' | 'Female' | 'Other' | null>(null);
-  const [userType, setUserType] = useState<'client' | 'professional' | 'student' | null>(null);
   const [profession, setProfession] = useState('');
   const [title, setTitle] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -26,7 +25,6 @@ export const useRegisterLogic = () => {
   const [countdown, setCountdown] = useState(60);
   const [timerActive, setTimerActive] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
-  const [clinicReferenceCode, setClinicReferenceCode] = useState('');
 
   const animateButton = () => {
     Animated.sequence([
@@ -83,11 +81,8 @@ export const useRegisterLogic = () => {
       password === '' ||
       confirmPassword === '' ||
       !gender ||
-      !userType ||
-      (userType === 'professional' && (
-        profession === '' ||
-        (profession === 'doctor' && title === '') // Validate title if profession is doctor
-      ))
+      profession === '' ||
+      (profession === 'doctor' && title === '') // Validate title if profession is doctor
     ) {
       setErrorMessage('Please fill all required fields.');
       return;
@@ -105,18 +100,12 @@ export const useRegisterLogic = () => {
         email,
         password,
         gender,
-        userType,
-        ...(userType === 'professional' ? { 
-          profession,
-          ...(profession === 'doctor' ? { title } : {}),
-          clinicReferenceCode, // Include clinic reference code
-        } : {}),
+        profession,
+        ...(profession === 'doctor' ? { title } : {}),
       };
 
       await registerUser(userData);
-      if (userType === 'client') {
-        await createFhirPatient(userData);
-      }
+      await createFhirPatient(userData);
       setErrorMessage(null);
       setSuccessMessage('Signup successful! Please check your email for verification.');
       setIsVerifying(true);
@@ -170,7 +159,6 @@ export const useRegisterLogic = () => {
     password, setPassword,
     confirmPassword, setConfirmPassword,
     gender, setGender,
-    userType, setUserType,
     profession, setProfession,
     title, setTitle,
     verificationCode, setVerificationCode,
