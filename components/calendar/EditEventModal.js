@@ -34,6 +34,15 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
     }
   }, [event]);
 
+  useEffect(() => {
+    console.log("Modal visibility:", isVisible);
+    console.log("Title:", title);
+    console.log("Start Date:", startDate);
+    console.log("End Date:", endDate);
+    console.log("Shift:", shift);
+    console.log("Color:", color);
+  }, [isVisible, title, startDate, endDate, shift, color]);
+
   const handleSave = () => {
     onSave({
       ...event,
