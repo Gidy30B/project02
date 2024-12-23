@@ -14,8 +14,7 @@ interface Props {
   weekView?: boolean;
 }
 
-const ExpandableCalendarScreen = (props: Props) => {
-  const {weekView} = props;
+const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
   const marked = useRef(getMarkedDates());
   const theme = useRef(getTheme());
   const todayBtnTheme = useRef({

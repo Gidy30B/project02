@@ -69,7 +69,7 @@ export const agendaItems: AgendaSection[] = [
   },
   {
     title: dates[4],
-    data: [{}]
+    data: []
   },
   {
     title: dates[5],
@@ -88,7 +88,7 @@ export const agendaItems: AgendaSection[] = [
   },
   {
     title: dates[7],
-    data: [{}]
+    data: []
   },
   {
     title: dates[8],
