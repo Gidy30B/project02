@@ -186,6 +186,7 @@ export default class TimelineCalendarScreen extends Component {
         onMonthChange={this.onMonthChange}
         showTodayButton
         disabledOpacity={0.6}
+        style={{ flex: 1 }} // Added style
         // numberOfDays={3}
       >
         <ExpandableCalendar
@@ -201,6 +202,7 @@ export default class TimelineCalendarScreen extends Component {
           scrollToNow
           //scrollToFirst
           initialTime={INITIAL_TIME}
+          style={{ flex: 1 }} // Added style
         />
         {selectedEvent && (
           <EditEventModal
