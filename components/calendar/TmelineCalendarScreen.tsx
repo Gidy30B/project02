@@ -21,6 +21,9 @@ const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
     todayButtonTextColor: themeColor
   });
 
+  console.log('ITEMS:', ITEMS);
+  console.log('marked:', marked.current);
+
   const createNewEvent: TimelineProps["onBackgroundLongPress"] = (
     timeString,
     timeObject
@@ -83,8 +86,15 @@ const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
   };
 
   const renderItem = useCallback(({item}: any) => {
+    console.log('Rendering item:', item);
     return <AgendaItem item={item}/>;
   }, []);
+
+  const keyExtractor = useCallback((item: any, index: number) => {
+    return item.title + index;
+  }, []);
+
+  console.log('AgendaList sections:', ITEMS);
 
   return (
     <CalendarProvider
@@ -113,7 +123,7 @@ const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
       <AgendaList
         sections={ITEMS}
         renderItem={renderItem}
-       
+        keyExtractor={keyExtractor}
         sectionStyle={styles.section}
         
       />
