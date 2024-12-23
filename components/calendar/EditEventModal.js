@@ -8,26 +8,23 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import ColorSelection from "./ColorSection";
 import styles from './Style';
-import { PickerIOS } from "@react-native-picker/picker";
+import { useSelector } from 'react-redux';
 
 const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
+  const userId = useSelector(state => state.user.id);
   const [title, setTitle] = useState(event?.title || "");
   const [color, setColor] = useState(event?.color || "");
   const [summary, setSummary] = useState(event?.summary || "");
   const [startDate, setStartDate] = useState(event?.start ? new Date(event.start) : new Date());
   const [endDate, setEndDate] = useState(event?.end ? new Date(event.end) : new Date());
-  const [isShift, setIsShift] = useState(false);
-  const [shift, setShift] = useState({ name: '', startTime: '', endTime: '', breaks: [], consultationDuration: '' });
-  const [newSchedule, setNewSchedule] = useState({ date: '', userId: '', shifts: [], startTime: '', endTime: '' });
+  const [shift, setShift] = useState({ name: '', startTime: new Date(), endTime: new Date(), breaks: [], consultationDuration: '' });
+  const [newSchedule, setNewSchedule] = useState({ userId: userId, shifts: [] });
 
   useEffect(() => {
     if (event) {
-      console.log("Event data:", event);
       setTitle(event.title);
       setStartDate(event.start ? new Date(event.start) : new Date());
       setEndDate(event.end ? new Date(event.end) : new Date());
@@ -35,15 +32,6 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
       setSummary(event.summary);
     }
   }, [event]);
-
-  useEffect(() => {
-    console.log("Modal visibility:", isVisible);
-    console.log("Title:", title);
-    console.log("Start Date:", startDate);
-    console.log("End Date:", endDate);
-    console.log("Shift:", shift);
-    console.log("Color:", color);
-  }, [isVisible, title, startDate, endDate, shift, color]);
 
   const handleSave = () => {
     onSave({
@@ -54,6 +42,7 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
       color,
       summary,
       shifts: newSchedule.shifts,
+      userId: userId
     });
     onClose();
   };
@@ -71,6 +60,14 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
     setEndDate(selectedDate);
   };
 
+  const onShiftStartTimeChange = (event, selectedTime) => {
+    setShift({ ...shift, startTime: selectedTime });
+  };
+
+  const onShiftEndTimeChange = (event, selectedTime) => {
+    setShift({ ...shift, endTime: selectedTime });
+  };
+
   function hasAtLeastTenMinutesDifference(date1, date2) {
     const tenMinutesInMilliseconds = 10 * 60 * 1000; // 10 minutes in milliseconds
     const differenceInMilliseconds = Math.abs(date1 - date2);
@@ -83,7 +80,7 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
 
   const handleAddShift = () => {
     setNewSchedule({ ...newSchedule, shifts: [...newSchedule.shifts, shift] });
-    setShift({ name: '', startTime: '', endTime: '', breaks: [], consultationDuration: '' });
+    setShift({ name: '', startTime: new Date(), endTime: new Date(), breaks: [], consultationDuration: '' });
   };
 
   return (
@@ -96,76 +93,43 @@ const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
               style={styles.input}
               value={title}
               onChangeText={setTitle}
-              // Ensure editable is not set to false
-              editable={true}
             />
-            <Picker
-              selectedValue={isShift}
-              onValueChange={(itemValue) => setIsShift(itemValue)}
-            >
-              <Picker.Item label="Entire Day" value={false} />
-              <Picker.Item label="Shifts" value={true} />
-            </Picker>
-            {isShift ? (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Shift Name"
-                  value={shift.name}
-                  onChangeText={text => setShift({ ...shift, name: text })}
-                  editable={true}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Start Time (HH:mm)"
-                  value={shift.startTime}
-                  onChangeText={text => setShift({ ...shift, startTime: text })}
-                  editable={true}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="End Time (HH:mm)"
-                  value={shift.endTime}
-                  onChangeText={text => setShift({ ...shift, endTime: text })}
-                  editable={true}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Consultation Duration (minutes)"
-                  value={shift.consultationDuration}
-                  onChangeText={text => setShift({ ...shift, consultationDuration: text })}
-                  editable={true}
-                />
-                <Text style={styles.label}>Color</Text>
-                <TextInput
-                  style={styles.input}
-                  value={color}
-                  onChangeText={setColor}
-                  editable={true}
-                />
-                <ColorSelection eventColor={color} onClick={handleColorChange} />
-                <TouchableOpacity style={styles.modalButton} onPress={handleAddShift}>
-                  <Text style={styles.modalButtonText}>Add Shift</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Start Time (HH:mm)"
-                  value={newSchedule.startTime}
-                  onChangeText={text => setNewSchedule({ ...newSchedule, startTime: text })}
-                  editable={true}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="End Time (HH:mm)"
-                  value={newSchedule.endTime}
-                  onChangeText={text => setNewSchedule({ ...newSchedule, endTime: text })}
-                  editable={true}
-                />
-              </>
-            )}
+            <TextInput
+              style={styles.input}
+              placeholder="Shift Name"
+              value={shift.name}
+              onChangeText={text => setShift({ ...shift, name: text })}
+            />
+            <Text style={styles.label}>Start Time</Text>
+            <DateTimePicker
+              value={shift.startTime}
+              mode="time"
+              display="default"
+              onChange={onShiftStartTimeChange}
+            />
+            <Text style={styles.label}>End Time</Text>
+            <DateTimePicker
+              value={shift.endTime}
+              mode="time"
+              display="default"
+              onChange={onShiftEndTimeChange}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Consultation Duration (minutes)"
+              value={shift.consultationDuration}
+              onChangeText={text => setShift({ ...shift, consultationDuration: text })}
+            />
+            <Text style={styles.label}>Color</Text>
+            <TextInput
+              style={styles.input}
+              value={color}
+              onChangeText={setColor}
+            />
+            <ColorSelection eventColor={color} onClick={handleColorChange} />
+            <TouchableOpacity style={styles.modalButton} onPress={handleAddShift}>
+              <Text style={styles.modalButtonText}>Add Shift</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.modalButton} onPress={handleSave}>
               <Text style={styles.modalButtonText}>Save Schedule</Text>
             </TouchableOpacity>
