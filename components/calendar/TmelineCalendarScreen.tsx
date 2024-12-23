@@ -98,7 +98,6 @@ export default class TimelineCalendarScreen extends Component {
       newEventStartTime: timeObject.date,
     });
 
-    // removing draft once the modal is visible at the top of draft
     if (timeObject.date) {
       eventsByDate[timeObject.date] = filter(
         eventsByDate[timeObject.date],
@@ -159,9 +158,6 @@ export default class TimelineCalendarScreen extends Component {
     onBackgroundLongPress: this.createNewEvent,
     onBackgroundLongPressOut: this.approveNewEvent,
     onEventPress: this.onEventPress,
-    // scrollToFirst: true,
-    // start: 0,
-    // end: 24,
     unavailableHours: [
       { start: 0, end: 6 },
       { start: 22, end: 24 },
@@ -181,20 +177,17 @@ export default class TimelineCalendarScreen extends Component {
     } = this.state;
 
     return (
-      <View style={{ flex: 1 }}> {/* Added View wrapper */}
+      <View style={{ flex: 1 }}>
         <CalendarProvider
           date={currentDate}
           onDateChanged={this.onDateChanged}
           onMonthChange={this.onMonthChange}
           showTodayButton
           disabledOpacity={0.6}
-          style={{ flex: 1 }} // Added style
-          // numberOfDays={3}
+          style={{ flex: 1 }}
         >
           <ExpandableCalendar
             firstDay={1}
-            //   leftArrowImageSource={require('../img/previous.png')}
-            //   rightArrowImageSource={require('../img/next.png')}
             markedDates={this.marked}
           />
           <TimelineList
@@ -202,9 +195,8 @@ export default class TimelineCalendarScreen extends Component {
             timelineProps={this.timelineProps}
             showNowIndicator
             scrollToNow
-            //scrollToFirst
             initialTime={INITIAL_TIME}
-            style={{ flex: 1 }} // Added style
+            style={{ flex: 1 }}
           />
           {selectedEvent && (
             <EditEventModal
