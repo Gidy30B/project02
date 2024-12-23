@@ -1,6 +1,6 @@
-import React, {useRef, useCallback} from 'react';
-import {StyleSheet} from 'react-native';
-import {ExpandableCalendar, AgendaList, CalendarProvider, WeekCalendar} from 'react-native-calendars';
+import React, {useRef, useCallback, useState} from 'react';
+import {StyleSheet, FlatList, View, Text, TouchableOpacity} from 'react-native';
+import {CalendarProvider, WeekCalendar} from 'react-native-calendars';
 import testIDs from '../../testIDs';
 import {agendaItems, getMarkedDates} from '../../mocks/agendaItems';
 import AgendaItem from '../../mocks/AgendaItem';
@@ -13,6 +13,26 @@ const ITEMS: any[] = agendaItems;
 interface Props {
   weekView?: boolean;
 }
+
+const CustomCalendar = ({markedDates, onDayPress}: any) => {
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const handleDayPress = (date: string) => {
+    setSelectedDate(date);
+    onDayPress(date);
+  };
+
+  return (
+    <View style={styles.calendarContainer}>
+      {Object.keys(markedDates).map((date) => (
+        <TouchableOpacity key={date} onPress={() => handleDayPress(date)} style={styles.dayContainer}>
+          <Text style={styles.dayText}>{date}</Text>
+          {markedDates[date]?.marked && <View style={styles.markedIndicator} />}
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
 
 const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
   const marked = useRef(getMarkedDates());
@@ -94,38 +114,35 @@ const ExpandableCalendarScreen = ({ weekView = false }: Props) => {
     return item.title + index;
   }, []);
 
+  const renderSectionHeader = ({section}: any) => {
+    return (
+      <View style={styles.section}>
+        <Text>{section.title}</Text>
+      </View>
+    );
+  };
+
   console.log('AgendaList sections:', ITEMS);
 
   return (
     <CalendarProvider
       date={ITEMS[1]?.title}
-     
       showTodayButton
-      
       theme={todayBtnTheme.current}
-     
     >
       {weekView ? (
         <WeekCalendar testID={testIDs.weekCalendar.CONTAINER} firstDay={1} markedDates={marked.current}/>
       ) : (
-        <ExpandableCalendar
-          testID={testIDs.expandableCalendar.CONTAINER}
-       
-          theme={theme.current}
-         
-          firstDay={1}
+        <CustomCalendar
           markedDates={marked.current}
-          leftArrowImageSource={leftArrowIcon}
-          rightArrowImageSource={rightArrowIcon}
-          
+          onDayPress={(date: string) => console.log('Selected date:', date)}
         />
       )}
-      <AgendaList
-        sections={ITEMS}
+      <FlatList
+        data={ITEMS}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        sectionStyle={styles.section}
-        
+        ListHeaderComponent={renderSectionHeader}
       />
     </CalendarProvider>
   );
@@ -145,5 +162,30 @@ const styles = StyleSheet.create({
     backgroundColor: lightThemeColor,
     color: 'grey',
     textTransform: 'capitalize'
+  },
+  calendarContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    padding: 10
+  },
+  dayContainer: {
+    width: '14%',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: 'lightgrey',
+    marginBottom: 10
+  },
+  dayText: {
+    fontSize: 16,
+    color: 'black'
+  },
+  markedIndicator: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'red',
+    marginTop: 5
   }
 });
