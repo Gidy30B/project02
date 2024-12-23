@@ -8,10 +8,12 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
-  Picker,
+  
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import ColorSelection from "./ColorSection";
 import styles from './Style';
+import { PickerIOS } from "@react-native-picker/picker";
 
 const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
   const [title, setTitle] = useState(event?.title || "");
