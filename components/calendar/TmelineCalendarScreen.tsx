@@ -13,6 +13,7 @@ import {
 
 import EditEventModal from "./EditEventModal";
 import { getDate, timelineEvents } from "@/testData/timeLineEvents";
+import { View } from "react-native";
 
 const INITIAL_TIME = { hour: 9, minutes: 0 };
 const EVENTS: TimelineEventProps[] = timelineEvents;
@@ -180,40 +181,42 @@ export default class TimelineCalendarScreen extends Component {
     } = this.state;
 
     return (
-      <CalendarProvider
-        date={currentDate}
-        onDateChanged={this.onDateChanged}
-        onMonthChange={this.onMonthChange}
-        showTodayButton
-        disabledOpacity={0.6}
-        style={{ flex: 1 }} // Added style
-        // numberOfDays={3}
-      >
-        <ExpandableCalendar
-          firstDay={1}
-          //   leftArrowImageSource={require('../img/previous.png')}
-          //   rightArrowImageSource={require('../img/next.png')}
-          markedDates={this.marked}
-        />
-        <TimelineList
-          events={eventsByDate}
-          timelineProps={this.timelineProps}
-          showNowIndicator
-          scrollToNow
-          //scrollToFirst
-          initialTime={INITIAL_TIME}
+      <View style={{ flex: 1 }}> {/* Added View wrapper */}
+        <CalendarProvider
+          date={currentDate}
+          onDateChanged={this.onDateChanged}
+          onMonthChange={this.onMonthChange}
+          showTodayButton
+          disabledOpacity={0.6}
           style={{ flex: 1 }} // Added style
-        />
-        {selectedEvent && (
-          <EditEventModal
-            isVisible={modalVisible}
-            event={selectedEvent}
-            onClose={this.handleCloseModal}
-            onSave={this.handleSaveEvent}
-            isNew={isNewEvent}
+          // numberOfDays={3}
+        >
+          <ExpandableCalendar
+            firstDay={1}
+            //   leftArrowImageSource={require('../img/previous.png')}
+            //   rightArrowImageSource={require('../img/next.png')}
+            markedDates={this.marked}
           />
-        )}
-      </CalendarProvider>
+          <TimelineList
+            events={eventsByDate}
+            timelineProps={this.timelineProps}
+            showNowIndicator
+            scrollToNow
+            //scrollToFirst
+            initialTime={INITIAL_TIME}
+            style={{ flex: 1 }} // Added style
+          />
+          {selectedEvent && (
+            <EditEventModal
+              isVisible={modalVisible}
+              event={selectedEvent}
+              onClose={this.handleCloseModal}
+              onSave={this.handleSaveEvent}
+              isNew={isNewEvent}
+            />
+          )}
+        </CalendarProvider>
+      </View>
     );
   }
 }
