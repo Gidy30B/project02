@@ -317,12 +317,117 @@ const styles = StyleSheet.create({
         margin: 10,
         borderRadius: 5,
     },
+    indicatorsContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 20,
+      },
+      indicator: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: "#d3d3d3",
+        marginHorizontal: 5,
+      },
+      activeIndicator: {
+        backgroundColor: "#007BFF",
+      },
+      inputContainer: {
+        backgroundColor: "#f0f0f0",
+        padding: 10,
+        borderRadius: 8,
+        marginVertical: 10,
+      },
+      inputText: {
+        fontSize: 16,
+        color: "#333",
+      },
+      flexRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+      },
+      activeInputButton: {
+        backgroundColor: "#007BFF",
+      },
+      textInput: {
+        borderColor: "#ccc",
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 10,
+        marginTop: 10,
+      },
     modalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.5)',
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+        maxHeight: '80%',
     },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+      },
+      modalContainer: {
+        width: "90%",
+        maxHeight: "80%",
+        backgroundColor: "#fff",
+        borderRadius: 10,
+        padding: 20,
+        elevation: 5,
+      },
+      modalContent: {
+        paddingBottom: 20,
+      },
+      promptText: {
+        fontSize: 18,
+        fontWeight: "600",
+        marginBottom: 15,
+        textAlign: "center",
+      },
+      flexIconRow: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        marginBottom: 20,
+      },
+      iconButton: {
+        alignItems: "center",
+        padding: 10,
+      },
+      iconText: {
+        marginTop: 5,
+        fontSize: 14,
+        fontWeight: "500",
+      },
+      modalButton: {
+        backgroundColor: "#007BFF",
+        padding: 15,
+        borderRadius: 8,
+        alignItems: "center",
+        marginTop: 15,
+      },
+      modalButtonText: {
+        color: "#fff",
+        fontWeight: "600",
+        fontSize: 16,
+      },
+      inputButton: {
+        backgroundColor: "#F8F9FA",
+        padding: 10,
+        borderRadius: 8,
+        marginVertical: 5,
+        alignItems: "center",
+      },
+      inputButtonText: {
+        fontSize: 16,
+        fontWeight: "500",
+      },
     modalContent: {
         width: '80%',
         padding: 20,
@@ -340,9 +445,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginVertical: 5,
         borderRadius: 5,
+        marginBottom: 10,
     },
     modalButtonText: {
         color: 'white',
+        fontWeight: 'bold',
     },
     modalOverlay: {
         flex: 1,
@@ -350,15 +457,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    modalContainer: {
-        width: '90%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 20,
-    },
     label: {
         fontSize: 16,
         marginBottom: 8,
+        fontWeight: 'bold',
+        marginBottom: 10,
     },
     input: {
         borderWidth: 1,
@@ -366,11 +469,16 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         padding: 10,
         marginBottom: 16,
+        marginBottom: 15,
     },
     dateTimePickerContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         marginBottom: 16,
+        marginBottom: 15,
+    },
+    dateTimePicker: {
+        width: '100%',
     },
     modalButton: {
         backgroundColor: '#46c3ad',
@@ -378,10 +486,12 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         alignItems: 'center',
         marginTop: 10,
+        marginBottom: 10,
     },
     modalButtonText: {
         color: 'white',
         fontSize: 16,
+        fontWeight: 'bold',
     },
     agendaItem: {
         backgroundColor: 'white',

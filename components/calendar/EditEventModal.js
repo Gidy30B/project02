@@ -1,144 +1,269 @@
-import React, { useState, useEffect } from "react";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import React, { useState } from "react";
 import {
   Modal,
   View,
-  TextInput,
   Text,
-  TouchableWithoutFeedback,
-  Keyboard,
   TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import ColorSelection from "./ColorSection";
-import styles from './Style';
-import { useSelector } from 'react-redux';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { FontAwesome5 } from "@expo/vector-icons";
+import styles from "./Style";
 
-const EditEventModal = ({ isVisible, event, onClose, onSave, isNew }) => {
-  const userId = useSelector(state => state.user.id);
-  const [title, setTitle] = useState(event?.title || "");
-  const [color, setColor] = useState(event?.color || "");
-  const [summary, setSummary] = useState(event?.summary || "");
-  const [startDate, setStartDate] = useState(event?.start ? new Date(event.start) : new Date());
-  const [endDate, setEndDate] = useState(event?.end ? new Date(event.end) : new Date());
-  const [shift, setShift] = useState({ name: '', startTime: new Date(), endTime: new Date(), breaks: [], consultationDuration: '' });
-  const [newSchedule, setNewSchedule] = useState({ userId: userId, shifts: [] });
+const EditEventModal = ({ isVisible, onClose, onSave }) => {
+  const [step, setStep] = useState(1);
+  const [shift, setShift] = useState({
+    name: "",
+    startTime: new Date(),
+    endTime: new Date(),
+    breaks: [],
+    consultationDuration: "",
+  });
+  const [currentBreak, setCurrentBreak] = useState({ start: new Date(), end: new Date() });
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [showBreakStartPicker, setShowBreakStartPicker] = useState(false);
+  const [showBreakEndPicker, setShowBreakEndPicker] = useState(false);
+  const [allShifts, setAllShifts] = useState([]);
 
-  useEffect(() => {
-    if (event) {
-      setTitle(event.title);
-      setStartDate(event.start ? new Date(event.start) : new Date());
-      setEndDate(event.end ? new Date(event.end) : new Date());
-      setColor(event.color);
-      setSummary(event.summary);
-    }
-  }, [event]);
+  const handleShiftSelection = (name) => {
+    setShift({ ...shift, name });
+    setStep(2);
+  };
 
-  const handleSave = () => {
-    onSave({
-      ...event,
-      title,
-      start: startDate,
-      end: endDate,
-      color,
-      summary,
-      shifts: newSchedule.shifts,
-      userId: userId
+  const handleAddBreak = () => {
+    setShift({
+      ...shift,
+      breaks: [...shift.breaks, { ...currentBreak }],
     });
+    setCurrentBreak({ start: new Date(), end: new Date() }); // Reset break fields
+  };
+
+  const handleSaveShift = () => {
+    setAllShifts([...allShifts, shift]);
+    setShift({
+      name: "",
+      startTime: new Date(),
+      endTime: new Date(),
+      breaks: [],
+      consultationDuration: "",
+    });
+    setStep(1); // Reset to the first step for new shift
+  };
+
+  const handleFinalSave = () => {
+    onSave(allShifts); // Pass the entire schedule back to the parent component
     onClose();
-  };
-
-  const onStartDateChange = (event, selectedDate) => {
-    setStartDate(selectedDate);
-
-    if (!hasAtLeastTenMinutesDifference(selectedDate, endDate)) {
-      const newEndDate = new Date(selectedDate.getTime() + 60 * 60000); // Adding 1 hour
-      setEndDate(newEndDate);
-    }
-  };
-
-  const onEndDateChange = (event, selectedDate) => {
-    setEndDate(selectedDate);
-  };
-
-  const onShiftStartTimeChange = (event, selectedTime) => {
-    setShift({ ...shift, startTime: selectedTime });
-  };
-
-  const onShiftEndTimeChange = (event, selectedTime) => {
-    setShift({ ...shift, endTime: selectedTime });
-  };
-
-  function hasAtLeastTenMinutesDifference(date1, date2) {
-    const tenMinutesInMilliseconds = 10 * 60 * 1000; // 10 minutes in milliseconds
-    const differenceInMilliseconds = Math.abs(date1 - date2);
-    return differenceInMilliseconds >= tenMinutesInMilliseconds;
-  }
-
-  const handleColorChange = (newColor) => {
-    setColor(newColor);
-  };
-
-  const handleAddShift = () => {
-    setNewSchedule({ ...newSchedule, shifts: [...newSchedule.shifts, shift] });
-    setShift({ name: '', startTime: new Date(), endTime: new Date(), breaks: [], consultationDuration: '' });
   };
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.label}>Title</Text>
-            <TextInput
-              style={styles.input}
-              value={title}
-              onChangeText={setTitle}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Shift Name"
-              value={shift.name}
-              onChangeText={text => setShift({ ...shift, name: text })}
-            />
-            <Text style={styles.label}>Start Time</Text>
-            <DateTimePicker
-              value={shift.startTime}
-              mode="time"
-              display="default"
-              onChange={onShiftStartTimeChange}
-            />
-            <Text style={styles.label}>End Time</Text>
-            <DateTimePicker
-              value={shift.endTime}
-              mode="time"
-              display="default"
-              onChange={onShiftEndTimeChange}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Consultation Duration (minutes)"
-              value={shift.consultationDuration}
-              onChangeText={text => setShift({ ...shift, consultationDuration: text })}
-            />
-            <Text style={styles.label}>Color</Text>
-            <TextInput
-              style={styles.input}
-              value={color}
-              onChangeText={setColor}
-            />
-            <ColorSelection eventColor={color} onClick={handleColorChange} />
-            <TouchableOpacity style={styles.modalButton} onPress={handleAddShift}>
-              <Text style={styles.modalButtonText}>Add Shift</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={handleSave}>
-              <Text style={styles.modalButtonText}>Save Schedule</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.modalButton} onPress={onClose}>
-              <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableWithoutFeedback>
+      <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          style={styles.modalContainer}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <ScrollView contentContainerStyle={styles.modalContent}>
+            {step === 1 && (
+              <View>
+                <Text style={styles.promptText}>
+                  Let’s set up your schedule. Select a shift:
+                </Text>
+                <View style={styles.flexIconRow}>
+                  {[
+                    { name: "Morning Shift", icon: "sun", color: "#FFD700" },
+                    { name: "Afternoon Shift", icon: "cloud-sun", color: "#FFA500" },
+                    { name: "Evening Shift", icon: "moon", color: "#1E90FF" },
+                  ].map((shiftOption) => (
+                    <TouchableOpacity
+                      key={shiftOption.name}
+                      style={styles.iconButton}
+                      onPress={() => handleShiftSelection(shiftOption.name)}
+                    >
+                      <FontAwesome5
+                        name={shiftOption.icon}
+                        size={40}
+                        color={shiftOption.color}
+                      />
+                      <Text style={styles.iconText}>{shiftOption.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {step === 2 && (
+              <View>
+                <Text style={styles.promptText}>Work starts at:</Text>
+                <TouchableOpacity
+                  onPress={() => setShowStartPicker(true)}
+                  style={styles.inputContainer}
+                >
+                  <Text style={styles.inputText}>
+                    {shift.startTime.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showStartPicker && (
+                  <DateTimePicker
+                    value={shift.startTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={(event, selectedTime) => {
+                      setShowStartPicker(false);
+                      setShift({ ...shift, startTime: selectedTime || shift.startTime });
+                    }}
+                  />
+                )}
+                <Text style={styles.promptText}>Work ends at:</Text>
+                <TouchableOpacity
+                  onPress={() => setShowEndPicker(true)}
+                  style={styles.inputContainer}
+                >
+                  <Text style={styles.inputText}>
+                    {shift.endTime.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showEndPicker && (
+                  <DateTimePicker
+                    value={shift.endTime}
+                    mode="time"
+                    display="spinner"
+                    onChange={(event, selectedTime) => {
+                      setShowEndPicker(false);
+                      setShift({ ...shift, endTime: selectedTime || shift.endTime });
+                    }}
+                  />
+                )}
+              </View>
+            )}
+
+            {step === 3 && (
+              <View>
+                <Text style={styles.promptText}>
+                  Specify a break (optional):
+                </Text>
+                <Text style={styles.promptText}>Break starts at:</Text>
+                <TouchableOpacity
+                  onPress={() => setShowBreakStartPicker(true)}
+                  style={styles.inputContainer}
+                >
+                  <Text style={styles.inputText}>
+                    {currentBreak.start.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showBreakStartPicker && (
+                  <DateTimePicker
+                    value={currentBreak.start}
+                    mode="time"
+                    display="spinner"
+                    onChange={(event, selectedTime) => {
+                      setShowBreakStartPicker(false);
+                      setCurrentBreak({ ...currentBreak, start: selectedTime || currentBreak.start });
+                    }}
+                  />
+                )}
+                <Text style={styles.promptText}>Break ends at:</Text>
+                <TouchableOpacity
+                  onPress={() => setShowBreakEndPicker(true)}
+                  style={styles.inputContainer}
+                >
+                  <Text style={styles.inputText}>
+                    {currentBreak.end.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showBreakEndPicker && (
+                  <DateTimePicker
+                    value={currentBreak.end}
+                    mode="time"
+                    display="spinner"
+                    onChange={(event, selectedTime) => {
+                      setShowBreakEndPicker(false);
+                      setCurrentBreak({ ...currentBreak, end: selectedTime || currentBreak.end });
+                    }}
+                  />
+                )}
+                <TouchableOpacity
+                  style={styles.addBreakButton}
+                  onPress={handleAddBreak}
+                >
+                  <Text style={styles.addBreakButtonText}>Add Break</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {step === 4 && (
+              <View>
+                <Text style={styles.promptText}>
+                  How long should each consultation last? (in minutes)
+                </Text>
+                <View style={styles.flexRow}>
+                  {["15", "30", "60"].map((duration) => (
+                    <TouchableOpacity
+                      key={duration}
+                      style={[
+                        styles.inputButton,
+                        shift.consultationDuration === duration && styles.activeInputButton,
+                      ]}
+                      onPress={() =>
+                        setShift({ ...shift, consultationDuration: duration })
+                      }
+                    >
+                      <Text style={styles.inputButtonText}>{`${duration} Minutes`}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {step === 5 && (
+              <View>
+                <Text style={styles.promptText}>
+                  Would you like to save this schedule or add another shift?
+                </Text>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleSaveShift}
+                >
+                  <Text style={styles.modalButtonText}>Add Another Shift</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={handleFinalSave}
+                >
+                  <Text style={styles.modalButtonText}>Save Schedule</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <View style={styles.indicatorsContainer}>
+              {[1, 2, 3, 4, 5].map((indicatorStep) => (
+                <TouchableOpacity
+                  key={indicatorStep}
+                  style={[
+                    styles.indicator,
+                    step === indicatorStep && styles.activeIndicator,
+                  ]}
+                  onPress={() => setStep(indicatorStep)}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 };
