@@ -1,55 +1,28 @@
-import groupBy from "lodash/groupBy";
-import filter from "lodash/filter";
+import React, {useRef, useCallback} from 'react';
+import {StyleSheet} from 'react-native';
+import {ExpandableCalendar, AgendaList, CalendarProvider, WeekCalendar} from 'react-native-calendars';
+import testIDs from '../../testIDs';
+import {agendaItems, getMarkedDates} from '../../mocks/agendaItems';
+import AgendaItem from '../../mocks/AgendaItem';
+import {getTheme, themeColor, lightThemeColor} from '../../mocks/theme';
 
-import React, { Component } from "react";
-import {
-  ExpandableCalendar,
-  TimelineEventProps,
-  TimelineList,
-  CalendarProvider,
-  TimelineProps,
-  CalendarUtils,
-} from "react-native-calendars";
+const leftArrowIcon = require('../../assets/images/icons/previous.png');
+const rightArrowIcon = require('../../assets/images/icons/next.png');
+const ITEMS: any[] = agendaItems;
 
-import EditEventModal from "./EditEventModal";
-import { getDate, timelineEvents } from "@/testData/timeLineEvents";
-import { View } from "react-native";
+interface Props {
+  weekView?: boolean;
+}
 
-const INITIAL_TIME = { hour: 9, minutes: 0 };
-const EVENTS: TimelineEventProps[] = timelineEvents;
-export default class TimelineCalendarScreen extends Component {
-  state = {
-    currentDate: getDate(),
-    events: EVENTS,
-    eventsByDate: groupBy(EVENTS, (e) =>
-      CalendarUtils.getCalendarDateString(e.start)
-    ) as {
-      [key: string]: TimelineEventProps[];
-    },
-    modalVisible: false,
-    selectedEvent: null,
-    isNewEvent: false,
-    newEventStartTime: null,
-  };
+const ExpandableCalendarScreen = (props: Props) => {
+  const {weekView} = props;
+  const marked = useRef(getMarkedDates());
+  const theme = useRef(getTheme());
+  const todayBtnTheme = useRef({
+    todayButtonTextColor: themeColor
+  });
 
-  marked = {
-    [`${getDate(-1)}`]: { marked: true },
-    [`${getDate()}`]: { marked: true },
-    [`${getDate(1)}`]: { marked: true },
-    [`${getDate(2)}`]: { marked: true },
-    [`${getDate(4)}`]: { marked: true },
-  };
-
-  onDateChanged = (date: string, source: string) => {
-    console.log("TimelineCalendarScreen onDateChanged: ", date, source);
-    this.setState({ currentDate: date });
-  };
-
-  onMonthChange = (month: any, updateSource: any) => {
-    console.log("TimelineCalendarScreen onMonthChange: ", month, updateSource);
-  };
-
-  createNewEvent: TimelineProps["onBackgroundLongPress"] = (
+  const createNewEvent: TimelineProps["onBackgroundLongPress"] = (
     timeString,
     timeObject
   ) => {
@@ -79,7 +52,7 @@ export default class TimelineCalendarScreen extends Component {
     }
   };
 
-  approveNewEvent = (timeString, timeObject) => {
+  const approveNewEvent = (timeString, timeObject) => {
     const { eventsByDate } = this.state;
     const hourString = `${(timeObject.hour + 1).toString().padStart(2, "0")}`;
     const minutesString = `${timeObject.minutes.toString().padStart(2, "0")}`;
@@ -110,105 +83,58 @@ export default class TimelineCalendarScreen extends Component {
     }
   };
 
-  handleSaveEvent = (updatedEvent) => {
-    const { eventsByDate, isNewEvent, newEventStartTime } = this.state;
-    const dateKey = CalendarUtils.getCalendarDateString(updatedEvent.start);
+  const renderItem = useCallback(({item}: any) => {
+    return <AgendaItem item={item}/>;
+  }, []);
 
-    let updatedEvents;
-    if (isNewEvent) {
-      updatedEvents = eventsByDate[dateKey]
-        ? [...eventsByDate[dateKey], updatedEvent]
-        : [updatedEvent];
-    } else {
-      updatedEvents = eventsByDate[dateKey].map((e) => {
-        if (e.id === updatedEvent.id) {
-          return updatedEvent;
-        }
-        return e;
-      });
-    }
+  return (
+    <CalendarProvider
+      date={ITEMS[1]?.title}
+     
+      showTodayButton
+      
+      theme={todayBtnTheme.current}
+     
+    >
+      {weekView ? (
+        <WeekCalendar testID={testIDs.weekCalendar.CONTAINER} firstDay={1} markedDates={marked.current}/>
+      ) : (
+        <ExpandableCalendar
+          testID={testIDs.expandableCalendar.CONTAINER}
+       
+          theme={theme.current}
+         
+          firstDay={1}
+          markedDates={marked.current}
+          leftArrowImageSource={leftArrowIcon}
+          rightArrowImageSource={rightArrowIcon}
+          
+        />
+      )}
+      <AgendaList
+        sections={ITEMS}
+        renderItem={renderItem}
+       
+        sectionStyle={styles.section}
+        
+      />
+    </CalendarProvider>
+  );
+};
 
-    this.setState({
-      eventsByDate: { ...eventsByDate, [dateKey]: updatedEvents },
-      modalVisible: false,
-      selectedEvent: null,
-      isNewEvent: false,
-      newEventStartTime: null,
-    });
-  };
+export default ExpandableCalendarScreen;
 
-  handleCloseModal = () => {
-    this.setState({ modalVisible: false });
-  };
-
-  editEvent = (event) => {
-    this.setState({
-      modalVisible: true,
-      selectedEvent: event,
-      isNewEvent: false,
-    });
-  };
-
-  onEventPress = (event) => {
-    this.editEvent(event);
-  };
-
-  private timelineProps: Partial<TimelineProps> = {
-    format24h: true,
-    onBackgroundLongPress: this.createNewEvent,
-    onBackgroundLongPressOut: this.approveNewEvent,
-    onEventPress: this.onEventPress,
-    unavailableHours: [
-      { start: 0, end: 6 },
-      { start: 22, end: 24 },
-    ],
-    unavailableHoursColor: "linen",
-    overlapEventsSpacing: 8,
-    rightEdgeSpacing: 24,
-  };
-
-  render() {
-    const {
-      currentDate,
-      eventsByDate,
-      modalVisible,
-      selectedEvent,
-      isNewEvent,
-    } = this.state;
-
-    return (
-      <View style={{ flex: 1 }}>
-        <CalendarProvider
-          date={currentDate}
-          onDateChanged={this.onDateChanged}
-          onMonthChange={this.onMonthChange}
-          showTodayButton
-          disabledOpacity={0.6}
-          style={{ flex: 1 }}
-        >
-          <ExpandableCalendar
-            firstDay={1}
-            markedDates={this.marked}
-          />
-          <TimelineList
-            events={eventsByDate}
-            timelineProps={this.timelineProps}
-            showNowIndicator
-            scrollToNow
-            initialTime={INITIAL_TIME}
-            style={{ flex: 1 }}
-          />
-          {selectedEvent && (
-            <EditEventModal
-              isVisible={modalVisible}
-              event={selectedEvent}
-              onClose={this.handleCloseModal}
-              onSave={this.handleSaveEvent}
-              isNew={isNewEvent}
-            />
-          )}
-        </CalendarProvider>
-      </View>
-    );
+const styles = StyleSheet.create({
+  calendar: {
+    paddingLeft: 20,
+    paddingRight: 20
+  },
+  header: {
+    backgroundColor: 'lightgrey'
+  },
+  section: {
+    backgroundColor: lightThemeColor,
+    color: 'grey',
+    textTransform: 'capitalize'
   }
-}
+});
