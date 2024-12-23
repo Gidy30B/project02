@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { themeColor, lightThemeColor } from '../../mocks/theme';
 
 const styles = StyleSheet.create({
     component: {
@@ -118,7 +119,8 @@ const styles = StyleSheet.create({
         fontSize: 20
     },
     dayText: {
-        
+        fontSize: 16,
+        color: 'black',
     },
     allEvents: {
         width: '80%',
@@ -228,6 +230,173 @@ const styles = StyleSheet.create({
         padding: 10,
         backgroundColor: '#e0e0e0',
         borderRadius: 5,
+    },
+    calendarContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        padding: 10,
+        flex: 1,
+        width: Dimensions.get('window').width,
+        backgroundColor: 'white',
+    },
+    dayContainer: {
+        width: '14%',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 1,
+        borderColor: 'lightgrey',
+        marginBottom: 10,
+        borderRadius: 5,
+    },
+    selectedDayContainer: {
+        backgroundColor: themeColor,
+    },
+    selectedDayText: {
+        color: 'white',
+    },
+    markedIndicator: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: 'red',
+        marginTop: 5,
+    },
+    section: {
+        backgroundColor: lightThemeColor,
+        padding: 10,
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 35,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalText: {
+        marginBottom: 15,
+        textAlign: 'center',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    input: {
+        height: 40,
+        borderColor: 'gray',
+        borderWidth: 1,
+        marginBottom: 15,
+        width: '100%',
+        paddingHorizontal: 10,
+    },
+    shiftsContainer: {
+        marginVertical: 10,
+    },
+    shiftItem: {
+        padding: 10,
+        backgroundColor: 'lightgrey',
+        borderRadius: 5,
+        marginVertical: 5,
+    },
+    scheduleContainer: {
+        marginTop: 20,
+        padding: 10,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 10,
+    },
+    addButton: {
+        padding: 10,
+        backgroundColor: '#46c3ad',
+        alignItems: 'center',
+        margin: 10,
+        borderRadius: 5,
+    },
+    modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        width: '80%',
+        padding: 20,
+        backgroundColor: 'white',
+        borderRadius: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalButton: {
+        padding: 10,
+        backgroundColor: '#46c3ad',
+        alignItems: 'center',
+        marginVertical: 5,
+        borderRadius: 5,
+    },
+    modalButtonText: {
+        color: 'white',
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 20,
+    },
+    label: {
+        fontSize: 16,
+        marginBottom: 8,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 16,
+    },
+    dateTimePickerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 16,
+    },
+    modalButton: {
+        backgroundColor: '#46c3ad',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    modalButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    agendaItem: {
+        backgroundColor: 'white',
+        flex: 1,
+        borderRadius: 5,
+        padding: 10,
+        marginRight: 10,
+        marginTop: 17,
+    },
+    agendaItemText: {
+        color: '#888',
+        fontSize: 16,
+    },
+    agenda: {
+        flex: 1,
     },
 });
 

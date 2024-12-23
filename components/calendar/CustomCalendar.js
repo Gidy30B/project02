@@ -1,40 +1,58 @@
-import React from "react";
-import { Text, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { Text, TouchableOpacity, View, Dimensions } from "react-native";
 import { Agenda } from "react-native-calendars";
-
-// Calendar reference: https://www.npmjs.com/package/react-native-calendars
-// Guide: https://wix.github.io/react-native-calendars/docs/Intro
-// Link: https://blog.logrocket.com/create-customizable-shareable-calendars-react-native/
+import EditEventModal from "./EditEventModal";
+import styles from './Style';
 
 const RenderItem = React.memo(({ item }) => (
-  <TouchableOpacity
-    style={{
-      backgroundColor: "white",
-      flex: 1,
-      borderRadius: 5,
-      padding: 10,
-      marginRight: 10,
-      marginTop: 17,
-    }}
-  >
-    <Text style={{ color: "#888", fontSize: 16 }}>{item.name}</Text>
+  <TouchableOpacity style={styles.agendaItem}>
+    <Text style={styles.agendaItemText}>{item.name}</Text>
   </TouchableOpacity>
 ));
 
-export default function CustomCalendar(props) {
+export default function CustomCalendar({ onDayPress }) {
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [currentEvent, setCurrentEvent] = useState(null);
+
+  const handleDayPress = (day) => {
+    console.log("Day pressed:", day);
+    setSelectedDate(day.dateString);
+    setCurrentEvent({ date: day.dateString, start: new Date(), end: new Date() });
+    setModalVisible(true);
+    if (onDayPress) {
+      onDayPress(day);
+    }
+  };
+
+  const handleSave = (event) => {
+    console.log("Event saved:", event);
+    setModalVisible(false);
+  };
+
   return (
-    <Agenda
-      selected="2024-06-12"
-      items={{
-        "2024-06-12": [
-          { name: "Cycling" },
-          { name: "Walking" },
-          { name: "Running" },
-        ],
-        "2024-06-14": [{ name: "Writing" }],
-      }}
-      renderItem={(item, isFirst) => <RenderItem item={item} />}
-      style={{ flex: 1 }}
-    />
+    <View style={styles.calendarContainer}>
+      <Agenda
+        selected={selectedDate}
+        items={{
+          "2024-06-12": [
+            { name: "Cycling" },
+            { name: "Walking" },
+            { name: "Running" },
+          ],
+          "2024-06-14": [{ name: "Writing" }],
+        }}
+        renderItem={(item, isFirst) => <RenderItem item={item} />}
+        onDayPress={handleDayPress}
+        style={styles.agenda}
+      />
+      <EditEventModal
+        isVisible={isModalVisible}
+        event={currentEvent}
+        onClose={() => setModalVisible(false)}
+        onSave={handleSave}
+        isNew={true}
+      />
+    </View>
   );
 }

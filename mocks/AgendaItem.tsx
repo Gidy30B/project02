@@ -5,9 +5,10 @@ import testIDs from '../testIDs';
 
 interface ItemProps {
   item: {
-    hour: string;
-    duration: string;
+    hour?: string;
+    duration?: string;
     title: string;
+    slots?: { start: string; end: string }[];
   };
 }
 
@@ -33,10 +34,15 @@ const AgendaItem = (props: ItemProps) => {
   return (
     <TouchableOpacity onPress={itemPressed} style={styles.item} testID={testIDs.agenda.ITEM}>
       <View>
-        <Text style={styles.itemHourText}>{item.hour}</Text>
-        <Text style={styles.itemDurationText}>{item.duration}</Text>
+        {item.hour && <Text style={styles.itemHourText}>{item.hour}</Text>}
+        {item.duration && <Text style={styles.itemDurationText}>{item.duration}</Text>}
+        <Text style={styles.itemTitleText}>{item.title}</Text>
+        {item.slots && item.slots.map((slot, index) => (
+          <View key={index} style={styles.slotContainer}>
+            <Text style={styles.slotText}>{`${slot.start} - ${slot.end}`}</Text>
+          </View>
+        ))}
       </View>
-      <Text style={styles.itemTitleText}>{item.title}</Text>
       <View style={styles.itemButtonContainer}>
         <Button color={'grey'} title={'Info'} onPress={buttonPressed}/>
       </View>
@@ -72,6 +78,13 @@ const styles = StyleSheet.create({
   itemButtonContainer: {
     flex: 1,
     alignItems: 'flex-end'
+  },
+  slotContainer: {
+    marginTop: 10,
+  },
+  slotText: {
+    color: 'black',
+    fontSize: 14,
   },
   emptyItem: {
     paddingLeft: 20,
