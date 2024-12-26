@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux'; // Import useSelector from react-redux
-import { selectUser } from '../app/store/userSlice'; // Import selectUser from userSlice
+import { selectUser } from '../app/(redux)/authSlice'; // Import selectUser from userSlice
 
 interface Slot {
   _id: string;

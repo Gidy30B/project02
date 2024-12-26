@@ -51,6 +51,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       firstName: firstName || '',
       lastName: lastName || '',
       profilePicture: data.profilePicture || '',
+      userId: data.id, // Include userId
     };
     dispatch(loginAction(userData));
     router.push('/doctor/dashboard');

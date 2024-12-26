@@ -1,13 +1,13 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { login, logout } from '../app/store/userSlice';
-import { RootState } from '../app/store/configureStore';
+import { loginAction, logoutAction  } from '../app/(redux)/authSlice';
+import { RootState } from '../app/(redux)/store';
 
 export const AuthContext = createContext<any>(null);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const dispatch = useDispatch();
-  const userState = useSelector((state: RootState) => state.user);
+  const userState = useSelector((state: RootState) => state.auth.user);
   const [user, setUser] = useState(userState);
 
   useEffect(() => {
@@ -15,12 +15,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [userState]);
 
   const loginHandler = (userData: any) => {
-    dispatch(login(userData));
+    dispatch(loginAction(userData));
     setUser(userData);
   };
 
   const logoutHandler = () => {
-    dispatch(logout());
+    dispatch(logoutAction());
     setUser(null);
   };
 

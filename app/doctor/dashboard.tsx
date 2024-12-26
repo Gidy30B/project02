@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, ActivityIndicator, Image, TextInput, Modal, Button, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Dimensions, ActivityIndicator, TextInput, Modal, Button, FlatList } from 'react-native';
 
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { selectUser } from '../store/userSlice';
-import { useNavigation, useRouter } from 'expo-router';
-import useAppointments from '../../hooks/useAppointments';
+import { selectUser } from '../(redux)/authSlice';
+import { useRouter } from 'expo-router';
 import moment from 'moment';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,7 +17,6 @@ const DashboardScreen: React.FC = () => {
   const router = useRouter();
   const route = useRoute();
   const user = useSelector(selectUser);
-  const { appointments, loading: appointmentsLoading, error: appointmentsError } = useAppointments();
   const professionalId = user.professional?._id;
   const { schedule, fetchSchedule } = useSchedule();
   const [tasks, setTasks] = useState<{ description: string, startTime: string, endTime: string }[]>([]);
@@ -29,9 +27,9 @@ const DashboardScreen: React.FC = () => {
   const [scheduleLoading, setScheduleLoading] = useState<boolean>(true);
   const [scheduleError, setScheduleError] = useState<string | null>(null);
 
- 
-
   useEffect(() => {
+    console.log('User:', user); // Log user information
+
     const loadTasks = async () => {
       try {
         const storedTasks = await AsyncStorage.getItem('@tasks');
@@ -43,7 +41,7 @@ const DashboardScreen: React.FC = () => {
       }
     };
     loadTasks();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const saveTasks = async () => {
@@ -84,18 +82,7 @@ const DashboardScreen: React.FC = () => {
     router.push(`/patient/${patientId}?appointmentId=${appointmentId}`);
   };
 
-  const totalAppointments = appointments.length;
-  const upcomingAppointments = appointments.filter(appointment => {
-    const appointmentDate = appointment.date && moment(appointment.date);
-    return (
-      (appointment.status === 'confirmed' || appointment.status === 'pending') &&
-      appointmentDate && appointmentDate.isSame(moment(), 'day')
-    );
-  });
-  const requestedAppointments = appointments.filter(appointment => appointment.status === 'requested');
-  const completedAppointments = appointments.filter(appointment => appointment.status === 'completed');
-
-  if (appointmentsLoading || scheduleLoading) {
+  if (scheduleLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -103,20 +90,20 @@ const DashboardScreen: React.FC = () => {
     );
   }
 
-  if (appointmentsError || scheduleError) {
+  if (scheduleError) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{appointmentsError || scheduleError}</Text>
+        <Text style={styles.errorText}>{scheduleError}</Text>
       </View>
     );
   }
 
   const renderOverviewCards = () => {
     const cardData = [
-      { title: 'Total Appointments', count: totalAppointments, color: '#ff7f50' },
-      { title: 'Upcoming', count: upcomingAppointments.length, color: '#4CAF50' },
-      { title: 'Requested', count: requestedAppointments.length, color: '#2196F3' },
-      { title: 'Completed', count: completedAppointments.length, color: '#f44336' },
+      { title: 'Total Appointments', count: 0, color: '#ff7f50' },
+      { title: 'Upcoming', count: 0, color: '#4CAF50' },
+      { title: 'Requested', count: 0, color: '#2196F3' },
+      { title: 'Completed', count: 0, color: '#f44336' },
     ];
 
     return (
@@ -170,9 +157,6 @@ const DashboardScreen: React.FC = () => {
           <View style={styles.overviewHeader}>
             <Text style={styles.sectionTitle}>Overview</Text>
             <View style={styles.iconContainer}>
-              {upcomingAppointments.length > 0 && (
-                <View style={styles.badge} />
-              )}
               <Icon name="calendar" size={24} color="#333" style={styles.icon} />
             </View>
           </View>
@@ -209,38 +193,6 @@ const DashboardScreen: React.FC = () => {
         <View style={styles.analyticsContainer}>
           <Text style={styles.sectionTitle}>Appointments Overview</Text>
           {renderOverviewList()}
-        </View>
-
-        <View style={styles.upcomingContainer}>
-          <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
-          {upcomingAppointments.length > 0 ? (
-            upcomingAppointments.map((appointment) => {
-              const appointmentDate = moment(appointment.date).calendar(null, {
-                sameDay: '[Today]',
-                nextDay: '[Tomorrow]',
-                nextWeek: 'dddd',
-                sameElse: 'MMMM D, YYYY'
-              });
-
-              return (
-                <View key={appointment._id} style={styles.appointmentCard}>
-                  <View style={styles.appointmentDetails}>
-                    <Text style={styles.patientName}>{appointment.patientName}</Text>
-                    <Text style={styles.appointmentTime}>{appointment.time}</Text>
-                    <Text style={styles.appointmentDate}>{appointmentDate}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.viewButton}
-                    onPress={() => handleViewPatient(appointment.patientId._id, appointment._id)}
-                  >
-                    <Text style={styles.buttonText}>View Patient</Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })
-          ) : (
-            <Text style={styles.noAppointmentsText}>No upcoming appointments.</Text>
-          )}
         </View>
 
         <View style={styles.tasksContainer}>
@@ -396,54 +348,6 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   noSlotsText: {
-    fontSize: 16,
-    color: '#777',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  upcomingContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    marginTop: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  appointmentCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
-    marginTop: 10,
-  },
-  appointmentDetails: {
-    flex: 1,
-  },
-  patientName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  appointmentTime: {
-    fontSize: 14,
-    color: '#555',
-  },
-  viewButton: {
-    backgroundColor: '#4CAF50',
-    padding: 8,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  noAppointmentsText: {
     fontSize: 16,
     color: '#777',
     textAlign: 'center',

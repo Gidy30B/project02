@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
-import { setPrescription, clearPrescription } from '../app/store/prescriptionSlice';
-import { AppDispatch } from '../app/store/configureStore';
+import { setPrescription, clearPrescription } from '../app/(redux)/prescriptionSlice';
+import { AppDispatch } from '../app/(redux)/store';
 
 const useFetchPrescription = (appointmentId: string | undefined) => {
   const dispatch = useDispatch<AppDispatch>();

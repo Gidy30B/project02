@@ -1,4 +1,3 @@
-
 // Import your global CSS file
 import "../global.css";
 import { useFonts } from 'expo-font';
@@ -8,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
-import { store } from './store/configureStore';
+import store from './(redux)/store';
 import { AuthProvider } from '../context/AuthContext'; // Import AuthContext for user state
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { PaperProvider } from 'react-native-paper';

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/components/Shared/Colors';
 
 
-import { RootState } from './store/configureStore';
+import { RootState } from '../app/(redux)/store'; // Adjust path according to your store file
 
 const PrescriptionScreen = () => {
   const navigation = useNavigation();

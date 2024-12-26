@@ -508,6 +508,47 @@ const styles = StyleSheet.create({
     agenda: {
         flex: 1,
     },
+    textWrapper: {
+        backgroundColor: '#f0f0f0',
+        padding: 10,
+        borderRadius: 5,
+        marginBottom: 15,
+        alignItems: 'center',
+    },
+    sliderContainer: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    slider: {
+        width: '100%',
+        height: 40,
+    },
+    sliderLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+        paddingHorizontal: 10,
+    },
+    sliderLabel: {
+        fontSize: 12,
+        color: '#333',
+    },
+    navigationButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 20,
+    },
+    navButton: {
+        backgroundColor: '#007BFF',
+        padding: 10,
+        borderRadius: 5,
+        alignItems: 'center',
+        width: '45%',
+    },
+    navButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
 });
 
 export default styles;

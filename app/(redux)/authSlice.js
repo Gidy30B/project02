@@ -130,10 +130,10 @@ const authSlice = createSlice({
           ...state.profileData.address,
           ...action.payload.address,
         },
-      }; // Merge new profile data with existing profile data
+      };
     },
     updateInsurance: (state, action) => {
-      state.insuranceData = action.payload; // Update insurance data
+      state.insuranceData = action.payload; 
     },
   },
   extraReducers: (builder) => {
@@ -155,7 +155,7 @@ export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile
 
 export default authSlice.reducer;
 
-// Thunk to load user from AsyncStorage when the app starts
+
 export const loadUser = () => async (dispatch) => {
   const user = await loadUserFromStorage();
   if (user) {

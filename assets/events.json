@@ -1,0 +1,25 @@
+{
+  "2024-12-23": [
+    { "name": "item 1 - any js object" },
+    { "name": "item 2 - another js object" }
+  ],
+  "2024-12-2": [{ "name": "item 2 - any js object", "height": 80 }],
+  "2021-09-03": [{ "name": "item 3 - any js object" }],
+  "2021-09-04": [{ "name": "item 4 - any js object", "height": 80 }],
+  "2024-12-24": [
+    { "name": "item 3 - any js object", "height": 80 },
+    { "name": "item 4 - another js object", "height": 60 }
+  ],
+  "2024-12-25": [
+    { "name": "item 5 - any js object" },
+    { "name": "item 6 - another js object", "height": 100 }
+  ],
+  "2024-12-29": [
+    { "name": "item 7 - any js object", "height": 50 },
+    { "name": "item 8 - another js object", "height": 70 }
+  ],
+  "2024-12-27": [
+    { "name": "item 9 - any js object" },
+    { "name": "item 10 - another js object", "height": 90 }
+  ]
+}

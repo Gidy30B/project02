@@ -22,21 +22,25 @@ const TaskScreen: React.FC = () => {
 
   useEffect(() => {
     console.log('Appointments Data:', appointments);
-    
-    const currentTime = moment();
-    
-    const filteredAppointments = appointments.filter(app => 
-      app.status === 'booked' && moment(`${app.date} ${app.time}`, 'YYYY-MM-DD HH:mm').isAfter(currentTime)
-    );
-    
-    const transformedTasks = filteredAppointments.map(app => ({
-      id: app._id,
-      description: `Meet with ${app.patientId.name}`,
-      time: app.time,
-    }));
-    
-    console.log('Transformed Tasks:', transformedTasks);
-    setTasks(transformedTasks);
+
+    if (Array.isArray(appointments)) {
+      const currentTime = moment();
+
+      const filteredAppointments = appointments.filter(app => 
+        app.status === 'booked' && moment(`${app.date} ${app.time}`, 'YYYY-MM-DD HH:mm').isAfter(currentTime)
+      );
+
+      const transformedTasks = filteredAppointments.map(app => ({
+        id: app._id,
+        description: `Meet with ${app.patientId.name}`,
+        time: app.time,
+      }));
+
+      console.log('Transformed Tasks:', transformedTasks);
+      setTasks(transformedTasks);
+    } else {
+      console.error('Appointments is not an array:', appointments);
+    }
   }, [appointments]);
 
   const addTask = () => {

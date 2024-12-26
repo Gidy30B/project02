@@ -8,7 +8,7 @@ import { Ionicons } from '@expo/vector-icons'; // Import the eye icon
 import Colors from '../../components/Shared/Colors';
 import HorizontalLine from '../../components/common/HorizontalLine';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../store/userSlice';
+import { selectUser } from '../(redux)/authSlice';
 
 const TransactionScreen: React.FC = () => {
   const PAYSTACK_SECRET_KEY = process.env.EXPO_PUBLIC_PAYSTACK_SECRET_KEY;
@@ -27,12 +27,9 @@ const TransactionScreen: React.FC = () => {
   const user = useSelector(selectUser);
 
   useEffect(() => {
-    console.log('useEffect triggered'); // Debug log to check if useEffect is firing
     const checkPaymentSetupStatus = async () => {
       const status = await AsyncStorage.getItem('isPaymentSetupCompleted');
-      if (!status) {
-        setShowPaymentSetupModal(true);
-      } else {
+      if (status) {
         setIsPaymentSetupCompleted(true);
       }
     };
@@ -40,7 +37,7 @@ const TransactionScreen: React.FC = () => {
     checkPaymentSetupStatus();
     fetchBanks();
     fetchSubaccountInfo();
-    fetchTransactions(); // Fetch transactions
+    fetchTransactions();
   }, []);
 
   const fetchBanks = async () => {
@@ -166,18 +163,10 @@ const TransactionScreen: React.FC = () => {
        
         <TouchableOpacity
           style={[styles.card, !isPaymentSetupCompleted && styles.disabledCard]}
-          onPress={() => {
-            if (isPaymentSetupCompleted) {
-              setShowSubaccountModal(true);
-            } else {
-              Alert.alert('Payment Setup Required', 'Please complete your payment setup first.');
-            }
-          }}
+          onPress={() => setShowPaymentSetupModal(true)}
           disabled={!isPaymentSetupCompleted}
         >
-          <View style={styles.iconContainer}>
-            <Text style={styles.details}>Update Payment</Text>
-          </View>
+          <Text style={styles.details}>Update Payment</Text>
         </TouchableOpacity>
       </View>
 

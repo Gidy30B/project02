@@ -7,12 +7,16 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  TextInput,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { FontAwesome5 } from "@expo/vector-icons";
+import { useSelector } from 'react-redux';
 import styles from "./Style";
 
 const EditEventModal = ({ isVisible, onClose, onSave }) => {
+  const userId = useSelector(state => state.user?.id || null);
+  console.log('userId:', userId);
   const [step, setStep] = useState(1);
   const [shift, setShift] = useState({
     name: "",
@@ -20,7 +24,10 @@ const EditEventModal = ({ isVisible, onClose, onSave }) => {
     endTime: new Date(),
     breaks: [],
     consultationDuration: "",
+    date: new Date().toISOString().split('T')[0],
+    timeSlots: [],
   });
+  const [customShiftName, setCustomShiftName] = useState("");
   const [currentBreak, setCurrentBreak] = useState({ start: new Date(), end: new Date() });
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
@@ -41,22 +48,221 @@ const EditEventModal = ({ isVisible, onClose, onSave }) => {
     setCurrentBreak({ start: new Date(), end: new Date() }); // Reset break fields
   };
 
+  const generateTimeSlots = (startTime, endTime, duration) => {
+    const slots = [];
+    let currentTime = new Date(startTime);
+
+    while (currentTime < endTime) {
+      const slotEndTime = new Date(currentTime.getTime() + duration * 60000);
+      if (slotEndTime > endTime) break;
+
+      slots.push({
+        start: currentTime.toISOString(),
+        end: slotEndTime.toISOString(),
+      });
+
+      currentTime = slotEndTime;
+    }
+
+    return slots;
+  };
+
   const handleSaveShift = () => {
-    setAllShifts([...allShifts, shift]);
+    const timeSlots = generateTimeSlots(shift.startTime, shift.endTime, shift.consultationDuration);
+    setAllShifts([...allShifts, { ...shift, timeSlots }]);
     setShift({
       name: "",
       startTime: new Date(),
       endTime: new Date(),
       breaks: [],
       consultationDuration: "",
+      date: new Date().toISOString().split('T')[0],
+      timeSlots: [],
     });
     setStep(1); // Reset to the first step for new shift
   };
 
-  const handleFinalSave = () => {
-    onSave(allShifts); // Pass the entire schedule back to the parent component
+  const handleFinalSave = async () => {
+    console.log('All Shifts:', allShifts); // Log the state before sending the payload
+
+    const payload = {
+      professionalId: userId,
+      availability: allShifts.reduce((acc, shift) => {
+        const date = shift.date;
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push({
+          name: shift.name,
+          startTime: shift.startTime.toISOString(),
+          endTime: shift.endTime.toISOString(),
+          durationOfConsultation: shift.consultationDuration,
+          breaks: shift.breaks.map(b => ({
+            start: b.start.toISOString(),
+            end: b.end.toISOString()
+          })),
+          timeSlots: shift.timeSlots,
+        });
+        return acc;
+      }, {}),
+      recurrence: 'None',
+    };
+
+    console.log('Payload:', JSON.stringify(payload, null, 2));
+
+    try {
+      const response = await fetch('https://medplus-health.onrender.com/api/schedule', {
+        method: 'Put',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const responseData = await response.json();
+      console.log('Schedule saved successfully:', responseData);
+      onSave(responseData);
+    } catch (error) {
+      console.error('Error saving schedule:', error);
+    }
+
     onClose();
   };
+
+  const handleNext = () => {
+    if (step < 5) {
+      setStep(step + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (step > 1) {
+      setStep(step - 1);
+    }
+  };
+
+  const renderShiftSelection = () => (
+    <View>
+      <Text style={styles.promptText}>Work Shifts</Text>
+      <View style={styles.flexIconRow}>
+        {[
+          { name: "Morning Shift", icon: "sun", color: "#FFD700" },
+          { name: "Afternoon Shift", icon: "cloud-sun", color: "#FFA500" },
+          { name: "Evening Shift", icon: "moon", color: "#1E90FF" },
+        ].map((shiftOption) => (
+          <TouchableOpacity
+            key={shiftOption.name}
+            style={styles.iconButton}
+            onPress={() => handleShiftSelection(shiftOption.name)}
+          >
+            <FontAwesome5
+              name={shiftOption.icon}
+              size={40}
+              color={shiftOption.color}
+            />
+            <Text style={styles.iconText}>{shiftOption.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={styles.promptText}>custom shift name</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Shift Name"
+        value={customShiftName}
+        onChangeText={setCustomShiftName}
+      />
+      <TouchableOpacity
+        style={styles.modalButton}
+        onPress={() => handleShiftSelection(customShiftName)}
+      >
+        <Text style={styles.modalButtonText}>Next</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderTimePicker = (label, value, onChange, showPicker, setShowPicker) => (
+    <View>
+      <Text style={styles.promptText}>{label}</Text>
+      <TouchableOpacity
+        onPress={() => setShowPicker(true)}
+        style={styles.inputContainer}
+      >
+        <Text style={styles.inputText}>
+          {value.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </Text>
+      </TouchableOpacity>
+      {showPicker && (
+        <DateTimePicker
+          value={value}
+          mode="time"
+          display="spinner"
+          onChange={(event, selectedTime) => {
+            setShowPicker(false);
+            onChange(selectedTime || value);
+          }}
+        />
+      )}
+    </View>
+  );
+
+  const renderBreaks = () => (
+    <View>
+      <Text style={styles.promptText}>breaks</Text>
+      {renderTimePicker("starts at", currentBreak.start, (time) => setCurrentBreak({ ...currentBreak, start: time }), showBreakStartPicker, setShowBreakStartPicker)}
+      {renderTimePicker("ends at", currentBreak.end, (time) => setCurrentBreak({ ...currentBreak, end: time }), showBreakEndPicker, setShowBreakEndPicker)}
+      <TouchableOpacity
+        style={styles.addBreakButton}
+        onPress={handleAddBreak}
+      >
+        <Text style={styles.addBreakButtonText}>Add Break</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderConsultationDuration = () => (
+    <View>
+      <Text style={styles.promptText}>Consultation duration (in minutes)</Text>
+      <View style={styles.flexRow}>
+        {["15", "30", "60"].map((duration) => (
+          <TouchableOpacity
+            key={duration}
+            style={[
+              styles.inputButton,
+              shift.consultationDuration === duration && styles.activeInputButton,
+            ]}
+            onPress={() => setShift({ ...shift, consultationDuration: duration })}
+          >
+            <Text style={styles.inputButtonText}>{`${duration} Minutes`}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderSaveOptions = () => (
+    <View>
+      
+      <TouchableOpacity
+        style={styles.modalButton}
+        onPress={handleSaveShift}
+      >
+        <Text style={styles.modalButtonText}>Add Another Shift</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.modalButton}
+        onPress={handleFinalSave}
+      >
+        <Text style={styles.modalButtonText}>Save Schedule</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true}>
@@ -66,200 +272,28 @@ const EditEventModal = ({ isVisible, onClose, onSave }) => {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ScrollView contentContainerStyle={styles.modalContent}>
-            {step === 1 && (
-              <View>
-                <Text style={styles.promptText}>
-                  Let’s set up your schedule. Select a shift:
-                </Text>
-                <View style={styles.flexIconRow}>
-                  {[
-                    { name: "Morning Shift", icon: "sun", color: "#FFD700" },
-                    { name: "Afternoon Shift", icon: "cloud-sun", color: "#FFA500" },
-                    { name: "Evening Shift", icon: "moon", color: "#1E90FF" },
-                  ].map((shiftOption) => (
-                    <TouchableOpacity
-                      key={shiftOption.name}
-                      style={styles.iconButton}
-                      onPress={() => handleShiftSelection(shiftOption.name)}
-                    >
-                      <FontAwesome5
-                        name={shiftOption.icon}
-                        size={40}
-                        color={shiftOption.color}
-                      />
-                      <Text style={styles.iconText}>{shiftOption.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
+            {step === 1 && renderShiftSelection()}
             {step === 2 && (
               <View>
-                <Text style={styles.promptText}>Work starts at:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowStartPicker(true)}
-                  style={styles.inputContainer}
-                >
-                  <Text style={styles.inputText}>
-                    {shift.startTime.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
-                </TouchableOpacity>
-                {showStartPicker && (
-                  <DateTimePicker
-                    value={shift.startTime}
-                    mode="time"
-                    display="spinner"
-                    onChange={(event, selectedTime) => {
-                      setShowStartPicker(false);
-                      setShift({ ...shift, startTime: selectedTime || shift.startTime });
-                    }}
-                  />
-                )}
-                <Text style={styles.promptText}>Work ends at:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowEndPicker(true)}
-                  style={styles.inputContainer}
-                >
-                  <Text style={styles.inputText}>
-                    {shift.endTime.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
-                </TouchableOpacity>
-                {showEndPicker && (
-                  <DateTimePicker
-                    value={shift.endTime}
-                    mode="time"
-                    display="spinner"
-                    onChange={(event, selectedTime) => {
-                      setShowEndPicker(false);
-                      setShift({ ...shift, endTime: selectedTime || shift.endTime });
-                    }}
-                  />
-                )}
+                {renderTimePicker("Work starts at:", shift.startTime, (time) => setShift({ ...shift, startTime: time }), showStartPicker, setShowStartPicker)}
+                {renderTimePicker("Work ends at:", shift.endTime, (time) => setShift({ ...shift, endTime: time }), showEndPicker, setShowEndPicker)}
               </View>
             )}
+            {step === 3 && renderBreaks()}
+            {step === 4 && renderConsultationDuration()}
+            {step === 5 && renderSaveOptions()}
 
-            {step === 3 && (
-              <View>
-                <Text style={styles.promptText}>
-                  Specify a break (optional):
-                </Text>
-                <Text style={styles.promptText}>Break starts at:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowBreakStartPicker(true)}
-                  style={styles.inputContainer}
-                >
-                  <Text style={styles.inputText}>
-                    {currentBreak.start.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
+            <View style={styles.navigationButtons}>
+              {step > 1 && (
+                <TouchableOpacity style={styles.navButton} onPress={handlePrevious}>
+                  <Text style={styles.navButtonText}>Previous</Text>
                 </TouchableOpacity>
-                {showBreakStartPicker && (
-                  <DateTimePicker
-                    value={currentBreak.start}
-                    mode="time"
-                    display="spinner"
-                    onChange={(event, selectedTime) => {
-                      setShowBreakStartPicker(false);
-                      setCurrentBreak({ ...currentBreak, start: selectedTime || currentBreak.start });
-                    }}
-                  />
-                )}
-                <Text style={styles.promptText}>Break ends at:</Text>
-                <TouchableOpacity
-                  onPress={() => setShowBreakEndPicker(true)}
-                  style={styles.inputContainer}
-                >
-                  <Text style={styles.inputText}>
-                    {currentBreak.end.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Text>
+              )}
+              {step < 5 && (
+                <TouchableOpacity style={styles.navButton} onPress={handleNext}>
+                  <Text style={styles.navButtonText}>Next</Text>
                 </TouchableOpacity>
-                {showBreakEndPicker && (
-                  <DateTimePicker
-                    value={currentBreak.end}
-                    mode="time"
-                    display="spinner"
-                    onChange={(event, selectedTime) => {
-                      setShowBreakEndPicker(false);
-                      setCurrentBreak({ ...currentBreak, end: selectedTime || currentBreak.end });
-                    }}
-                  />
-                )}
-                <TouchableOpacity
-                  style={styles.addBreakButton}
-                  onPress={handleAddBreak}
-                >
-                  <Text style={styles.addBreakButtonText}>Add Break</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {step === 4 && (
-              <View>
-                <Text style={styles.promptText}>
-                  How long should each consultation last? (in minutes)
-                </Text>
-                <View style={styles.flexRow}>
-                  {["15", "30", "60"].map((duration) => (
-                    <TouchableOpacity
-                      key={duration}
-                      style={[
-                        styles.inputButton,
-                        shift.consultationDuration === duration && styles.activeInputButton,
-                      ]}
-                      onPress={() =>
-                        setShift({ ...shift, consultationDuration: duration })
-                      }
-                    >
-                      <Text style={styles.inputButtonText}>{`${duration} Minutes`}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {step === 5 && (
-              <View>
-                <Text style={styles.promptText}>
-                  Would you like to save this schedule or add another shift?
-                </Text>
-                <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={handleSaveShift}
-                >
-                  <Text style={styles.modalButtonText}>Add Another Shift</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={handleFinalSave}
-                >
-                  <Text style={styles.modalButtonText}>Save Schedule</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            <View style={styles.indicatorsContainer}>
-              {[1, 2, 3, 4, 5].map((indicatorStep) => (
-                <TouchableOpacity
-                  key={indicatorStep}
-                  style={[
-                    styles.indicator,
-                    step === indicatorStep && styles.activeIndicator,
-                  ]}
-                  onPress={() => setStep(indicatorStep)}
-                />
-              ))}
+              )}
             </View>
           </ScrollView>
         </KeyboardAvoidingView>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { logout, selectUser } from '../app/store/userSlice';
+import { logoutAction, selectUser } from '../app/(redux)/authSlice';
 import { useRouter } from 'expo-router';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Badge } from 'react-native-elements';
@@ -20,7 +20,7 @@ const ClientHeader: React.FC<{ title: string }> = ({ title }) => {
   }, [userId]);
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutAction());
     router.push('/auth/login');
   };
 
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.ligh_gray,
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 24,
+    paddingTop: 40, // Increased padding to create space from the status bar
     elevation: 4,
   },
   leftSection: {

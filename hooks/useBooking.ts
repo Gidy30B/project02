@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import { RootState } from '../app/store/configureStore'; // Adjust path according to your store file
+import { RootState } from '../app/(redux)/store'; // Adjust path according to your store file
 import * as paystackProps from 'react-native-paystack-webview';
 
 interface BookingHook {
