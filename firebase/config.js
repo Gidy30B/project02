@@ -1,19 +1,19 @@
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/storage';
-
+import Constants from 'expo-constants';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBrjvw6-rfs9BPsdD30kAjIQ-m2mQejKyo",
-    authDomain: "medplus-supat-af28f.firebaseapp.com",
-    projectId: "medplus-supat-af28f",
-    storageBucket: "medplus-supat-af28f.appspot.com",
-    messagingSenderId: "399287117531",
-    appId: "1:399287117531:web:6a3cb397b9933e9cd78efe",
-    measurementId: "G-D0187ZL711"
-  };
+  apiKey: Constants.manifest.extra.FIREBASE_API_KEY,
+  authDomain: Constants.manifest.extra.FIREBASE_AUTH_DOMAIN,
+  projectId: Constants.manifest.extra.FIREBASE_PROJECT_ID,
+  storageBucket: Constants.manifest.extra.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: Constants.manifest.extra.FIREBASE_MESSAGING_SENDER_ID,
+  appId: Constants.manifest.extra.FIREBASE_APP_ID,
+  measurementId: Constants.manifest.extra.FIREBASE_MEASUREMENT_ID
+};
 
-   if(!firebase.apps.length){
-    firebase.initializeApp(firebaseConfig);
-    }
-  
-    export{firebase};
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+export { firebase };
