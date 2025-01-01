@@ -138,16 +138,16 @@ const useAppointments = () => {
 
     const transformAppointmentsToAgendaFormat = (appointments) => {
         const formattedAppointments = {};
-      
-        Object.keys(appointments).forEach((date) => {
-          formattedAppointments[date] = appointments[date].map((appointment, index) => ({
-            ...appointment,
-            id: `${date}-${index}`,
-          }));
-        });
-      
+        for (const [date, events] of Object.entries(appointments)) {
+            formattedAppointments[date] = events.map(event => ({
+                id: event.id,
+                name: event.name,
+                height: event.height,
+                timeSlot: event.timeSlot
+            }));
+        }
         return formattedAppointments;
-      };
+    };
 
     return {
         appointments,

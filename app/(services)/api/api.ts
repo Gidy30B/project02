@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://medplus-health.onrender.com";
+const API_URL = "https://project03-rj91.onrender.com";
 
 interface LoginData {
   email: string;
@@ -10,6 +10,7 @@ interface LoginData {
 interface RegisterData extends LoginData {
   firstName: string;
   lastName: string;
+  userType: string; // Add userType to RegisterData interface
 }
 
 interface UserData {
@@ -27,13 +28,9 @@ const loginUser = async ({ email, password }: LoginData): Promise<any> => {
 };
 
 // register
-const registerUser = async ({ email, password, firstName, lastName }: RegisterData): Promise<any> => {
-  const response = await axios.post(`${API_URL}/api/users/register`, {
-    email,
-    password,
-    firstName,
-    lastName,
-  });
+const registerUser = async (data: RegisterData): Promise<any> => {
+  console.log("Data being sent to API:", data); // Add this line to log the data being sent to the API
+  const response = await axios.post(`${API_URL}/api/users/register`, data);
   return response.data;
 };
 

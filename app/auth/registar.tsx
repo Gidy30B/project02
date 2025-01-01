@@ -26,6 +26,7 @@ interface RegisterValues {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  userType: string;
 }
 
 const RegisterSchema = Yup.object().shape({
@@ -36,6 +37,7 @@ const RegisterSchema = Yup.object().shape({
     .required("Required"),
   firstName: Yup.string().required("Required"),
   lastName: Yup.string().required("Required"),
+  userType: Yup.string().required("Required"), // Add userType validation
 });
 
 export default function Register() {
@@ -106,6 +108,7 @@ export default function Register() {
               confirmPassword: "",
               firstName: "",
               lastName: "",
+              userType: "professional", // Default userType
             }}
             validationSchema={RegisterSchema}
             onSubmit={(values: RegisterValues) => {
@@ -114,6 +117,7 @@ export default function Register() {
                 password: values.password,
                 firstName: values.firstName,
                 lastName: values.lastName,
+                userType: values.userType, // Include userType in payload
               };
               setLoading(true);
               mutation

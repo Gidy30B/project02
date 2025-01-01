@@ -1,44 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useSelector } from 'react-redux'; // Import useSelector from react-redux
-import { selectUser } from '../app/(redux)/authSlice'; // Import selectUser from userSlice
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Slot {
   _id: string;
   date: string;
-  startTime: string; // Changed from 'time' to 'startTime'
-  endTime: string;   // Added 'endTime'
+  startTime: string;
+  endTime: string;
   isBooked: boolean;
-  appointmentId?: string | null; // Added to align with backend
+  appointmentId?: string | null;
 }
 
 interface UseScheduleHook {
   schedule: Slot[];
-  fetchSchedule: (professionalId: string) => Promise<void>;
-  createOrUpdateSchedule: (professionalId: string, availability: Slot[]) => Promise<void>;
-  createRecurringSlots: (professionalId: string, slot: Slot, recurrence: string) => Promise<void>;
-  subscribeToScheduleUpdates: (professionalId: string) => void;
+  fetchSchedule: (userId: string) => Promise<void>;
+  createOrUpdateSchedule: (userId: string, availability: Slot[]) => Promise<void>;
+  createRecurringSlots: (userId: string, slot: Slot[], recurrence: string) => Promise<void>;
+  subscribeToScheduleUpdates: (userId: string) => void;
   updateSlot: (slotId: string, updates: Partial<Slot>) => Promise<void>;
-  fetchScheduleForDate: (professionalId: string, date: string) => Promise<Slot[]>; // Added fetchScheduleForDate to the interface
+  fetchScheduleForDate: (userId: string, date: string) => Promise<Slot[]>;
 }
 
 const useSchedule = (): UseScheduleHook => {
   const [schedule, setSchedule] = useState<Slot[]>([]);
-  const user = useSelector(selectUser); // Get user from Redux
-  const professionalId = user.professional?._id; // Extract professionalId from user
+  const [userId, setUserId] = useState<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (professionalId) {
-      fetchSchedule(professionalId);
-    }
-  }, [professionalId]);
+    (async () => {
+      const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId && storedUserId !== userIdRef.current) {
+        userIdRef.current = storedUserId;
+        setUserId(storedUserId); // Update state only once
+        await fetchSchedule(storedUserId);
+      }
+    })();
+    // Ensure this runs only once to fetch the initial userId
+  }, []); // No dependencies to prevent continuous re-execution
 
-  // Directly fetch the schedule from the API
-  const fetchSchedule = async (professionalId: string) => {
+  const fetchSchedule = async (userId: string) => {
     try {
-      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${professionalId}`);
-      if (response.status === 200 && response.data.slots) {
-        setSchedule(response.data.slots);
+      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${userId}`);
+      if (response.status === 200 && response.data.availability) {
+        setSchedule(response.data.availability);
+        await AsyncStorage.setItem('schedule', JSON.stringify(response.data.availability)); // Store schedule in AsyncStorage
       } else {
         console.error('Failed to fetch schedule:', response.data.message);
       }
@@ -47,14 +52,14 @@ const useSchedule = (): UseScheduleHook => {
     }
   };
 
-  const createOrUpdateSchedule = async (professionalId: string, availability: Slot[]) => {
+  const createOrUpdateSchedule = async (userId: string, availability: Slot[]) => {
     try {
       const response = await axios.put(`https://medplus-health.onrender.com/api/schedule`, {
-        professionalId,
+        userId,
         availability,
       });
       if (response.status === 200) {
-        fetchSchedule(professionalId);
+        await fetchSchedule(userId);
       } else {
         console.error('Failed to create or update schedule:', response.data.message);
       }
@@ -63,15 +68,15 @@ const useSchedule = (): UseScheduleHook => {
     }
   };
 
-  const createRecurringSlots = async (professionalId: string, slots: Slot[], recurrence: string) => {
+  const createRecurringSlots = async (userId: string, slots: Slot[], recurrence: string) => {
     try {
       const response = await axios.post(`https://medplus-health.onrender.com/api/schedule/createRecurringSlots`, {
-        professionalId,
+        userId,
         slots,
         recurrence,
       });
       if (response.status === 200) {
-        fetchSchedule(professionalId);
+        await fetchSchedule(userId);
       } else {
         console.error('Failed to create recurring slots:', response.data.message);
       }
@@ -80,28 +85,30 @@ const useSchedule = (): UseScheduleHook => {
     }
   };
 
-  const subscribeToScheduleUpdates = (professionalId: string) => {
-    const socket = new WebSocket(`wss://medplus-health.onrender.com/schedule/${professionalId}`);
-    socket.onmessage = (event) => {
+  const subscribeToScheduleUpdates = (userId: string) => {
+    const socket = new WebSocket(`wss://medplus-health.onrender.com/schedule/${userId}`);
+    socket.onmessage = async (event) => {
       const updatedSchedule = JSON.parse(event.data);
       setSchedule(updatedSchedule);
+      await AsyncStorage.setItem('schedule', JSON.stringify(updatedSchedule)); // Store updated schedule in AsyncStorage
     };
   };
 
   const updateSlot = async (slotId: string, updates: Partial<Slot>) => {
     try {
-      const updatedSchedule = schedule.map(slot =>
+      const updatedSchedule = schedule.map((slot) =>
         slot._id === slotId ? { ...slot, ...updates } : slot
       );
       setSchedule(updatedSchedule);
+      await AsyncStorage.setItem('schedule', JSON.stringify(updatedSchedule)); // Store updated schedule in AsyncStorage
     } catch (error) {
       console.error('Error updating slot:', error);
     }
   };
 
-  const fetchScheduleForDate = async (professionalId: string, date: string) => {
+  const fetchScheduleForDate = async (userId: string, date: string) => {
     try {
-      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${professionalId}/${date}`);
+      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${userId}/${date}`);
       if (response.status === 200 && response.data.slots) {
         return response.data.slots;
       } else {
@@ -121,7 +128,7 @@ const useSchedule = (): UseScheduleHook => {
     createRecurringSlots,
     subscribeToScheduleUpdates,
     updateSlot,
-    fetchScheduleForDate, // Added fetchScheduleForDate to the return object
+    fetchScheduleForDate,
   };
 };
 

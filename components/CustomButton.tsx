@@ -21,7 +21,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({label, onPress, isPending, i
           marginBottom: 30,
           opacity: isPending ? 0.7 : 1,
         }}
-        disabled={isPending}
+        disabled={isPending} // Disable button when isPending is true
       >
         {isPending ? (
           <ActivityIndicator size="small" color="#fff" />

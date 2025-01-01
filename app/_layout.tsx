@@ -45,6 +45,7 @@ export default function RootLayout() {
               <Stack.Screen name="client/tabs" /> 
               <Stack.Screen name="doctors" options={{ title: 'Doctors Overview' }} /> 
               <Stack.Screen name="tasks" options={{ title: 'Tasks', headerShown: true }} />
+              <Stack.Screen name="profile" options={{ title: 'Profile', headerShown: false }} />
               <Stack.Screen name="income" options={{ title: 'Wallet', headerShown: true }} />
               <Stack.Screen name="consultations" options={{ title: 'Patients', headerShown: true }} />
               <Stack.Screen name="doctor/[doctorId]" options={{ title: 'Doctor Profile' }} />
@@ -52,6 +53,8 @@ export default function RootLayout() {
               <Stack.Screen name="addclinic" />
               <Stack.Screen name="pharmacist/tabs" />
               <Stack.Screen name="addpharmacy" />
+
+              <Stack.Screen name="EditProfile" options={{ title: 'Edit Profile' }} />
             </Stack>
           </PaperProvider>
         </AuthProvider>

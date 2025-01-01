@@ -42,11 +42,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   });
 
   const handleLoginSuccess = (data: any) => {
-    const [firstName, lastName] = data.username.split(' ');
+    const [firstName, lastName] = (data.username || "").split(' ');
     const userData = {
       id: data.id,
       email: data.email,
-      username: data.username,
+      username: data.username || '',
       token: data.token,
       firstName: firstName || '',
       lastName: lastName || '',
@@ -54,7 +54,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       userId: data.id, // Include userId
     };
     dispatch(loginAction(userData));
-    router.push('/doctor/dashboard');
+    router.push('profile');
   };
 
   const handleLoginError = (error: any) => {

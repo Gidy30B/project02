@@ -36,8 +36,8 @@ export default function DoctorLayout() {
       {/* Ensure all children are of type Tabs.Screen */}
       <Tabs.Screen name="dashboard" options={{ tabBarLabel: 'Dashboard' }} />
       <Tabs.Screen name="schedule" options={{ tabBarLabel: 'Schedule' }} />
-      <Tabs.Screen name="settings" options={{ tabBarLabel: 'Settings' }} />
-      <Tabs.Screen name="transaction" options={{ tabBarLabel: 'Transaction' }} /> {/* Add this line for the new tab */}
+      <Tabs.Screen name="transaction" options={{ tabBarLabel: 'Transaction' }} /> {/* Move this line up */}
+      <Tabs.Screen name="settings" options={{ tabBarLabel: 'Settings' }} /> {/* Move this line down */}
     </Tabs>
   );
 }
@@ -49,10 +49,10 @@ function getTitle(routeName: string): string {
       return 'Doctor Dashboard';
     case 'schedule':
       return 'Manage Schedule';
-    case 'settings':
-      return 'Settings';
-    case 'transaction': // Add this case for the new tab
+    case 'transaction': // Move this case up
       return 'Transaction';
+    case 'settings': // Move this case down
+      return 'Settings';
     default:
       return 'Doctor';
   }

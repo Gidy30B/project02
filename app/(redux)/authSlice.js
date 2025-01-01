@@ -73,23 +73,31 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     loginAction: (state, action) => {
-      state.user = {
-        email: action.payload.email,
-        firstName: action.payload.firstName,
-        lastName: action.payload.lastName,
-        userId: action.payload.userId, // Ensure userId is set correctly
-        token: action.payload.token,
-        username: action.payload.username // Include username
-      };
-      state.name = action.payload.firstName + ' ' + action.payload.lastName;
-      state.email = action.payload.email;
-      state.userId = action.payload.userId; // Ensure userId is set correctly
-      state.userType = action.payload.userType;
-      state.isAuthenticated = true;
-      state.professional = action.payload.professional || null;
-      state.profileImage = action.payload.profileImage || null;
-      state.loading = false;
-      AsyncStorage.setItem("userInfo", JSON.stringify(state.user));
+      const { user, token } = action.payload;
+      if (user) {
+        state.user = {
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          userId: user._id,
+          token: token,
+          username: user.username,
+          preferences: user.preferences,
+          isVerified: user.isVerified,
+          loginMethod: user.loginMethod,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        };
+        state.name = user.firstName + ' ' + user.lastName;
+        state.email = user.email;
+        state.userId = user._id;
+        state.userType = user.userType;
+        state.isAuthenticated = true;
+        state.professional = user.professional || null;
+        state.profileImage = user.profileImage || null;
+        state.loading = false;
+        AsyncStorage.setItem("userInfo", JSON.stringify(state.user));
+      }
     },
     logoutAction: (state) => {
       Object.assign(state, initialState); // Reset state to initial values
@@ -154,7 +162,6 @@ export const selectUser = (state) => ({
 export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile, updateInsurance } = authSlice.actions;
 
 export default authSlice.reducer;
-
 
 export const loadUser = () => async (dispatch) => {
   const user = await loadUserFromStorage();
