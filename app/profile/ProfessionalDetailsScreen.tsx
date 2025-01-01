@@ -1,61 +1,66 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function ProfessionalDetailsScreen() {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Professional Details</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Professional Details</Text>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Medical Degree(s)</Text>
-        <TextInput
-          placeholder="Degree name, University, Year"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Medical Degree(s)</Text>
+          <TextInput
+            placeholder="Degree name, University, Year"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Specialization</Text>
-        <TextInput
-          placeholder="e.g., Cardiology, Neurology"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Specialization</Text>
+          <TextInput
+            placeholder="e.g., Cardiology, Neurology"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Certifications</Text>
-        <TextInput
-          placeholder="e.g., ACLS, ATLS"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Certifications</Text>
+          <TextInput
+            placeholder="e.g., ACLS, ATLS"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>License Number</Text>
-        <TextInput
-          placeholder="Enter license or registration ID"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>License Number</Text>
+          <TextInput
+            placeholder="Enter license or registration ID"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Issuing Medical Board</Text>
-        <TextInput
-          placeholder="e.g., Medical Council of XYZ"
-          style={styles.input}
-        />
-      </View>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Issuing Medical Board</Text>
+          <TextInput
+            placeholder="e.g., Medical Council of XYZ"
+            style={styles.input}
+          />
+        </View>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Years of Experience</Text>
-        <TextInput
-          placeholder="e.g., 10"
-          keyboardType="numeric"
-          style={styles.input}
-        />
-      </View>
-    </ScrollView>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Years of Experience</Text>
+          <TextInput
+            placeholder="e.g., 10"
+            keyboardType="numeric"
+            style={styles.input}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

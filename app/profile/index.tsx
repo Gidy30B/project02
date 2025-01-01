@@ -8,6 +8,8 @@ import {
   Alert,
   Image,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { firebase } from '../../firebase/config';
@@ -84,54 +86,59 @@ const DoctorRegistrationForm = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Profile Image Section */}
-      <View style={styles.profileContainer}>
-        {profileImage ? (
-          <Image source={{ uri: profileImage }} style={styles.profileImage} />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>Add Photo</Text>
-          </View>
-        )}
-        <TouchableOpacity style={styles.editButton} onPress={pickImage}>
-          <Text style={styles.editButtonText}>Edit</Text>
-        </TouchableOpacity>
-      </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView style={styles.container}>
+        {/* Profile Image Section */}
+        <View style={styles.profileContainer}>
+          {profileImage ? (
+            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Text style={styles.placeholderText}>Add Photo</Text>
+            </View>
+          )}
+          <TouchableOpacity style={styles.editButton} onPress={pickImage}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Registration Form */}
-      <View style={styles.formContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Full Name (e.g., Dr. John Doe)"
-          value={fullName}
-          onChangeText={setFullName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          value={email}
-          keyboardType="email-address"
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Phone Number"
-          value={phoneNumber}
-          keyboardType="phone-pad"
-          onChangeText={setPhoneNumber}
-        />
-        <TouchableOpacity
-          style={styles.uploadButton}
-          onPress={uploadImage}
-          disabled={!profileImage || uploading}
-        >
-          <Text style={styles.uploadButtonText}>
-            {uploading ? 'Uploading...' : 'Upload Profile'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Registration Form */}
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name (e.g., Dr. John Doe)"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            value={email}
+            keyboardType="email-address"
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            value={phoneNumber}
+            keyboardType="phone-pad"
+            onChangeText={setPhoneNumber}
+          />
+          <TouchableOpacity
+            style={styles.uploadButton}
+            onPress={uploadImage}
+            disabled={!profileImage || uploading}
+          >
+            <Text style={styles.uploadButtonText}>
+              {uploading ? 'Uploading...' : 'Upload Profile'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 

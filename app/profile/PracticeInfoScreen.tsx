@@ -6,7 +6,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInputProps,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 
 interface Experience {
@@ -35,56 +36,61 @@ export default function PracticeInfoScreen(): JSX.Element {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Practice Information</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Practice Information</Text>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Current Workplace</Text>
-        <TextInput
-          placeholder="Hospital/Clinic name and location"
-          style={styles.input}
-        />
-      </View>
-
-      <Text style={styles.label}>Past Work Experience</Text>
-      {experiences.map((experience, index) => (
-        <View key={index} style={styles.experienceContainer}>
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Current Workplace</Text>
           <TextInput
-            placeholder="Institution"
+            placeholder="Hospital/Clinic name and location"
             style={styles.input}
-            value={experience.institution}
-            onChangeText={(value) =>
-              handleExperienceChange(index, 'institution', value)
-            }
-          />
-          <TextInput
-            placeholder="Year"
-            style={styles.input}
-            value={experience.year}
-            onChangeText={(value) => handleExperienceChange(index, 'year', value)}
-          />
-          <TextInput
-            placeholder="Role"
-            style={styles.input}
-            value={experience.role}
-            onChangeText={(value) => handleExperienceChange(index, 'role', value)}
           />
         </View>
-      ))}
-      <TouchableOpacity style={styles.addButton} onPress={addExperience}>
-        <Text style={styles.addButtonText}>+ Add Another Experience</Text>
-      </TouchableOpacity>
 
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Professional Affiliations</Text>
-        <TextInput
-          placeholder="Memberships in medical associations"
-          style={styles.input}
-          multiline
-          numberOfLines={3}
-        />
-      </View>
-    </ScrollView>
+        <Text style={styles.label}>Past Work Experience</Text>
+        {experiences.map((experience, index) => (
+          <View key={index} style={styles.experienceContainer}>
+            <TextInput
+              placeholder="Institution"
+              style={styles.input}
+              value={experience.institution}
+              onChangeText={(value) =>
+                handleExperienceChange(index, 'institution', value)
+              }
+            />
+            <TextInput
+              placeholder="Year"
+              style={styles.input}
+              value={experience.year}
+              onChangeText={(value) => handleExperienceChange(index, 'year', value)}
+            />
+            <TextInput
+              placeholder="Role"
+              style={styles.input}
+              value={experience.role}
+              onChangeText={(value) => handleExperienceChange(index, 'role', value)}
+            />
+          </View>
+        ))}
+        <TouchableOpacity style={styles.addButton} onPress={addExperience}>
+          <Text style={styles.addButtonText}>+ Add Another Experience</Text>
+        </TouchableOpacity>
+
+        <View style={styles.formGroup}>
+          <Text style={styles.label}>Professional Affiliations</Text>
+          <TextInput
+            placeholder="Memberships in medical associations"
+            style={styles.input}
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
