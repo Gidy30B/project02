@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
-import { StyleSheet, Text, TouchableOpacity, SafeAreaView, Alert, Image, View } from 'react-native'
-import * as ImagePicker from 'expo-image-picker'
-import {firebase} from '../../firebase/config'
-import * as FileSystem from 'expo-file-system'
-
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, SafeAreaView, Alert, Image, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { firebase } from '../../firebase/config';
+import * as FileSystem from 'expo-file-system';
 
 const UploadMediaFile = () => {
-  const [image, setImage] = useState(null)
-  const [uploading, setUploading] = useState(false)
+  const [image, setImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [downloadURL, setDownloadURL] = useState(null);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -15,28 +15,24 @@ const UploadMediaFile = () => {
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
-    })
-
-
-    console.log(result)
+    });
 
     if (!result.cancelled) {
       setImage(result.assets[0].uri);
     }
-  }
+  };
 
-  // upload media filess
   const uploadMedia = async () => {
-    setUploading(true)
+    setUploading(true);
 
     try {
-      const {uri} = await FileSystem.getInfoAsync(image);
+      const { uri } = await FileSystem.getInfoAsync(image);
       const blob = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.onload = function() {
+        xhr.onload = function () {
           resolve(xhr.response);
         };
-        xhr.onerror = function(e) {
+        xhr.onerror = function (e) {
           console.error(e);
           reject(new TypeError('Network request failed'));
         };
@@ -47,16 +43,22 @@ const UploadMediaFile = () => {
 
       const filename = image.substring(image.lastIndexOf('/') + 1);
       const ref = firebase.storage().ref().child(filename);
+
       await ref.put(blob);
-      setUploading(false);
-      Alert.alert('uploaded successfully');
+      blob.close();
+
+      const url = await ref.getDownloadURL(); // Get the download URL
+      setDownloadURL(url);
+      Alert.alert('Uploaded successfully');
+
       setImage(null);
     } catch (e) {
-      console.error(e)
-      setUploading(false)
-      Alert.alert('upload failed');
+      console.error(e);
+      Alert.alert('Upload failed');
+    } finally {
+      setUploading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,17 +67,27 @@ const UploadMediaFile = () => {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={styles.selectButtonText} onPress={pickImage}>
-          <Text>Upload Image</Text>
+          <Text>Pick Image</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.selectButtonText} onPress={uploadMedia}>
-          <Text>Upload</Text>
+        <TouchableOpacity
+          style={styles.selectButtonText}
+          onPress={uploadMedia}
+          disabled={!image || uploading}
+        >
+          <Text>{uploading ? 'Uploading...' : 'Upload'}</Text>
         </TouchableOpacity>
       </View>
+      {downloadURL && (
+        <View style={styles.downloadContainer}>
+          <Text>Download URL:</Text>
+          <Text style={styles.downloadURL}>{downloadURL}</Text>
+        </View>
+      )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default UploadMediaFile
+export default UploadMediaFile;
 
 const styles = StyleSheet.create({
   container: {
@@ -100,9 +112,13 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  imageBox: {
-    width: 200,
-    height: 200,
+  downloadContainer: {
+    marginTop: 20,
+    alignItems: 'center',
   },
-
-})
+  downloadURL: {
+    color: '#007aff',
+    marginTop: 5,
+    textAlign: 'center',
+  },
+});
