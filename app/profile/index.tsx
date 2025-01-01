@@ -60,18 +60,17 @@ const UploadMediaFile = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-
-      <TouchableOpacity style={styles.selectButtonText} onPress={pickImage}>
-       <Text >Upload Image</Text>
-      </TouchableOpacity>
       <View style={styles.imageContainer}>
         {image && <Image source={{ uri: image }} style={{ width: 200, height: 200 }} />}
-
+      </View>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.selectButtonText} onPress={pickImage}>
+          <Text>Upload Image</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.selectButtonText} onPress={uploadMedia}>
           <Text>Upload</Text>
         </TouchableOpacity>
       </View>
-        
     </SafeAreaView>
   )
 }
@@ -94,6 +93,12 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginTop: 30,
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 30,
+    width: '100%',
+    alignItems: 'center',
   },
   imageBox: {
     width: 200,
