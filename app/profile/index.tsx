@@ -10,6 +10,7 @@ import {
   View,
   KeyboardAvoidingView,
   Platform,
+  ScrollView, // Import ScrollView
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -119,50 +120,52 @@ const DoctorRegistrationForm = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={styles.container}>
-        <View style={styles.profileContainer}>
-          {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
-          ) : (
-            <View style={styles.placeholderImage}>
-              <Text style={styles.placeholderText}>Add Photo</Text>
-            </View>
-          )}
-          <TouchableOpacity style={styles.editButton} onPress={pickImage}>
-            <Text style={styles.editButtonText}>Upload</Text>
-          </TouchableOpacity>
-        </View>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.profileContainer}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <Text style={styles.placeholderText}>Add Photo</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.editButton} onPress={pickImage}>
+              <Text style={styles.editButtonText}>Upload</Text>
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.formContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name (e.g., Dr. John Doe)"
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email Address"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            keyboardType="phone-pad"
-            value={phoneNumber}
-            onChangeText={setPhoneNumber}
-          />
-          <TouchableOpacity
-            style={styles.submitButton}
-            onPress={handleSubmit}
-            disabled={uploading}
-          >
-            <Text style={styles.submitButtonText}>
-              {uploading ? 'Uploading...' : 'Submit'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name (e.g., Dr. John Doe)"
+              value={fullName}
+              onChangeText={setFullName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email Address"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={uploading}
+            >
+              <Text style={styles.submitButtonText}>
+                {uploading ? 'Uploading...' : 'Submit'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
   );
@@ -172,6 +175,7 @@ export default DoctorRegistrationForm;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9f9f9', alignItems: 'center', paddingTop: 20 },
+  scrollContainer: { alignItems: 'center', paddingBottom: 20 },
   profileContainer: { alignItems: 'center', marginBottom: 30 },
   profileImage: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#6200ee' },
   placeholderImage: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' },
