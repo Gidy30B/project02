@@ -17,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 import { useSelector } from 'react-redux'; // Import useSelector
 import { loadUserFromStorage } from '../(redux)/authSlice'; // Adjust the import path as needed
+import { firebase } from '../../firebase/config'; // Import firebase
 
 const DoctorRegistrationForm = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -104,13 +105,21 @@ const DoctorRegistrationForm = () => {
       }
 
       console.log('Profile image URL:', profileImageUrl);
+      const payload = {
+        userId,
+        fullName,
+        email,
+        phoneNumber,
+        profileImage: profileImageUrl,
+      };
+      console.log('Payload:', payload);
+
       const response = await fetch('https://medplus-health.onrender.com/api/users/updateDoctorProfile', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
         },
-        body: JSON.stringify({ userId, fullName, email, phoneNumber, profileImage: profileImageUrl }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) throw new Error('Failed to update profile');
