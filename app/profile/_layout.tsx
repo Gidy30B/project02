@@ -50,7 +50,7 @@ export default function Layout() {
       >
         <Tabs.Screen name="index" />
         <Tabs.Screen name="PracticeInfo" />
-        <Tabs.Screen name="ProfessionalDetailsScreen" />
+        <Tabs.Screen name="ProfessionalDetailsScreen" /> {/* Ensure this matches the name used in router.push */}
         <Tabs.Screen name="Verification" />
       </Tabs>
     </View>

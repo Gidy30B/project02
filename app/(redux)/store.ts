@@ -10,6 +10,14 @@ const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
   whitelist: ['auth'], // Only persist the auth reducer
+  serialize: false, // Disable serialization check
+  stateReconciler: (inboundState: any, originalState: any) => {
+    return {
+      ...originalState,
+      ...inboundState,
+      err: undefined, // Ignore the err field
+    };
+  },
 };
 
 const rootReducer = combineReducers({

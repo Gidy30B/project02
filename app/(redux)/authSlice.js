@@ -139,6 +139,9 @@ const authSlice = createSlice({
     updateInsurance: (state, action) => {
       state.insuranceData = action.payload; 
     },
+    setError: (state, action) => {
+      state.error = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(fetchProfileImage.fulfilled, (state, action) => {
@@ -146,6 +149,7 @@ const authSlice = createSlice({
     });
     builder.addCase(fetchProfileImage.rejected, (state, action) => {
       console.error('Error fetching profile image:', action.payload);
+      state.error = action.payload; // Store error in state
     });
   },
 });
@@ -155,7 +159,7 @@ export const selectUser = (state) => ({
   profileImage: state.auth.profileImage,
 });
 
-export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile, updateInsurance } = authSlice.actions;
+export const { loginAction, logoutAction, setUser, setLoading, updateUserProfile, updateAttachedToClinic, setProfileImage, updateProfile, updateInsurance, setError } = authSlice.actions;
 
 export default authSlice.reducer;
 
