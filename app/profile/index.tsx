@@ -137,7 +137,7 @@ const DoctorRegistrationForm = () => {
 
       console.log('Profile updated successfully');
       Alert.alert('Profile updated successfully');
-      router.push('/profile/ProfessionalDetails'); // Navigate to ProfessionalDetails screen
+      router.push('/ProfessionalDetailsScree'); // Navigate to ProfessionalDetails screen
     } catch (error) {
       console.error('Failed to update profile:', error);
       Alert.alert('Failed to update profile');

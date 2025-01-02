@@ -9,7 +9,6 @@ export default function Layout() {
       {/* Header Section */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-     
       </View>
 
       {/* Tab Navigator */}
@@ -22,17 +21,17 @@ export default function Layout() {
               case 'index':
                 iconName = 'account';
                 break;
-              case 'PersonalDetails':
-                iconName = 'account-details';
-                break;
               case 'PracticeInfo':
                 iconName = 'hospital-box';
+                break;
+              case 'ProfessionalDetailsScreen':
+                iconName = 'briefcase';
                 break;
               case 'Verification':
                 iconName = 'check-decagram';
                 break;
               default:
-                iconName = 'help-circle-outline';
+                iconName = 'doctor';
                 break;
             }
             return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
@@ -50,8 +49,8 @@ export default function Layout() {
         })}
       >
         <Tabs.Screen name="index" />
-        <Tabs.Screen name="PersonalDetails" />
         <Tabs.Screen name="PracticeInfo" />
+        <Tabs.Screen name="ProfessionalDetailsScreen" />
         <Tabs.Screen name="Verification" />
       </Tabs>
     </View>
