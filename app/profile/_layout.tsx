@@ -9,9 +9,7 @@ export default function Layout() {
       {/* Header Section */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
-        <Text style={styles.headerSubtitle}>
-          Complete your  profile.
-        </Text>
+     
       </View>
 
       {/* Tab Navigator */}

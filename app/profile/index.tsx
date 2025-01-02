@@ -10,14 +10,16 @@ import {
   View,
   KeyboardAvoidingView,
   Platform,
-  ScrollView, // Import ScrollView
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { useSelector } from 'react-redux'; // Import useSelector
-import { loadUserFromStorage } from '../(redux)/authSlice'; // Adjust the import path as needed
-import { firebase } from '../../firebase/config'; // Import firebase
+import { useSelector } from 'react-redux';
+import { useRouter } from 'expo-router'; // Import useRouter
+import { loadUserFromStorage } from '../(redux)/authSlice';
+import { firebase } from '../../firebase/config';
 
 const DoctorRegistrationForm = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -25,10 +27,11 @@ const DoctorRegistrationForm = () => {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [uploading, setUploading] = useState(false);
-  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
-  const token = useSelector((state) => state.auth.token); // Get token from Redux
-  console.log('User ID:', userId); // Log the userId
-  console.log('Token:', token); // Log the token
+  const userId = useSelector((state) => state.auth.userId);
+  const token = useSelector((state) => state.auth.token);
+  const router = useRouter(); // Initialize useRouter
+  console.log('User ID:', userId);
+  console.log('Token:', token);
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -81,11 +84,11 @@ const DoctorRegistrationForm = () => {
       await AsyncStorage.setItem('profileImage', url);
 
       Alert.alert('Profile image uploaded successfully');
-      return url; // Return the URL after successful upload
+      return url;
     } catch (error) {
       console.error('Image upload failed:', error);
       Alert.alert('Image upload failed');
-      return null; // Return null if upload fails
+      return null;
     } finally {
       setUploading(false);
     }
@@ -126,6 +129,7 @@ const DoctorRegistrationForm = () => {
 
       console.log('Profile updated successfully');
       Alert.alert('Profile updated successfully');
+      router.push('/profile/ProfessionalDetails'); // Navigate to ProfessionalDetails screen
     } catch (error) {
       console.error('Failed to update profile:', error);
       Alert.alert('Failed to update profile');
@@ -152,37 +156,37 @@ const DoctorRegistrationForm = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.formContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Full Name (e.g., Dr. John Doe)"
-              value={fullName}
-              onChangeText={setFullName}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email Address"
-              keyboardType="email-address"
-              value={email}
-              onChangeText={setEmail}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone Number"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
-            />
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              disabled={uploading}
-            >
-              <Text style={styles.submitButtonText}>
-                {uploading ? 'Uploading...' : 'Submit'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name (e.g., Dr. John Doe)"
+            value={fullName}
+            onChangeText={setFullName}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone Number"
+            keyboardType="phone-pad"
+            value={phoneNumber}
+            onChangeText={setPhoneNumber}
+          />
+          <TouchableOpacity
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Submit</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     </KeyboardAvoidingView>
@@ -192,16 +196,15 @@ const DoctorRegistrationForm = () => {
 export default DoctorRegistrationForm;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9', alignItems: 'center', paddingTop: 20 },
-  scrollContainer: { alignItems: 'center', paddingBottom: 20 },
+  container: { flex: 1, backgroundColor: '#f9f9f9', justifyContent: 'center', paddingTop: 20 },
+  scrollContainer: { alignItems: 'center', paddingBottom: 20, paddingHorizontal: 20 },
   profileContainer: { alignItems: 'center', marginBottom: 30 },
   profileImage: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#6200ee' },
   placeholderImage: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' },
   placeholderText: { color: '#aaa', fontSize: 16 },
   editButton: { marginTop: 10, backgroundColor: '#6200ee', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 },
   editButtonText: { color: '#fff', fontSize: 14 },
-  formContainer: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 2 },
-  input: { height: 50, borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 20, fontSize: 16, paddingHorizontal: 10 },
-  submitButton: { backgroundColor: '#6200ee', paddingVertical: 15, borderRadius: 5, alignItems: 'center' },
+  input: { width: '100%', height: 50, borderWidth: 1, borderColor: '#ccc', borderRadius: 5, marginBottom: 20, fontSize: 16, paddingHorizontal: 10 },
+  submitButton: { backgroundColor: '#6200ee', paddingVertical: 15, borderRadius: 5, alignItems: 'center', width: '100%' },
   submitButtonText: { color: '#fff', fontSize: 16 },
 });
