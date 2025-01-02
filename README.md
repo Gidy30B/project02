@@ -1,242 +1,207 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, StyleSheet } from 'react-native';
-import { Button, Snackbar, Card, TextInput, Dialog, Portal } from 'react-native-paper';
-import axios from 'axios';
-import EnhancedCalendar from '@/components/doctor/calendar/EnhancedCalendar';
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+  Image,
+  View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView, // Import ScrollView
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
+import { useSelector } from 'react-redux'; // Import useSelector
+import { loadUserFromStorage } from '../(redux)/authSlice'; // Adjust the import path as needed
+import { firebase } from '../../firebase/config'; // Import firebase
 
-// Types for the schedule data
-interface Break {
-  start: string;
-  end: string;
-}
-
-interface Shift {
-  name: string;
-  startTime: string;
-  endTime: string;
-  consultationDuration: string;
-  breaks: Break[];
-}
-
-interface ScheduleResponse {
-  schedule: Shift[];
-}
-
-const timeToString = (time: Date): string => time.toISOString().split('T')[0];
-
-const Schedule: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [schedule, setSchedule] = useState<Shift[]>([]);
-  const [shiftDetails, setShiftDetails] = useState<Shift>({
-    name: '',
-    startTime: '',
-    endTime: '',
-    consultationDuration: '',
-    breaks: [],
-  });
-  const [isDialogVisible, setIsDialogVisible] = useState<boolean>(false);
-  const [editingShiftIndex, setEditingShiftIndex] = useState<number | null>(null);
-  const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
-  const [isSnackbarVisible, setIsSnackbarVisible] = useState<boolean>(false);
-  const [currentBreak, setCurrentBreak] = useState<Break>({ start: '', end: '' });
-  const [editingBreakIndex, setEditingBreakIndex] = useState<number | null>(null);
+const DoctorRegistrationForm = () => {
+  const [profileImage, setProfileImage] = useState(null);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
+  const token = useSelector((state) => state.auth.token); // Get token from Redux
+  console.log('User ID:', userId); // Log the userId
+  console.log('Token:', token); // Log the token
 
   useEffect(() => {
-    if (!selectedDate) return;
-
-    const fetchSchedule = async () => {
-      try {
-        const response = await axios.get<ScheduleResponse>(`/api/schedule?date=${selectedDate}`);
-        setSchedule(response.data.schedule || []);
-      } catch (error) {
-        console.error('Failed to fetch schedule:', error);
+    const loadProfileImage = async () => {
+      const storedImage = await AsyncStorage.getItem('profileImage');
+      if (storedImage) {
+        setProfileImage(storedImage);
       }
     };
 
-    fetchSchedule();
-  }, [selectedDate]);
+    loadProfileImage();
+  }, []);
 
-  const handleSaveSchedule = async (): Promise<void> => {
-    if (!selectedDate) {
-      setSnackbarMessage('No date selected.');
-      setIsSnackbarVisible(true);
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.cancelled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async () => {
+    setUploading(true);
+    try {
+      console.log('Starting image upload...');
+      const { uri } = await FileSystem.getInfoAsync(profileImage);
+      console.log('Image URI:', uri);
+      const blob = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = (e) => reject(new TypeError('Network request failed'));
+        xhr.responseType = 'blob';
+        xhr.open('GET', uri, true);
+        xhr.send(null);
+      });
+
+      const filename = profileImage.substring(profileImage.lastIndexOf('/') + 1);
+      console.log('Filename:', filename);
+      const ref = firebase.storage().ref().child(filename);
+      await ref.put(blob);
+      blob.close();
+
+      const url = await ref.getDownloadURL();
+      console.log('Image uploaded successfully. URL:', url);
+      setProfileImage(url);
+      await AsyncStorage.setItem('profileImage', url);
+
+      Alert.alert('Profile image uploaded successfully');
+      return url; // Return the URL after successful upload
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      Alert.alert('Image upload failed');
+      return null; // Return null if upload fails
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!profileImage || !fullName || !email || !phoneNumber) {
+      Alert.alert('Please fill out all fields and upload a profile image.');
       return;
     }
 
     try {
-      await axios.post('/api/schedule', { date: selectedDate, schedule });
-      setSnackbarMessage('Schedule saved successfully!');
-      setIsSnackbarVisible(true);
-    } catch (error) {
-      console.error('Failed to save schedule:', error);
-      setSnackbarMessage('Failed to save schedule. Please try again.');
-      setIsSnackbarVisible(true);
-    }
-  };
-
-  const handleAddOrUpdateShift = (): void => {
-    if (!shiftDetails.name || !shiftDetails.startTime || !shiftDetails.endTime || !shiftDetails.consultationDuration) {
-      setSnackbarMessage('Please fill out all fields for the shift.');
-      setIsSnackbarVisible(true);
-      return;
-    }
-
-    const newShift = { ...shiftDetails };
-
-    setSchedule((prev) => {
-      const updatedSchedule = [...prev];
-      if (editingShiftIndex !== null) {
-        updatedSchedule[editingShiftIndex] = newShift;
-      } else {
-        updatedSchedule.push(newShift);
+      console.log('Starting profile update...');
+      const profileImageUrl = await uploadImage();
+      if (!profileImageUrl) {
+        throw new Error('Failed to upload image');
       }
-      return updatedSchedule;
-    });
 
-    setShiftDetails({ name: '', startTime: '', endTime: '', consultationDuration: '', breaks: [] });
-    setEditingShiftIndex(null);
-    setIsDialogVisible(false);
-  };
+      console.log('Profile image URL:', profileImageUrl);
+      const payload = {
+        userId,
+        fullName,
+        email,
+        phoneNumber,
+        profileImage: profileImageUrl,
+      };
+      console.log('Payload:', payload);
 
-  const handleAddOrUpdateBreak = (): void => {
-    if (!currentBreak.start || !currentBreak.end) {
-      setSnackbarMessage('Please fill out all fields for the break.');
-      setIsSnackbarVisible(true);
-      return;
+      const response = await fetch('https://medplus-health.onrender.com/api/users/updateDoctorProfile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) throw new Error('Failed to update profile');
+
+      console.log('Profile updated successfully');
+      Alert.alert('Profile updated successfully');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      Alert.alert('Failed to update profile');
     }
-
-    const updatedBreaks = [...shiftDetails.breaks];
-    if (editingBreakIndex !== null) {
-      updatedBreaks[editingBreakIndex] = currentBreak;
-    } else {
-      updatedBreaks.push(currentBreak);
-    }
-
-    setShiftDetails((prev) => ({ ...prev, breaks: updatedBreaks }));
-    setCurrentBreak({ start: '', end: '' });
-    setEditingBreakIndex(null);
-  };
-
-  const handleDeleteBreak = (index: number): void => {
-    setShiftDetails((prev) => ({
-      ...prev,
-      breaks: prev.breaks.filter((_, i) => i !== index),
-    }));
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>How would you like to schedule your day?</Text>
-      <EnhancedCalendar onDayPress={(date) => setSelectedDate(timeToString(date))} />
-
-      {selectedDate && (
-        <View>
-          <Text style={styles.sectionTitle}>Schedule for {selectedDate}</Text>
-
-          {schedule.map((shift, index) => (
-            <Card key={index} style={styles.card}>
-              <Card.Content>
-                <Text style={styles.shiftTitle}>{shift.name}</Text>
-                <Text>
-                  {shift.startTime} - {shift.endTime} ({shift.consultationDuration} min consultation)
-                </Text>
-                {shift.breaks.length > 0 && (
-                  <Text>Breaks: {shift.breaks.map((b, i) => `${b.start} - ${b.end}`).join(', ')}</Text>
-                )}
-              </Card.Content>
-            </Card>
-          ))}
-
-          <Button onPress={() => setIsDialogVisible(true)} mode="contained" style={styles.button}>
-            Add Shift
-          </Button>
-
-          <Button onPress={handleSaveSchedule} mode="contained" style={styles.saveButton}>
-            Save Schedule
-          </Button>
-        </View>
-      )}
-
-      <Snackbar
-        visible={isSnackbarVisible}
-        onDismiss={() => setIsSnackbarVisible(false)}
-        duration={3000}
-      >
-        {snackbarMessage}
-      </Snackbar>
-
-      <Portal>
-        <Dialog visible={isDialogVisible} onDismiss={() => setIsDialogVisible(false)}>
-          <Dialog.Title>{editingShiftIndex !== null ? 'Edit Shift' : 'Add Shift'}</Dialog.Title>
-          <Dialog.Content>
-            <TextInput
-              label="Shift Name"
-              value={shiftDetails.name}
-              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, name: text }))}
-            />
-            <TextInput
-              label="Start Time"
-              placeholder="HH:mm"
-              value={shiftDetails.startTime}
-              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, startTime: text }))}
-            />
-            <TextInput
-              label="End Time"
-              placeholder="HH:mm"
-              value={shiftDetails.endTime}
-              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, endTime: text }))}
-            />
-            <TextInput
-              label="Consultation Duration (min)"
-              keyboardType="numeric"
-              value={shiftDetails.consultationDuration}
-              onChangeText={(text) => setShiftDetails((prev) => ({ ...prev, consultationDuration: text }))}
-            />
-
-            <Text style={styles.sectionTitle}>Breaks</Text>
-            {shiftDetails.breaks.map((b, i) => (
-              <View key={i} style={styles.breakRow}>
-                <Text>{b.start} - {b.end}</Text>
-                <Button onPress={() => { setEditingBreakIndex(i); setCurrentBreak(b); }}>Edit</Button>
-                <Button onPress={() => handleDeleteBreak(i)} color="red">Delete</Button>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView style={styles.container}>
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.profileContainer}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <Text style={styles.placeholderText}>Add Photo</Text>
               </View>
-            ))}
+            )}
+            <TouchableOpacity style={styles.editButton} onPress={pickImage}>
+              <Text style={styles.editButtonText}>Upload</Text>
+            </TouchableOpacity>
+          </View>
 
+          <View style={styles.formContainer}>
             <TextInput
-              label="Break Start Time"
-              placeholder="HH:mm"
-              value={currentBreak.start}
-              onChangeText={(text) => setCurrentBreak((prev) => ({ ...prev, start: text }))}
+              style={styles.input}
+              placeholder="Full Name (e.g., Dr. John Doe)"
+              value={fullName}
+              onChangeText={setFullName}
             />
             <TextInput
-              label="Break End Time"
-              placeholder="HH:mm"
-              value={currentBreak.end}
-              onChangeText={(text) => setCurrentBreak((prev) => ({ ...prev, end: text }))}
+              style={styles.input}
+              placeholder="Email Address"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
             />
-            <Button onPress={handleAddOrUpdateBreak} mode="outlined">
-              {editingBreakIndex !== null ? 'Update Break' : 'Add Break'}
-            </Button>
-          </Dialog.Content>
-
-          <Dialog.Actions>
-            <Button onPress={() => setIsDialogVisible(false)}>Cancel</Button>
-            <Button onPress={handleAddOrUpdateShift}>Save</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-    </ScrollView>
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              keyboardType="phone-pad"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+            />
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={uploading}
+            >
+              <Text style={styles.submitButtonText}>
+                {uploading ? 'Uploading...' : 'Submit'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: { padding: 16 },
-  title: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  sectionTitle: { fontSize: 16, marginVertical: 8 },
-  card: { marginBottom: 8 },
-  shiftTitle: { fontSize: 16, fontWeight: 'bold' },
-  button: { marginTop: 16 },
-  saveButton: { marginTop: 16, backgroundColor: 'green' },
-});
+export default DoctorRegistrationForm;
 
-export default Schedule;
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9f9f9', alignItems: 'center', paddingTop: 20 },
+  scrollContainer: { alignItems: 'center', paddingBottom: 20 },
+  profileContainer: { alignItems: 'center', marginBottom: 30 },
+  profileImage: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#6200ee' },
+  placeholderImage: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' },
+  placeholderText: { color: '#aaa', fontSize: 16 },
+  editButton: { marginTop: 10, backgroundColor: '#6200ee', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 },
+  editButtonText: { color: '#fff', fontSize: 14 },
+  formContainer: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 2 },
+  input: { height: 50, borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 20, fontSize: 16, paddingHorizontal: 10 },
+  submitButton: { backgroundColor: '#6200ee', paddingVertical: 15, borderRadius: 5, alignItems: 'center' },
+  submitButtonText: { color: '#fff', fontSize: 16 },
+});

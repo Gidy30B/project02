@@ -29,6 +29,8 @@ const DoctorRegistrationForm = () => {
   const [uploading, setUploading] = useState(false);
   const userId = useSelector((state) => state.auth.userId);
   const token = useSelector((state) => state.auth.token);
+  const userEmail = useSelector((state) => state.auth.email); // Get email from Redux
+  const name = useSelector((state) => state.auth.name); // Get name from Redux
   const router = useRouter(); // Initialize useRouter
   console.log('User ID:', userId);
   console.log('Token:', token);
@@ -43,6 +45,12 @@ const DoctorRegistrationForm = () => {
 
     loadProfileImage();
   }, []);
+
+  useEffect(() => {
+    // Auto-fill the inputs with data from Redux
+    setEmail(userEmail);
+    setFullName(name);
+  }, [userEmail, name]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
