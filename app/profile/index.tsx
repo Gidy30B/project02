@@ -35,6 +35,7 @@ const DoctorRegistrationForm = () => {
 
     const loadUserId = async () => {
       const user = await loadUserFromStorage();
+      console.log('User:', user); // Log the user object
       if (user && user.userId) {
         setUserId(user.userId);
         console.log('User ID:', user.userId); // Log the userId
@@ -43,8 +44,14 @@ const DoctorRegistrationForm = () => {
       }
     };
 
+    const loadToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token); // Log the token
+    };
+
     loadProfileImage();
     loadUserId();
+    loadToken();
   }, []);
 
   const pickImage = async () => {
@@ -99,10 +106,16 @@ const DoctorRegistrationForm = () => {
     try {
       await uploadImage();
       const profileImageUrl = await AsyncStorage.getItem('profileImage');
+      const token = await AsyncStorage.getItem('token'); // Retrieve the token from storage
 
-      const response = await fetch('https://medplus-health.onrender.com/users/updateDoctorProfile', {
+      console.log('Token:', token); // Log the token for debugging
+
+      const response = await fetch('https://medplus-health.onrender.com/api/users/updateDoctorProfile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`, // Include the token in the Authorization header
+        },
         body: JSON.stringify({ userId, fullName, email, phoneNumber, profileImage: profileImageUrl }),
       });
 

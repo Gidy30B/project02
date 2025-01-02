@@ -17,7 +17,7 @@ import { useMutation } from '@tanstack/react-query';
 import { loginUser } from "../(services)/api/api";
 import { useDispatch } from 'react-redux';
 import { loginAction } from '../(redux)/authSlice';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import CustomButton from '../../components/CustomButton';
 import InputField from '../../components/InputField';
@@ -41,20 +41,39 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     mutationKey: ["login"],
   });
 
-  const handleLoginSuccess = (data: any) => {
-    const [firstName, lastName] = (data.username || "").split(' ');
+  const handleLoginSuccess = async (data: any) => {
+    const user = data.user;
+    const [firstName, lastName] = (user.username || "").split(' ');
     const userData = {
-      id: data.id,
-      email: data.email,
-      username: data.username || '',
+      id: user._id, // Extract id from user object
+      email: user.email,
+      username: user.username || '',
       token: data.token,
-      firstName: firstName || '',
-      lastName: lastName || '',
-      profilePicture: data.profilePicture || '',
-      userId: data.id, // Include userId
+      firstName: user.firstName || firstName || '',
+      lastName: user.lastName || lastName || '',
+      profilePicture: user.profilePicture || '',
+      userId: user._id, // Include userId from user object
     };
-    dispatch(loginAction(userData));
-    router.push('profile');
+    try {
+      // Remove specific keys from AsyncStorage
+      await AsyncStorage.multiRemove(['userId', 'token', 'user']);
+      
+      const existingUserData = await AsyncStorage.getItem('user');
+      if (existingUserData) {
+        const parsedData = JSON.parse(existingUserData);
+        const updatedUserData = { ...parsedData, ...userData };
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
+      } else {
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+      }
+
+      // Dispatch loginAction to update the user state
+      dispatch(loginAction({ user, token: data.token }));
+
+      router.push('profile');
+    } catch (error) {
+      console.error('Error saving user data to AsyncStorage:', error);
+    }
   };
 
   const handleLoginError = (error: any) => {
