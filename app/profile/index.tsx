@@ -42,7 +42,7 @@ const DoctorRegistrationForm = () => {
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaType.Images, // Use ImagePicker.MediaType
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -56,7 +56,9 @@ const DoctorRegistrationForm = () => {
   const uploadImage = async () => {
     setUploading(true);
     try {
+      console.log('Starting image upload...');
       const { uri } = await FileSystem.getInfoAsync(profileImage);
+      console.log('Image URI:', uri);
       const blob = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.onload = () => resolve(xhr.response);
@@ -67,17 +69,22 @@ const DoctorRegistrationForm = () => {
       });
 
       const filename = profileImage.substring(profileImage.lastIndexOf('/') + 1);
+      console.log('Filename:', filename);
       const ref = firebase.storage().ref().child(filename);
       await ref.put(blob);
       blob.close();
 
       const url = await ref.getDownloadURL();
+      console.log('Image uploaded successfully. URL:', url);
       setProfileImage(url);
       await AsyncStorage.setItem('profileImage', url);
 
       Alert.alert('Profile image uploaded successfully');
+      return url; // Return the URL after successful upload
     } catch (error) {
+      console.error('Image upload failed:', error);
       Alert.alert('Image upload failed');
+      return null; // Return null if upload fails
     } finally {
       setUploading(false);
     }
@@ -90,9 +97,13 @@ const DoctorRegistrationForm = () => {
     }
 
     try {
-      await uploadImage();
-      const profileImageUrl = await AsyncStorage.getItem('profileImage');
+      console.log('Starting profile update...');
+      const profileImageUrl = await uploadImage();
+      if (!profileImageUrl) {
+        throw new Error('Failed to upload image');
+      }
 
+      console.log('Profile image URL:', profileImageUrl);
       const response = await fetch('https://medplus-health.onrender.com/api/users/updateDoctorProfile', {
         method: 'POST',
         headers: {
@@ -104,8 +115,10 @@ const DoctorRegistrationForm = () => {
 
       if (!response.ok) throw new Error('Failed to update profile');
 
+      console.log('Profile updated successfully');
       Alert.alert('Profile updated successfully');
     } catch (error) {
+      console.error('Failed to update profile:', error);
       Alert.alert('Failed to update profile');
     }
   };
