@@ -58,14 +58,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       // Remove specific keys from AsyncStorage
       await AsyncStorage.multiRemove(['userId', 'token', 'user']);
       
-      const existingUserData = await AsyncStorage.getItem('user');
-      if (existingUserData) {
-        const parsedData = JSON.parse(existingUserData);
-        const updatedUserData = { ...parsedData, ...userData };
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUserData));
-      } else {
-        await AsyncStorage.setItem('user', JSON.stringify(userData));
-      }
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
 
       // Dispatch loginAction to update the user state
       dispatch(loginAction({ user, token: data.token }));

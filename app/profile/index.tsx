@@ -15,6 +15,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { useSelector } from 'react-redux'; // Import useSelector
 import { loadUserFromStorage } from '../(redux)/authSlice'; // Adjust the import path as needed
 
 const DoctorRegistrationForm = () => {
@@ -23,7 +24,10 @@ const DoctorRegistrationForm = () => {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
+  const token = useSelector((state) => state.auth.token); // Get token from Redux
+  console.log('User ID:', userId); // Log the userId
+  console.log('Token:', token); // Log the token
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -33,25 +37,7 @@ const DoctorRegistrationForm = () => {
       }
     };
 
-    const loadUserId = async () => {
-      const user = await loadUserFromStorage();
-      console.log('User:', user); // Log the user object
-      if (user && user.userId) {
-        setUserId(user.userId);
-        console.log('User ID:', user.userId); // Log the userId
-      } else {
-        console.log('User ID is null');
-      }
-    };
-
-    const loadToken = async () => {
-      const token = await AsyncStorage.getItem('token');
-      console.log('Token:', token); // Log the token
-    };
-
     loadProfileImage();
-    loadUserId();
-    loadToken();
   }, []);
 
   const pickImage = async () => {
@@ -106,9 +92,6 @@ const DoctorRegistrationForm = () => {
     try {
       await uploadImage();
       const profileImageUrl = await AsyncStorage.getItem('profileImage');
-      const token = await AsyncStorage.getItem('token'); // Retrieve the token from storage
-
-      console.log('Token:', token); // Log the token for debugging
 
       const response = await fetch('https://medplus-health.onrender.com/api/users/updateDoctorProfile', {
         method: 'POST',

@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from 'axios';
 
@@ -96,13 +95,10 @@ const authSlice = createSlice({
         state.professional = user.professional || null;
         state.profileImage = user.profileImage || null;
         state.loading = false;
-        AsyncStorage.setItem("userInfo", JSON.stringify(state.user));
       }
     },
     logoutAction: (state) => {
       Object.assign(state, initialState); // Reset state to initial values
-      AsyncStorage.removeItem("userInfo");
-      AsyncStorage.removeItem('profileImage');
     },
     setUser: (state, action) => {
       const user = action.payload;
