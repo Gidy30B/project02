@@ -14,6 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import { loadUserFromStorage } from '../(redux)/authSlice'; // Adjust the import path as needed
 
 const DoctorRegistrationForm = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -32,9 +33,13 @@ const DoctorRegistrationForm = () => {
     };
 
     const loadUserId = async () => {
-      const id = await AsyncStorage.getItem('userId');
-      setUserId(id);
-      console.log('User ID:', id); // Log the userId
+      const user = await loadUserFromStorage();
+      if (user && user.userId) {
+        setUserId(user.userId);
+        console.log('User ID:', user.userId); // Log the userId
+      } else {
+        console.log('User ID is null');
+      }
     };
 
     loadProfileImage();

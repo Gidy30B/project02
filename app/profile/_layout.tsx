@@ -1,8 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Tabs } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import { FontAwesome6 } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function Layout() {
   return (
@@ -11,7 +10,7 @@ export default function Layout() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Profile</Text>
         <Text style={styles.headerSubtitle}>
-          Complete your comprehensive professional profile.
+          Complete your  profile.
         </Text>
       </View>
 
@@ -23,29 +22,32 @@ export default function Layout() {
 
             switch (route.name) {
               case 'index':
-                iconName = 'account-circle';
-                return <MaterialIcons name={iconName} size={size} color={color} />;
+                iconName = 'account';
+                break;
+              case 'PersonalDetails':
+                iconName = 'account-details';
+                break;
               case 'PracticeInfo':
-                iconName = 'hospital';
-                return <FontAwesome6 name={iconName} size={size} color={color} />;
+                iconName = 'hospital-box';
+                break;
               case 'Verification':
-                iconName = 'verified-user';
-                return <MaterialIcons name={iconName} size={size} color={color} />;
+                iconName = 'check-decagram';
+                break;
               default:
-                iconName = 'help-outline';
-                return <MaterialIcons name={iconName} size={size} color={color} />;
+                iconName = 'help-circle-outline';
+                break;
             }
+            return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
           },
           tabBarStyle: {
-            backgroundColor: '#fff',
-            elevation: 0,
-            shadowOpacity: 0,
-            borderBottomWidth: 1,
-            borderColor: '#e3e3e3',
+            backgroundColor: '#f8f9fa',
+            borderTopWidth: 1,
+            borderTopColor: '#e0e0e0',
+            height: 60,
           },
           tabBarShowLabel: false, // Remove labels
           tabBarActiveTintColor: '#007bff',
-          tabBarInactiveTintColor: '#929292',
+          tabBarInactiveTintColor: '#6c757d',
           headerShown: false,
         })}
       >
@@ -61,19 +63,19 @@ export default function Layout() {
 const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderColor: '#e3e3e3',
+    borderColor: '#e0e0e0',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1d1d1d',
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#333',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#929292',
-    marginTop: 4,
+    fontSize: 16,
+    color: '#6c757d',
+    marginTop: 6,
   },
 });

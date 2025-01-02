@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from 'axios';
 
 // Function to load user from AsyncStorage
-const loadUserFromStorage = async () => {
+export const loadUserFromStorage = async () => {
   try {
     const userInfo = await AsyncStorage.getItem("userInfo");
     return userInfo ? JSON.parse(userInfo) : null;
