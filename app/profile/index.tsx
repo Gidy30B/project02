@@ -12,7 +12,6 @@ import {
   Platform,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { firebase } from '../../firebase/config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
 
@@ -22,20 +21,28 @@ const DoctorRegistrationForm = () => {
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    // Load stored profile image on component mount
     const loadProfileImage = async () => {
       const storedImage = await AsyncStorage.getItem('profileImage');
       if (storedImage) {
         setProfileImage(storedImage);
       }
     };
+
+    const loadUserId = async () => {
+      const id = await AsyncStorage.getItem('userId');
+      setUserId(id);
+      console.log('User ID:', id); // Log the userId
+    };
+
     loadProfileImage();
+    loadUserId();
   }, []);
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
@@ -49,18 +56,12 @@ const DoctorRegistrationForm = () => {
 
   const uploadImage = async () => {
     setUploading(true);
-
     try {
       const { uri } = await FileSystem.getInfoAsync(profileImage);
       const blob = await new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
-        xhr.onload = function () {
-          resolve(xhr.response);
-        };
-        xhr.onerror = function (e) {
-          console.error(e);
-          reject(new TypeError('Network request failed'));
-        };
+        xhr.onload = () => resolve(xhr.response);
+        xhr.onerror = (e) => reject(new TypeError('Network request failed'));
         xhr.responseType = 'blob';
         xhr.open('GET', uri, true);
         xhr.send(null);
@@ -68,20 +69,42 @@ const DoctorRegistrationForm = () => {
 
       const filename = profileImage.substring(profileImage.lastIndexOf('/') + 1);
       const ref = firebase.storage().ref().child(filename);
-
       await ref.put(blob);
       blob.close();
 
-      const url = await ref.getDownloadURL(); // Get the download URL
+      const url = await ref.getDownloadURL();
       setProfileImage(url);
-      await AsyncStorage.setItem('profileImage', url); // Save to AsyncStorage
+      await AsyncStorage.setItem('profileImage', url);
 
       Alert.alert('Profile image uploaded successfully');
     } catch (error) {
-      console.error(error);
       Alert.alert('Image upload failed');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!profileImage || !fullName || !email || !phoneNumber) {
+      Alert.alert('Please fill out all fields and upload a profile image.');
+      return;
+    }
+
+    try {
+      await uploadImage();
+      const profileImageUrl = await AsyncStorage.getItem('profileImage');
+
+      const response = await fetch('https://medplus-health.onrender.com/users/updateDoctorProfile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, fullName, email, phoneNumber, profileImage: profileImageUrl }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update profile');
+
+      Alert.alert('Profile updated successfully');
+    } catch (error) {
+      Alert.alert('Failed to update profile');
     }
   };
 
@@ -91,7 +114,6 @@ const DoctorRegistrationForm = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={styles.container}>
-        {/* Profile Image Section */}
         <View style={styles.profileContainer}>
           {profileImage ? (
             <Image source={{ uri: profileImage }} style={styles.profileImage} />
@@ -101,11 +123,10 @@ const DoctorRegistrationForm = () => {
             </View>
           )}
           <TouchableOpacity style={styles.editButton} onPress={pickImage}>
-            <Text style={styles.editButtonText}>Edit</Text>
+            <Text style={styles.editButtonText}>Upload</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Registration Form */}
         <View style={styles.formContainer}>
           <TextInput
             style={styles.input}
@@ -116,24 +137,24 @@ const DoctorRegistrationForm = () => {
           <TextInput
             style={styles.input}
             placeholder="Email Address"
-            value={email}
             keyboardType="email-address"
+            value={email}
             onChangeText={setEmail}
           />
           <TextInput
             style={styles.input}
             placeholder="Phone Number"
-            value={phoneNumber}
             keyboardType="phone-pad"
+            value={phoneNumber}
             onChangeText={setPhoneNumber}
           />
           <TouchableOpacity
-            style={styles.uploadButton}
-            onPress={uploadImage}
-            disabled={!profileImage || uploading}
+            style={styles.submitButton}
+            onPress={handleSubmit}
+            disabled={uploading}
           >
-            <Text style={styles.uploadButtonText}>
-              {uploading ? 'Uploading...' : 'Upload Profile'}
+            <Text style={styles.submitButtonText}>
+              {uploading ? 'Uploading...' : 'Submit'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -145,69 +166,15 @@ const DoctorRegistrationForm = () => {
 export default DoctorRegistrationForm;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
-    alignItems: 'center',
-    paddingTop: 40,
-  },
-  profileContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: '#6200ee',
-  },
-  placeholderImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#e0e0e0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  placeholderText: {
-    color: '#aaa',
-    fontSize: 16,
-  },
-  editButton: {
-    marginTop: 10,
-    backgroundColor: '#6200ee',
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-  },
-  editButtonText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  formContainer: {
-    width: '90%',
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    elevation: 2,
-  },
-  input: {
-    height: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    marginBottom: 20,
-    fontSize: 16,
-    paddingHorizontal: 10,
-  },
-  uploadButton: {
-    backgroundColor: '#6200ee',
-    paddingVertical: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  uploadButtonText: {
-    color: '#fff',
-    fontSize: 16,
-  },
+  container: { flex: 1, backgroundColor: '#f9f9f9', alignItems: 'center', paddingTop: 20 },
+  profileContainer: { alignItems: 'center', marginBottom: 30 },
+  profileImage: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: '#6200ee' },
+  placeholderImage: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#e0e0e0', justifyContent: 'center', alignItems: 'center' },
+  placeholderText: { color: '#aaa', fontSize: 16 },
+  editButton: { marginTop: 10, backgroundColor: '#6200ee', paddingVertical: 5, paddingHorizontal: 15, borderRadius: 20 },
+  editButtonText: { color: '#fff', fontSize: 14 },
+  formContainer: { width: '90%', backgroundColor: '#fff', padding: 20, borderRadius: 10, elevation: 2 },
+  input: { height: 50, borderBottomWidth: 1, borderBottomColor: '#ccc', marginBottom: 20, fontSize: 16, paddingHorizontal: 10 },
+  submitButton: { backgroundColor: '#6200ee', paddingVertical: 15, borderRadius: 5, alignItems: 'center' },
+  submitButtonText: { color: '#fff', fontSize: 16 },
 });
