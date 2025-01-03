@@ -157,6 +157,7 @@ const PracticeInformation = () => {
       return;
     }
   
+    setUploading(true);
     try {
       console.log('Starting practice information update...');
       const profileImageUrl = await uploadImage();
