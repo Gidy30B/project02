@@ -159,7 +159,7 @@ const PracticeInformation = () => {
   
     setUploading(true);
     try {
-      console.log('Starting practice information update...');
+      console.log('Starting image upload...');
       const profileImageUrl = await uploadImage();
       if (!profileImageUrl) {
         throw new Error('Failed to upload image');
