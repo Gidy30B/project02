@@ -177,13 +177,17 @@ const PracticeInformation = () => {
       };
       console.log('Payload:', payload);
   
-      const response = await fetch('https://medplus-health.onrender.com/professionals/practice', {
+      const response = await fetch('https://medplus-health.onrender.com/api/professionals/practice', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(payload),
       });
+  
+      console.log('Response status:', response.status);
+      const responseBody = await response.json();
+      console.log('Response body:', responseBody);
   
       if (!response.ok) throw new Error('Failed to update practice information');
   
