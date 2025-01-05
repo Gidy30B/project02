@@ -57,7 +57,7 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
 
       if (response.status === 200) {
         Alert.alert('Success', 'Profile updated successfully!');
-        router.push('PracticeInfoScreen', {
+        router.push('/profile/PracticeInfoScreen', {
           missingFields: response.data.missingFields,
         });
       }
