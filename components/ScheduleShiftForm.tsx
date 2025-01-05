@@ -1,24 +1,9 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import { Picker } from "@react-native-picker/picker";
-import DateTimePickerModal from "react-native-modal-datetime-picker"; // Expo-compatible DateTimePickerModal
+import DateTimePickerModal from "react-native-modal-datetime-picker"; 
 
-interface ScheduleShiftFormProps {
-  onAddShift: () => void;
-  onSaveSchedule: () => void;
-  shifts: any[];
-  selectedDate: string;
-  setSelectedDate: (date: string) => void;
-  shiftData: { name: string; startTime: string; endTime: string };
-  setShiftData: (data: { name: string; startTime: string; endTime: string }) => void;
-  recurrence: string;
-  setRecurrence: (recurrence: string) => void;
-  consultationDuration: number;
-  setConsultationDuration: (duration: number) => void;
-  renderShiftPreview: () => JSX.Element;
-}
-
-const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
+const ScheduleShiftForm = ({
   onAddShift,
   onSaveSchedule,
   shifts,
@@ -36,18 +21,24 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
   const [isStartTimePickerVisible, setStartTimePickerVisibility] = useState(false);
   const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
 
-  const handleConfirmDate = (date: Date) => {
+  const handleConfirmDate = (date) => {
     setSelectedDate(date.toISOString().split("T")[0]);
     setDatePickerVisibility(false);
   };
 
-  const handleConfirmStartTime = (time: Date) => {
-    setShiftData({ ...shiftData, startTime: time.toISOString().substr(11, 5) });
+  const handleConfirmStartTime = (time) => {
+    setShiftData((prevShiftData) => ({
+      ...prevShiftData,
+      startTime: time.toISOString().substr(11, 5),
+    }));
     setStartTimePickerVisibility(false);
   };
 
-  const handleConfirmEndTime = (time: Date) => {
-    setShiftData({ ...shiftData, endTime: time.toISOString().substr(11, 5) });
+  const handleConfirmEndTime = (time) => {
+    setShiftData((prevShiftData) => ({
+      ...prevShiftData,
+      endTime: time.toISOString().substr(11, 5),
+    }));
     setEndTimePickerVisibility(false);
   };
 
@@ -86,7 +77,7 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
         <Text style={styles.label}>Shift Name</Text>
         <TextInput
           value={shiftData.name}
-          onChangeText={(text) => setShiftData({ ...shiftData, name: text })}
+          onChangeText={(text) => setShiftData((prevShiftData) => ({ ...prevShiftData, name: text }))}
           style={styles.input}
           placeholder="e.g., Morning Shift"
         />
@@ -98,6 +89,7 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
           <TextInput
             value={shiftData.startTime}
             onFocus={() => setStartTimePickerVisibility(true)}
+            onChangeText={(text) => setShiftData((prevShiftData) => ({ ...prevShiftData, startTime: text }))}
             style={styles.input}
             placeholder="Select Start Time"
           />
@@ -113,6 +105,7 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
           <TextInput
             value={shiftData.endTime}
             onFocus={() => setEndTimePickerVisibility(true)}
+            onChangeText={(text) => setShiftData((prevShiftData) => ({ ...prevShiftData, endTime: text }))}
             style={styles.input}
             placeholder="Select End Time"
           />

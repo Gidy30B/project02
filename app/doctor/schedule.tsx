@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import useSchedule from "../../hooks/useSchedule";
 import ScheduleComponent from "../../components/ScheduleComponent";
 import ScheduleShiftForm from "../../components/ScheduleShiftForm";
 import { StyleSheet, ScrollView, View, Text } from 'react-native'; // Import ScrollView, View, and Text
@@ -21,8 +20,8 @@ interface Shift {
 }
 
 const ScheduleShifts: React.FC = () => {
-  const { schedule, fetchSchedule } = useSchedule();
   const userId = useSelector((state: any) => state.auth.userId); // Get userId from Redux
+  const [schedule, setSchedule] = useState<{ [key: string]: Shift[] }>({});
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({
@@ -38,7 +37,21 @@ const ScheduleShifts: React.FC = () => {
     if (userId) {
       fetchSchedule(userId);
     }
-  }, [fetchSchedule, userId]);
+  }, [userId]);
+
+  const fetchSchedule = async (userId: string) => {
+    try {
+      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${userId}`);
+      if (response.status === 200 && response.data.availability) {
+        setSchedule(response.data.availability);
+        await AsyncStorage.setItem('schedule', JSON.stringify(response.data.availability)); // Store schedule in AsyncStorage
+      } else {
+        console.error('Failed to fetch schedule:', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching schedule:', axios.isAxiosError(error) ? error.message : error);
+    }
+  };
 
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
     const slots: Slot[] = [];
@@ -138,6 +151,7 @@ const ScheduleShifts: React.FC = () => {
       await axios.put("https://medplus-health.onrender.com/api/schedule", payload);
       alert("Your schedule has been saved successfully!");
       setShifts([]);
+      fetchSchedule(userId); // Refresh the schedule after saving
     } catch (error) {
       alert("Error saving schedule.");
     }
