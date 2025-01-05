@@ -3,9 +3,11 @@ import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 're
 import { useSelector } from 'react-redux';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
+import { useRouter } from 'expo-router';
 
 const ProfessionalDetailsScreen = ({ navigation }) => {
   const userId = useSelector((state) => state.auth.userId);
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     medicalDegree: '',
@@ -17,7 +19,6 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
     issuingMedicalBoard: '',
     yearsOfExperience: '',
     specializedTreatment: '',
-    customSpecializedTreatment: '',
   });
 
   const [consultationFee, setConsultationFee] = useState('');
@@ -57,7 +58,7 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
 
       if (response.status === 200) {
         Alert.alert('Success', 'Profile updated successfully!');
-        navigation.navigate('PracticeInfoScreen', {
+        router.push('PracticeInfoScreen', {
           missingFields: response.data.missingFields,
         });
       }
@@ -185,17 +186,6 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
           <Picker.Item label="Pediatrics" value="Pediatrics" />
           <Picker.Item label="Second Opinion Consults" value="Second Opinion Consults" />
         </Picker>
-      </View>
-      
-      {/* Custom Specialized Treatment */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Custom Specialized Treatment</Text>
-        <TextInput
-          placeholder="Enter custom specialized treatment"
-          style={styles.input}
-          value={formData.customSpecializedTreatment}
-          onChangeText={(text) => handleInputChange('customSpecializedTreatment', text)}
-        />
       </View>
       
       <View style={styles.formGroup}>
