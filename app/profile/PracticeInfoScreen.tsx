@@ -13,7 +13,7 @@ import {
   FlatList,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import useInsurance from '../../hooks/useInsurance';
 import { useSelector } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
@@ -39,13 +39,14 @@ const PracticeInformation = () => {
   const [year, setYear] = useState('');
   const [roles, setRoles] = useState('');
   const [notableAchievement, setNotableAchievement] = useState('');
+  const [showExperienceInput, setShowExperienceInput] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedInsuranceProviders, setSelectedInsuranceProviders] = useState([]);
   const { insuranceProviders } = useInsurance();
   const router = useRouter();
   const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
+  const { missingFields } = useLocalSearchParams();
   console.log('User ID:', userId);
-
 
   useEffect(() => {
     const loadProfileImage = async () => {
@@ -57,6 +58,27 @@ const PracticeInformation = () => {
 
     loadProfileImage();
   }, []);
+
+  useEffect(() => {
+    if (missingFields) {
+      const fields = JSON.parse(missingFields);
+      fields.forEach(field => {
+        if (field === 'practiceName') setPracticeName('');
+        if (field === 'practiceLocation') setPracticeLocation('');
+        if (field === 'workingDays') setWorkingDays([
+          { day: 'Mon', active: false },
+          { day: 'Tue', active: false },
+          { day: 'Wed', active: false },
+          { day: 'Thu', active: false },
+          { day: 'Fri', active: false },
+          { day: 'Sat', active: false },
+          { day: 'Sun', active: false },
+        ]);
+        if (field === 'workingHours') setWorkingHours({ startTime: '', endTime: '' });
+        if (field === 'selectedInsuranceProviders') setSelectedInsuranceProviders([]);
+      });
+    }
+  }, [missingFields]);
 
   const pickImage = async () => {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -100,6 +122,7 @@ const PracticeInformation = () => {
     setYear('');
     setRoles('');
     setNotableAchievement('');
+    setShowExperienceInput(false);
   };
 
   const uploadImage = async () => {
@@ -140,7 +163,7 @@ const PracticeInformation = () => {
   };
 
   const handleSubmit = async () => {
-    if (!practiceName || !practiceLocation || !profileImage) {
+    if (!practiceName || !practiceLocation) {
       Alert.alert('Please fill out all mandatory fields.');
       return;
     }
@@ -159,10 +182,12 @@ const PracticeInformation = () => {
   
     setUploading(true);
     try {
-      console.log('Starting image upload...');
-      const profileImageUrl = await uploadImage();
+      let profileImageUrl = profileImage;
       if (!profileImageUrl) {
-        throw new Error('Failed to upload image');
+        profileImageUrl = await uploadImage();
+        if (!profileImageUrl) {
+          throw new Error('Failed to upload image');
+        }
       }
   
       console.log('Profile image URL:', profileImageUrl);
@@ -290,42 +315,51 @@ const PracticeInformation = () => {
 
         {/* Experience Section */}
         <Text style={styles.sectionHeader}>Experience (Optional)</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Institution"
-          value={institution}
-          onChangeText={setInstitution}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Year"
-          value={year}
-          onChangeText={setYear}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Roles"
-          value={roles}
-          onChangeText={setRoles}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Notable Achievement"
-          value={notableAchievement}
-          onChangeText={setNotableAchievement}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={addExperience}>
+        <TouchableOpacity style={styles.addButton} onPress={() => setShowExperienceInput(true)}>
           <Text style={styles.addButtonText}>Add Experience</Text>
         </TouchableOpacity>
+
+        {showExperienceInput && (
+          <View style={styles.experienceInputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Institution"
+              value={institution}
+              onChangeText={setInstitution}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Year"
+              value={year}
+              onChangeText={setYear}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Roles"
+              value={roles}
+              onChangeText={setRoles}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Notable Achievement"
+              value={notableAchievement}
+              onChangeText={setNotableAchievement}
+            />
+            <TouchableOpacity style={styles.addButton} onPress={addExperience}>
+              <Text style={styles.addButtonText}>Save Experience</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {experience.length > 0 && (
           <View style={styles.experienceList}>
             {experience.map((exp, index) => (
               <View key={index} style={styles.experienceItem}>
-                <Text style={styles.experienceText}>
-                  {exp.institution} ({exp.year}) - {exp.roles}
+                <Text style={styles.experienceInstitution}>{exp.institution}</Text>
+                <Text style={styles.experienceDetails}>
+                  {exp.year} - {exp.roles}
                 </Text>
-                <Text style={styles.experienceText}>
+                <Text style={styles.experienceAchievement}>
                   Achievement: {exp.notableAchievement}
                 </Text>
               </View>
@@ -438,14 +472,34 @@ const styles = StyleSheet.create({
     color: '#007BFF',
     fontWeight: '600',
   },
+  experienceInputContainer: {
+    marginBottom: 16,
+  },
   experienceList: {
     marginBottom: 16,
   },
   experienceItem: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  experienceText: {
+  experienceInstitution: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#333',
+    marginBottom: 4,
+  },
+  experienceDetails: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 4,
+  },
+  experienceAchievement: {
+    fontSize: 14,
+    color: '#777',
   },
   submitButton: {
     backgroundColor: '#28a745',

@@ -10,6 +10,8 @@ import {
   Image,
 } from 'react-native';
 import FeatherIcon from 'react-native-vector-icons/Feather';
+import { useRouter } from 'expo-router';
+import { useSelector } from 'react-redux';
 
 export default function Example() {
   const [form, setForm] = useState({
@@ -17,6 +19,9 @@ export default function Example() {
     emailNotifications: true,
     pushNotifications: false,
   });
+
+  const router = useRouter();
+  const { name, email, profileImage } = useSelector((state) => state.auth);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#f6f6f6' }}>
@@ -33,16 +38,14 @@ export default function Example() {
           <View style={styles.profile}>
             <Image
               alt="User Avatar"
-              source={{
-                uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2.5&w=256&h=256&q=80',
-              }}
+              source={{ uri: profileImage }}
               style={styles.profileAvatar}
             />
-            <Text style={styles.profileName}>John Doe</Text>
-            <Text style={styles.profileEmail}>john.doe@mail.com</Text>
+            <Text style={styles.profileName}>{name}</Text>
+            <Text style={styles.profileEmail}>{email}</Text>
             <TouchableOpacity
               onPress={() => {
-                // handle onPress
+                router.push('/profile');
               }}>
               <View style={styles.profileAction}>
                 <Text style={styles.profileActionText}>Edit Profile</Text>

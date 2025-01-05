@@ -1,27 +1,12 @@
 import React, { useState } from 'react';
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useSelector } from 'react-redux';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
-import { useRouter } from 'expo-router';
 
-const medicalCourses = ["MBBS", "MD", "DO", "BDS"];
-const specializations = ["Cardiology", "Neurology", "Orthopedics", "Pediatrics"];
-const certifications = ["ACLS", "ATLS", "BLS", "PALS"];
-
-export default function ProfessionalDetailsScreen() {
+const ProfessionalDetailsScreen = ({ navigation }) => {
   const userId = useSelector((state) => state.auth.userId);
-  const [consultationFee, setConsultationFee] = useState('');
+
   const [formData, setFormData] = useState({
     medicalDegree: '',
     institution: '',
@@ -29,27 +14,53 @@ export default function ProfessionalDetailsScreen() {
     specialization: '',
     certifications: '',
     licenseNumber: '',
-    medicalBoard: '',
-    experience: '',
+    issuingMedicalBoard: '',
+    yearsOfExperience: '',
+    specializedTreatment: '',
+    customSpecializedTreatment: '',
   });
-  const router = useRouter();
 
-  const handleInputChange = (key, value) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+  const [consultationFee, setConsultationFee] = useState('');
+
+  const handleInputChange = (field, value) => {
+    setFormData((prevData) => ({ ...prevData, [field]: value }));
   };
 
   const handleSave = async () => {
-    const allFields = { ...formData, consultationFee };
+    // Validate fields
+    const missingFields = Object.keys(formData).filter(
+      (key) => formData[key].trim() === ''
+    );
+
+    if (missingFields.length > 0) {
+      Alert.alert('Error', `Missing fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      consultationFee,
+      medicalDegrees: [
+        {
+          degree: formData.medicalDegree,
+          institution: formData.institution,
+          year: formData.year,
+        },
+      ],
+    };
 
     try {
       const response = await axios.put(
         `https://medplus-health.onrender.com/api/professionals/update-profile/${userId}`,
-        allFields
+        payload
       );
+
       if (response.status === 200) {
-        router.push('/profile/PracticeInfoScreen');
+        Alert.alert('Success', 'Profile updated successfully!');
+        navigation.navigate('PracticeInfoScreen', {
+          missingFields: response.data.missingFields,
+        });
       }
-      Alert.alert('Success', 'Profile updated successfully!');
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Failed to update profile.');
@@ -57,140 +68,179 @@ export default function ProfessionalDetailsScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Professional Details</Text>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Medical Degree(s)</Text>
-          <Picker
-            style={styles.input}
-            selectedValue={formData.medicalDegree}
-            onValueChange={(value) => handleInputChange('medicalDegree', value)}
-          >
-            {medicalCourses.map((course) => (
-              <Picker.Item key={course} label={course} value={course} />
-            ))}
-          </Picker>
-          <TextInput
-            placeholder="Institution"
-            style={styles.input}
-            value={formData.institution}
-            onChangeText={(value) => handleInputChange('institution', value)}
-          />
-          <TextInput
-            placeholder="Year"
-            keyboardType="numeric"
-            style={styles.input}
-            value={formData.year}
-            onChangeText={(value) => handleInputChange('year', value)}
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Specialization</Text>
-          <Picker
-            style={styles.input}
-            selectedValue={formData.specialization}
-            onValueChange={(value) => handleInputChange('specialization', value)}
-          >
-            {specializations.map((spec) => (
-              <Picker.Item key={spec} label={spec} value={spec} />
-            ))}
-          </Picker>
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Certifications</Text>
-          <Picker
-            style={styles.input}
-            selectedValue={formData.certifications}
-            onValueChange={(value) => handleInputChange('certifications', value)}
-          >
-            {certifications.map((cert) => (
-              <Picker.Item key={cert} label={cert} value={cert} />
-            ))}
-          </Picker>
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>License Number</Text>
-          <TextInput
-            placeholder="Enter license or registration ID"
-            style={styles.input}
-            value={formData.licenseNumber}
-            onChangeText={(value) => handleInputChange('licenseNumber', value)}
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Years of Experience</Text>
-          <TextInput
-            placeholder="e.g., 10"
-            keyboardType="numeric"
-            style={styles.input}
-            value={formData.experience}
-            onChangeText={(value) => handleInputChange('experience', value)}
-          />
-        </View>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Consultation Fee</Text>
-          <TextInput
-            placeholder="Enter fee in USD"
-            keyboardType="numeric"
-            style={styles.input}
-            value={consultationFee}
-            onChangeText={(value) => setConsultationFee(value)}
-          />
-        </View>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    <ScrollView style={styles.container}>
+      <Text style={styles.heading}>Professional Details</Text>
+
+      {/* Medical Degree */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Medical Degree</Text>
+        <Picker
+          selectedValue={formData.medicalDegree}
+          style={styles.input}
+          onValueChange={(value) => handleInputChange('medicalDegree', value)}
+        >
+          <Picker.Item label="Select Medical Degree" value="" />
+          <Picker.Item label="Bachelor of Medicine and Bachelor of Surgery (MBCHB)" value="MBCHB" />
+          <Picker.Item label="Bachelors of Dental Surgery" value="BDS" />
+        </Picker>
+      </View>
+
+      {/* Additional fields... */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Institution</Text>
+        <TextInput
+          placeholder="Enter institution"
+          style={styles.input}
+          value={formData.institution}
+          onChangeText={(text) => handleInputChange('institution', text)}
+        />
+      </View>
+
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Year</Text>
+        <TextInput
+          placeholder="Enter year"
+          keyboardType="numeric"
+          style={styles.input}
+          value={formData.year}
+          onChangeText={(text) => handleInputChange('year', text)}
+        />
+      </View>
+      
+      {/* Specialization */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Specialization</Text>
+        <TextInput
+          placeholder="Enter specialization"
+          style={styles.input}
+          value={formData.specialization}
+          onChangeText={(text) => handleInputChange('specialization', text)}
+        />
+      </View>
+      
+      {/* Certifications */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Certifications</Text>
+        <TextInput
+          placeholder="Enter certifications"
+          style={styles.input}
+          value={formData.certifications}
+          onChangeText={(text) => handleInputChange('certifications', text)}
+        />
+      </View>
+      
+      {/* License Number */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>License Number</Text>
+        <TextInput
+          placeholder="Enter license number"
+          style={styles.input}
+          value={formData.licenseNumber}
+          onChangeText={(text) => handleInputChange('licenseNumber', text)}
+        />
+      </View>
+      
+      {/* Issuing Medical Board */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Issuing Medical Board</Text>
+        <TextInput
+          placeholder="Enter issuing medical board"
+          style={styles.input}
+          value={formData.issuingMedicalBoard}
+          onChangeText={(text) => handleInputChange('issuingMedicalBoard', text)}
+        />
+      </View>
+      
+      {/* Years of Experience */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Years of Experience</Text>
+        <TextInput
+          placeholder="Enter years of experience"
+          keyboardType="numeric"
+          style={styles.input}
+          value={formData.yearsOfExperience}
+          onChangeText={(text) => handleInputChange('yearsOfExperience', text)}
+        />
+      </View>
+      
+      {/* Specialized Treatment */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Specialized Treatment</Text>
+        <Picker
+          selectedValue={formData.specializedTreatment}
+          style={styles.input}
+          onValueChange={(value) => handleInputChange('specializedTreatment', value)}
+        >
+          <Picker.Item label="Select Specialized Treatment" value="" />
+          <Picker.Item label="Cardiac Diagnostic and Therapeutic Procedures" value="Cardiac Diagnostic and Therapeutic Procedures" />
+          <Picker.Item label="Latest Cancer Treatment Options" value="Latest Cancer Treatment Options" />
+          <Picker.Item label="Orthopedics" value="Orthopedics" />
+          <Picker.Item label="Infertility Treatments" value="Infertility Treatments" />
+          <Picker.Item label="Cosmetic Surgery" value="Cosmetic Surgery" />
+          <Picker.Item label="Dental Treatment" value="Dental Treatment" />
+          <Picker.Item label="General Surgery" value="General Surgery" />
+          <Picker.Item label="Organ Transplants" value="Organ Transplants" />
+          <Picker.Item label="Rehabilitation and Geriatric" value="Rehabilitation and Geriatric" />
+          <Picker.Item label="Bariatric Surgery" value="Bariatric Surgery" />
+          <Picker.Item label="Pediatrics" value="Pediatrics" />
+          <Picker.Item label="Second Opinion Consults" value="Second Opinion Consults" />
+        </Picker>
+      </View>
+      
+      {/* Custom Specialized Treatment */}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Custom Specialized Treatment</Text>
+        <TextInput
+          placeholder="Enter custom specialized treatment"
+          style={styles.input}
+          value={formData.customSpecializedTreatment}
+          onChangeText={(text) => handleInputChange('customSpecializedTreatment', text)}
+        />
+      </View>
+      
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Consultation Fee</Text>
+        <TextInput
+          placeholder="Enter consultation fee"
+          keyboardType="numeric"
+          style={styles.input}
+          value={consultationFee}
+          onChangeText={setConsultationFee}
+        />
+      </View>
+
+      {/* Save Button */}
+      <Button title="Save" onPress={handleSave} />
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
-    padding: 16,
-    backgroundColor: '#f9f9f9',
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
   },
-  title: {
-    fontSize: 26,
+  heading: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
+    marginBottom: 20,
   },
   formGroup: {
-    marginBottom: 24,
+    marginBottom: 15,
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#555',
+    marginBottom: 5,
   },
   input: {
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
     fontSize: 16,
-    color: '#333',
-    marginBottom: 16,
-  },
-  saveButton: {
-    backgroundColor: '#007BFF',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
+
+export default ProfessionalDetailsScreen;

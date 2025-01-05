@@ -18,6 +18,7 @@ import { loginUser } from "../(services)/api/api";
 import { useDispatch } from 'react-redux';
 import { loginAction } from '../(redux)/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 
 import CustomButton from '../../components/CustomButton';
 import InputField from '../../components/InputField';
@@ -63,7 +64,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       // Dispatch loginAction to update the user state
       dispatch(loginAction({ user, token: data.token }));
 
-      router.push('profile');
+      // Check if the user has completed the profile
+      if (user.completedProfile) {
+        router.push('doctor/dashboard');
+      } else {
+        router.push('profile');
+      }
     } catch (error) {
       console.error('Error saving user data to AsyncStorage:', error);
     }

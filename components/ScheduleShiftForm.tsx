@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
 
 const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
   return (
-    <>
+    <div style={styles.formContainer}>
       {/* Schedule Form */}
-      <div className="mb-4">
-        <label htmlFor="recurrence" className="block text-gray-700 font-medium">Recurrence</label>
+      <div style={styles.formGroup}>
+        <label htmlFor="recurrence" style={styles.label}>Recurrence</label>
         <select
           id="recurrence"
           value={recurrence}
           onChange={(e) => setRecurrence(e.target.value)}
-          className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md"
+          style={styles.select}
         >
           <option value="none">Only for this day</option>
           <option value="daily">Repeat every day</option>
@@ -18,60 +18,58 @@ const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, s
         </select>
       </div>
 
-      <div className="mb-4">
-        <label htmlFor="date" className="block text-gray-700 font-medium">Choose the date for your shifts</label>
+      <div style={styles.formGroup}>
+        <label htmlFor="date" style={styles.label}>Choose the date for your shifts</label>
         <input
           type="date"
           id="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md"
+          style={styles.input}
         />
       </div>
 
       {/* Shift Input Form */}
-      <div className="space-y-4">
-        <div>
-          <label htmlFor="shiftName" className="block text-gray-700">Shift Name</label>
+      <div style={styles.formGroup}>
+        <label htmlFor="shiftName" style={styles.label}>Shift Name</label>
+        <input
+          type="text"
+          id="shiftName"
+          value={shiftData.name}
+          onChange={(e) => setShiftData({ ...shiftData, name: e.target.value })}
+          style={styles.input}
+          placeholder="e.g., Morning Shift"
+        />
+      </div>
+
+      <div style={styles.formGroupRow}>
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="startTime" style={styles.label}>Start Time</label>
           <input
-            type="text"
-            id="shiftName"
-            value={shiftData.name}
-            onChange={(e) => setShiftData({ ...shiftData, name: e.target.value })}
-            className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md"
-            placeholder="e.g., Morning Shift"
+            type="time"
+            id="startTime"
+            value={shiftData.startTime}
+            onChange={(e) => setShiftData({ ...shiftData, startTime: e.target.value })}
+            style={styles.input}
           />
         </div>
-
-        <div className="flex gap-4">
-          <div className="w-1/2">
-            <label htmlFor="startTime" className="block text-gray-700">Start Time</label>
-            <input
-              type="time"
-              id="startTime"
-              value={shiftData.startTime}
-              onChange={(e) => setShiftData({ ...shiftData, startTime: e.target.value })}
-              className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div className="w-1/2">
-            <label htmlFor="endTime" className="block text-gray-700">End Time</label>
-            <input
-              type="time"
-              id="endTime"
-              value={shiftData.endTime}
-              onChange={(e) => setShiftData({ ...shiftData, endTime: e.target.value })}
-              className="mt-2 w-full px-4 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
+        <div style={styles.formGroupHalf}>
+          <label htmlFor="endTime" style={styles.label}>End Time</label>
+          <input
+            type="time"
+            id="endTime"
+            value={shiftData.endTime}
+            onChange={(e) => setShiftData({ ...shiftData, endTime: e.target.value })}
+            style={styles.input}
+          />
         </div>
       </div>
 
       {/* Add Shift Button */}
-      <div className="mt-4">
+      <div style={styles.buttonContainer}>
         <button
           onClick={onAddShift}
-          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md shadow-md hover:bg-blue-700"
+          style={{ ...styles.button, ...styles.addButton }}
         >
           Add Shift
         </button>
@@ -81,16 +79,75 @@ const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, s
       {selectedDate && renderShiftPreview()}
 
       {/* Save Schedule Button */}
-      <div className="mt-6">
+      <div style={styles.buttonContainer}>
         <button
           onClick={onSaveSchedule}
-          className="w-full px-4 py-2 bg-green-600 text-white rounded-md shadow-md hover:bg-green-700"
+          style={{ ...styles.button, ...styles.saveButton }}
         >
           Save Schedule
         </button>
       </div>
-    </>
+    </div>
   );
+};
+
+const styles = {
+  formContainer: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formGroupRow: {
+    display: 'flex',
+    gap: 20,
+  },
+  formGroupHalf: {
+    flex: 1,
+  },
+  label: {
+    display: 'block',
+    marginBottom: 8,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    border: '1px solid #ccc',
+    fontSize: 16,
+  },
+  select: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    border: '1px solid #ccc',
+    fontSize: 16,
+  },
+  buttonContainer: {
+    marginTop: 20,
+  },
+  button: {
+    width: '100%',
+    padding: 15,
+    borderRadius: 5,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    cursor: 'pointer',
+  },
+  addButton: {
+    backgroundColor: '#4caf50',
+    color: '#fff',
+  },
+  saveButton: {
+    backgroundColor: '#2196f3',
+    color: '#fff',
+  },
 };
 
 export default ScheduleShiftForm;

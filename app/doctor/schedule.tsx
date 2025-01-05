@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import useSchedule from "../../hooks/useSchedule"; // Import the custom hook for managing schedule data
-import ScheduleComponent from "../../components/ScheduleComponent"; // Component to display the schedule
-import ScheduleShiftForm from "../../components/ScheduleShiftForm"; // Component for adding/editing shifts
+import useSchedule from "../../hooks/useSchedule";
+import ScheduleComponent from "../../components/ScheduleComponent";
+import ScheduleShiftForm from "../../components/ScheduleShiftForm";
+import { StyleSheet } from 'react-native';
+import { useSelector } from 'react-redux'; // Import useSelector
 
 interface Shift {
   name: string;
@@ -14,28 +16,25 @@ interface Shift {
 }
 
 const ScheduleShifts: React.FC = () => {
-  const { schedule, fetchSchedule } = useSchedule(); // Use the custom hook
-  const [userId, setUserId] = useState<string | null>(null);
-  const [shifts, setShifts] = useState<Shift[]>([]); 
-  const [selectedDate, setSelectedDate] = useState<string>(""); 
-  const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({ name: "", startTime: "", endTime: "" });
+  const { schedule, fetchSchedule } = useSchedule();
+  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({
+    name: "",
+    startTime: "",
+    endTime: "",
+  });
   const [recurrence, setRecurrence] = useState<string>("none");
-  const [consultationDuration, setConsultationDuration] = useState<number>(60); 
-  const [expandedShift, setExpandedShift] = useState<number | null>(null); 
+  const [consultationDuration, setConsultationDuration] = useState<number>(60);
+  const [expandedShift, setExpandedShift] = useState<number | null>(null);
 
-  // Fetch user ID and schedule on component mount
   useEffect(() => {
-    const getUserId = async () => {
-      const storedUserId = await AsyncStorage.getItem("userId");
-      if (storedUserId) {
-        setUserId(storedUserId);
-        fetchSchedule(storedUserId); 
-      }
-    };
-    getUserId();
-  }, [fetchSchedule]);
+    if (userId) {
+      fetchSchedule(userId);
+    }
+  }, [fetchSchedule, userId]);
 
-  // Generate time slots based on start time, end time, and consultation duration
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
     const slots: { startTime: string; endTime: string }[] = [];
     const start = new Date(`1970-01-01T${startTime}:00Z`);
@@ -43,11 +42,11 @@ const ScheduleShifts: React.FC = () => {
 
     while (start < end) {
       const nextSlot = new Date(start);
-      nextSlot.setMinutes(nextSlot.getMinutes() + duration + 10); // Add waiting time
+      nextSlot.setMinutes(nextSlot.getMinutes() + duration + 10);
 
       if (nextSlot <= end) {
         slots.push({
-          startTime: start.toISOString().substr(11, 5), 
+          startTime: start.toISOString().substr(11, 5),
           endTime: nextSlot.toISOString().substr(11, 5),
         });
       }
@@ -56,7 +55,6 @@ const ScheduleShifts: React.FC = () => {
     return slots;
   };
 
-  // Generate recurrence dates (daily, weekly, none)
   const generateRecurrenceDates = (startDate: string, recurrenceType: string) => {
     const dates: string[] = [];
     const start = new Date(startDate);
@@ -74,13 +72,12 @@ const ScheduleShifts: React.FC = () => {
         dates.push(newDate.toISOString().split("T")[0]);
       }
     } else {
-      dates.push(startDate); 
+      dates.push(startDate);
     }
 
     return dates;
   };
 
-  // Add a new shift
   const handleAddShift = () => {
     if (!shiftData.name || !shiftData.startTime || !shiftData.endTime || !selectedDate || !consultationDuration) {
       alert("Please fill out all fields!");
@@ -100,7 +97,6 @@ const ScheduleShifts: React.FC = () => {
     setShiftData({ name: "", startTime: "", endTime: "" });
   };
 
-  // Save the schedule to the server
   const handleSaveSchedule = async () => {
     if (shifts.length === 0) {
       alert("Please add some shifts before saving!");
@@ -136,45 +132,40 @@ const ScheduleShifts: React.FC = () => {
     try {
       await axios.put("https://medplus-health.onrender.com/api/schedule", payload);
       alert("Your schedule has been saved successfully!");
-      setShifts([]); // Clear shifts after saving
+      setShifts([]);
     } catch (error) {
       alert("Error saving schedule.");
     }
   };
 
-  // Toggle shift slots expansion
   const toggleShiftSlots = (index: number) => {
     setExpandedShift(expandedShift === index ? null : index);
   };
 
-  // Render shift preview for selected date
   const renderShiftPreview = () => {
     const shiftsForSelectedDate = shifts.filter((shift) => shift.date === selectedDate);
 
     if (shiftsForSelectedDate.length === 0) {
-      return <p className="text-gray-500">No shifts added for this date yet.</p>;
+      return <p className="no-shifts-message">No shifts added for this date yet.</p>;
     }
 
     return (
-      <div className="mt-4 space-x-4 overflow-x-auto p-4 border-t bg-gray-50">
-        <h3 className="font-semibold text-lg text-gray-700">Shifts for {selectedDate}</h3>
-        <div className="flex space-x-4">
+      <div className="shift-preview-container">
+        <h3 className="preview-title">Shifts for {selectedDate}</h3>
+        <div className="shifts-wrapper">
           {shiftsForSelectedDate.map((shift, index) => (
-            <div
-              key={index}
-              className="flex-shrink-0 w-48 p-4 bg-white border border-gray-300 rounded-md shadow-sm"
-            >
-              <div className="font-semibold text-gray-800 cursor-pointer" onClick={() => toggleShiftSlots(index)}>
+            <div key={index} className="shift-card">
+              <div className="shift-header" onClick={() => toggleShiftSlots(index)}>
                 {shift.name}
               </div>
-              <div className="text-gray-600">
+              <div className="shift-details">
                 {shift.startTime} - {shift.endTime}
               </div>
 
               {expandedShift === index && (
-                <div className="mt-2 space-y-2">
+                <div className="shift-slots">
                   {shift.slots.map((slot, idx) => (
-                    <div key={idx} className="text-gray-500">
+                    <div key={idx} className="slot">
                       {slot.startTime} - {slot.endTime}
                     </div>
                   ))}
@@ -187,20 +178,16 @@ const ScheduleShifts: React.FC = () => {
     );
   };
 
-  // Handle editing schedule for a specific date
   const handleEditSchedule = (date: string) => {
     setSelectedDate(date);
     setShifts(schedule[date] || []);
   };
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Top Section */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Schedule Your Day</h2>
+    <div style={styles.scheduleContainer}>
+      <div style={styles.header}>
+        <h2 style={styles.headerTitle}>Schedule Your Day</h2>
       </div>
-
-      {/* Render saved schedule if available */}
       {schedule && Object.keys(schedule).length > 0 ? (
         <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
       ) : (
@@ -222,5 +209,23 @@ const ScheduleShifts: React.FC = () => {
     </div>
   );
 };
+
+const styles = StyleSheet.create({
+  scheduleContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2a2a2a',
+    textAlign: 'center',
+  },
+});
 
 export default ScheduleShifts;
