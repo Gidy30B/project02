@@ -1,23 +1,47 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; // Import React Native components
+import { View, Text, Button, StyleSheet, TextInput } from 'react-native'; // Import React Native components
 import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
 import { Picker } from "@react-native-picker/picker";
+import { format } from 'date-fns';
 
-const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
+interface ScheduleShiftFormProps {
+  onAddShift: () => void;
+  onSaveSchedule: () => void;
+  shifts: any[];
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+  shiftData: { name: string; startTime: string; endTime: string };
+  setShiftData: (data: { name: string; startTime: string; endTime: string }) => void;
+  recurrence: string;
+  setRecurrence: (recurrence: string) => void;
+  consultationDuration: number;
+  setConsultationDuration: (duration: number) => void;
+  renderShiftPreview: () => JSX.Element;
+}
+
+const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
-  const handleStartTimeChange = (event, selectedTime) => {
-    setShowStartTimePicker(false);
-    if (selectedTime) {
-      setShiftData({ ...shiftData, startTime: selectedTime.toISOString().substr(11, 5) });
+  const handleDateChange = (event: any, selectedDate: Date | undefined) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setSelectedDate(format(selectedDate, 'yyyy-MM-dd'));
     }
   };
 
-  const handleEndTimeChange = (event, selectedTime) => {
+  const handleStartTimeChange = (event: any, selectedTime: Date | undefined) => {
+    setShowStartTimePicker(false);
+    if (selectedTime) {
+      setShiftData({ ...shiftData, startTime: format(selectedTime, 'HH:mm') });
+    }
+  };
+
+  const handleEndTimeChange = (event: any, selectedTime: Date | undefined) => {
     setShowEndTimePicker(false);
     if (selectedTime) {
-      setShiftData({ ...shiftData, endTime: selectedTime.toISOString().substr(11, 5) });
+      setShiftData({ ...shiftData, endTime: format(selectedTime, 'HH:mm') });
     }
   };
 
@@ -39,12 +63,15 @@ const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, s
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Choose the date for your shifts</Text>
-        <TextInput
-          type="date"
-          value={selectedDate}
-          onChangeText={(text) => setSelectedDate(text)}
-          style={styles.input}
-        />
+        <Button title={selectedDate || "Select Date"} onPress={() => setShowDatePicker(true)} />
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
       </View>
 
       {/* Shift Input Form */}
@@ -61,12 +88,7 @@ const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, s
       <View style={styles.formGroupRow}>
         <View style={styles.formGroupHalf}>
           <Text style={styles.label}>Start Time</Text>
-          <TextInput
-            value={shiftData.startTime}
-            onFocus={() => setShowStartTimePicker(true)}
-            style={styles.input}
-            placeholder="Select Start Time"
-          />
+          <Button title={shiftData.startTime || "Select Start Time"} onPress={() => setShowStartTimePicker(true)} />
           {showStartTimePicker && (
             <DateTimePicker
               value={new Date()}
@@ -78,12 +100,7 @@ const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, s
         </View>
         <View style={styles.formGroupHalf}>
           <Text style={styles.label}>End Time</Text>
-          <TextInput
-            value={shiftData.endTime}
-            onFocus={() => setShowEndTimePicker(true)}
-            style={styles.input}
-            placeholder="Select End Time"
-          />
+          <Button title={shiftData.endTime || "Select End Time"} onPress={() => setShowEndTimePicker(true)} />
           {showEndTimePicker && (
             <DateTimePicker
               value={new Date()}
