@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; 
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
+import DatePicker from "react-datepicker"; // Import DatePicker component
+import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker styles
 
 interface ScheduleShiftFormProps {
   onAddShift: () => void;
@@ -54,11 +56,11 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Choose the date for your shifts</Text>
-        <TextInput
-          type="date"
-          value={selectedDate}
-          onChangeText={(text) => setSelectedDate(text)}
-          style={styles.input}
+        <DatePicker
+          selected={new Date(selectedDate)}
+          onChange={(date: Date) => setSelectedDate(date.toISOString().split("T")[0])}
+          style={styles.datePicker}
+          aria-label="Select a date"
         />
       </View>
 
@@ -165,6 +167,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   select: {
+    width: '100%',
+    padding: 10,
+    borderRadius: 5,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    fontSize: 16,
+  },
+  datePicker: {
     width: '100%',
     padding: 10,
     borderRadius: 5,
