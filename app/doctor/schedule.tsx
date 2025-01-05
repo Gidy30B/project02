@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import useSchedule from "../../hooks/useSchedule";
 import ScheduleComponent from "../../components/ScheduleComponent";
 import ScheduleShiftForm from "../../components/ScheduleShiftForm";
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ScrollView } from 'react-native'; // Import ScrollView
 import { useSelector } from 'react-redux'; // Import useSelector
 
 interface Shift {
@@ -184,33 +184,38 @@ const ScheduleShifts: React.FC = () => {
   };
 
   return (
-    <div style={styles.scheduleContainer}>
-      <div style={styles.header}>
-        <h2 style={styles.headerTitle}>Schedule Your Day</h2>
+    <ScrollView style={styles.scrollView}> {/* Wrap in ScrollView */}
+      <div style={styles.scheduleContainer}>
+        <div style={styles.header}>
+          <h2 style={styles.headerTitle}>Schedule Your Day</h2>
+        </div>
+        {schedule && Object.keys(schedule).length > 0 ? (
+          <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
+        ) : (
+          <ScheduleShiftForm
+            onAddShift={handleAddShift}
+            onSaveSchedule={handleSaveSchedule}
+            shifts={shifts}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            shiftData={shiftData}
+            setShiftData={setShiftData}
+            recurrence={recurrence}
+            setRecurrence={setRecurrence}
+            consultationDuration={consultationDuration}
+            setConsultationDuration={setConsultationDuration}
+            renderShiftPreview={renderShiftPreview}
+          />
+        )}
       </div>
-      {schedule && Object.keys(schedule).length > 0 ? (
-        <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
-      ) : (
-        <ScheduleShiftForm
-          onAddShift={handleAddShift}
-          onSaveSchedule={handleSaveSchedule}
-          shifts={shifts}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          shiftData={shiftData}
-          setShiftData={setShiftData}
-          recurrence={recurrence}
-          setRecurrence={setRecurrence}
-          consultationDuration={consultationDuration}
-          setConsultationDuration={setConsultationDuration}
-          renderShiftPreview={renderShiftPreview}
-        />
-      )}
-    </div>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollView: {
+    flex: 1,
+  },
   scheduleContainer: {
     flex: 1,
     padding: 20,

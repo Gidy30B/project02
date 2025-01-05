@@ -67,6 +67,10 @@ export default function VerificationScreen() {
     };
 
     fetchProfileProgress();
+
+    const intervalId = setInterval(fetchProfileProgress, 30000); // Poll every 30 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
   }, [userId]);
 
   const { professionalDetails, practiceInfo, overall } = profileCompletion;
