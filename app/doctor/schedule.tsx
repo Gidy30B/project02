@@ -1,70 +1,54 @@
 import React, { useState, useEffect } from "react";
+import { View, Text, Alert, ScrollView } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import ScheduleComponent from "../../components/ScheduleComponent";
-import ScheduleShiftForm from "../../components/ScheduleShiftForm";
-import { StyleSheet, ScrollView, View, Text } from 'react-native';
-import { useSelector } from 'react-redux';
-
-interface Slot {
-  startTime: string;
-  endTime: string;
-}
+import useSchedule from "../../hooks/useSchedule"; // Import the custom hook for managing schedule data
+import ScheduleComponent from "../../components/ScheduleComponent"; // Component to display the schedule
+import ScheduleShiftForm from "../../components/ScheduleShiftForm"; // Component for adding/editing shifts
 
 interface Shift {
   name: string;
   startTime: string;
   endTime: string;
   date: string;
-  slots: Slot[];
+  slots: { startTime: string; endTime: string }[];
 }
 
 const ScheduleShifts: React.FC = () => {
-  const userId = useSelector((state: any) => state.auth.userId);
-  const [schedule, setSchedule] = useState<{ [key: string]: Shift[] }>({});
-  const [shifts, setShifts] = useState<Shift[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({
-    name: "",
-    startTime: "",
-    endTime: "",
-  });
+  const { schedule, fetchSchedule } = useSchedule(); // Use the custom hook
+  const [userId, setUserId] = useState<string | null>(null);
+  const [shifts, setShifts] = useState<Shift[]>([]); 
+  const [selectedDate, setSelectedDate] = useState<string>(""); 
+  const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({ name: "", startTime: "", endTime: "" });
   const [recurrence, setRecurrence] = useState<string>("none");
-  const [consultationDuration, setConsultationDuration] = useState<number>(60);
-  const [expandedShift, setExpandedShift] = useState<number | null>(null);
+  const [consultationDuration, setConsultationDuration] = useState<number>(60); 
+  const [expandedShift, setExpandedShift] = useState<number | null>(null); 
 
+  // Fetch user ID and schedule on component mount
   useEffect(() => {
-    if (userId) {
-      fetchSchedule(userId);
-    }
-  }, [userId]);
-
-  const fetchSchedule = async (userId: string) => {
-    try {
-      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${userId}`);
-      if (response.status === 200 && response.data.availability) {
-        setSchedule(response.data.availability);
-        await AsyncStorage.setItem('schedule', JSON.stringify(response.data.availability));
-      } else {
-        console.error('Failed to fetch schedule:', response.data.message);
+    const getUserId = async () => {
+      const storedUserId = await AsyncStorage.getItem("userId");
+      if (storedUserId) {
+        setUserId(storedUserId);
+        fetchSchedule(storedUserId); 
       }
-    } catch (error) {
-      console.error('Error fetching schedule:', axios.isAxiosError(error) ? error.message : error);
-    }
-  };
+    };
+    getUserId();
+  }, [fetchSchedule]);
 
+  // Generate time slots based on start time, end time, and consultation duration
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
-    const slots: Slot[] = [];
+    const slots: { startTime: string; endTime: string }[] = [];
     const start = new Date(`1970-01-01T${startTime}:00Z`);
     const end = new Date(`1970-01-01T${endTime}:00Z`);
 
     while (start < end) {
       const nextSlot = new Date(start);
-      nextSlot.setMinutes(nextSlot.getMinutes() + duration + 10);
+      nextSlot.setMinutes(nextSlot.getMinutes() + duration + 10); // Add waiting time
 
       if (nextSlot <= end) {
         slots.push({
-          startTime: start.toISOString().substr(11, 5),
+          startTime: start.toISOString().substr(11, 5), 
           endTime: nextSlot.toISOString().substr(11, 5),
         });
       }
@@ -73,6 +57,7 @@ const ScheduleShifts: React.FC = () => {
     return slots;
   };
 
+  // Generate recurrence dates (daily, weekly, none)
   const generateRecurrenceDates = (startDate: string, recurrenceType: string) => {
     const dates: string[] = [];
     const start = new Date(startDate);
@@ -90,15 +75,16 @@ const ScheduleShifts: React.FC = () => {
         dates.push(newDate.toISOString().split("T")[0]);
       }
     } else {
-      dates.push(startDate);
+      dates.push(startDate); 
     }
 
     return dates;
   };
 
+  // Add a new shift
   const handleAddShift = () => {
     if (!shiftData.name || !shiftData.startTime || !shiftData.endTime || !selectedDate || !consultationDuration) {
-      alert("Please fill out all fields!");
+      Alert.alert("Please fill out all fields!");
       return;
     }
 
@@ -115,9 +101,10 @@ const ScheduleShifts: React.FC = () => {
     setShiftData({ name: "", startTime: "", endTime: "" });
   };
 
+  // Save the schedule to the server
   const handleSaveSchedule = async () => {
     if (shifts.length === 0) {
-      alert("Please add some shifts before saving!");
+      Alert.alert("Please add some shifts before saving!");
       return;
     }
 
@@ -149,41 +136,46 @@ const ScheduleShifts: React.FC = () => {
 
     try {
       await axios.put("https://medplus-health.onrender.com/api/schedule", payload);
-      alert("Your schedule has been saved successfully!");
-      setShifts([]);
+      Alert.alert("Your schedule has been saved successfully!");
+      setShifts([]); // Clear shifts after saving
     } catch (error) {
-      alert("Error saving schedule.");
+      Alert.alert("Error saving schedule.");
     }
   };
 
+  // Toggle shift slots expansion
   const toggleShiftSlots = (index: number) => {
     setExpandedShift(expandedShift === index ? null : index);
   };
 
+  // Render shift preview for selected date
   const renderShiftPreview = () => {
     const shiftsForSelectedDate = shifts.filter((shift) => shift.date === selectedDate);
 
     if (shiftsForSelectedDate.length === 0) {
-      return <Text style={styles.noShiftsMessage}>No shifts added for this date yet.</Text>;
+      return <Text style={{ color: 'gray' }}>No shifts added for this date yet.</Text>;
     }
 
     return (
-      <View style={styles.shiftPreviewContainer}>
-        <Text style={styles.previewTitle}>Shifts for {selectedDate}</Text>
-        <View style={styles.shiftsWrapper}>
+      <View style={{ marginTop: 16, padding: 16, borderTopWidth: 1, backgroundColor: '#f0f0f0' }}>
+        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#4a4a4a' }}>Shifts for {selectedDate}</Text>
+        <ScrollView horizontal>
           {shiftsForSelectedDate.map((shift, index) => (
-            <View key={index} style={styles.shiftCard}>
-              <Text style={styles.shiftHeader} onPress={() => toggleShiftSlots(index)}>
+            <View
+              key={index}
+              style={{ width: 192, padding: 16, backgroundColor: 'white', borderWidth: 1, borderColor: '#d1d1d1', borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, marginRight: 16 }}
+            >
+              <Text style={{ fontWeight: 'bold', color: '#333' }} onPress={() => toggleShiftSlots(index)}>
                 {shift.name}
               </Text>
-              <Text style={styles.shiftDetails}>
+              <Text style={{ color: '#666' }}>
                 {shift.startTime} - {shift.endTime}
               </Text>
 
               {expandedShift === index && (
-                <View style={styles.shiftSlots}>
+                <View style={{ marginTop: 8 }}>
                   {shift.slots.map((slot, idx) => (
-                    <Text key={idx} style={styles.slot}>
+                    <Text key={idx} style={{ color: '#999' }}>
                       {slot.startTime} - {slot.endTime}
                     </Text>
                   ))}
@@ -191,106 +183,45 @@ const ScheduleShifts: React.FC = () => {
               )}
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
     );
   };
 
+  // Handle editing schedule for a specific date
   const handleEditSchedule = (date: string) => {
     setSelectedDate(date);
     setShifts(schedule[date] || []);
   };
 
   return (
-    <ScrollView style={styles.scrollView}>
-      <View style={styles.scheduleContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Schedule Your Day</Text>
-        </View>
-        {schedule && Object.keys(schedule).length > 0 ? (
-          <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
-        ) : (
-          <ScheduleShiftForm
-            onAddShift={handleAddShift}
-            onSaveSchedule={handleSaveSchedule}
-            shifts={shifts}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            shiftData={shiftData}
-            setShiftData={setShiftData}
-            recurrence={recurrence}
-            setRecurrence={setRecurrence}
-            consultationDuration={consultationDuration}
-            setConsultationDuration={setConsultationDuration}
-            renderShiftPreview={renderShiftPreview}
-          />
-        )}
+    <View style={{ flex: 1, padding: 24 }}>
+      {/* Top Section */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Schedule Your Day</Text>
       </View>
-    </ScrollView>
+
+      {/* Render saved schedule if available */}
+      {schedule && Object.keys(schedule).length > 0 ? (
+        <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
+      ) : (
+        <ScheduleShiftForm
+          onAddShift={handleAddShift}
+          onSaveSchedule={handleSaveSchedule}
+          shifts={shifts}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          shiftData={shiftData}
+          setShiftData={setShiftData}
+          recurrence={recurrence}
+          setRecurrence={setRecurrence}
+          consultationDuration={consultationDuration}
+          setConsultationDuration={setConsultationDuration}
+          renderShiftPreview={renderShiftPreview}
+        />
+      )}
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scheduleContainer: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2a2a2a',
-    textAlign: 'center',
-  },
-  noShiftsMessage: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 20,
-  },
-  shiftPreviewContainer: {
-    marginTop: 20,
-  },
-  previewTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  shiftsWrapper: {
-    // Add styles for shiftsWrapper if needed
-  },
-  shiftCard: {
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  shiftHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  shiftDetails: {
-    fontSize: 16,
-    color: '#555',
-  },
-  shiftSlots: {
-    marginTop: 10,
-  },
-  slot: {
-    fontSize: 14,
-    color: '#777',
-  },
-});
 
 export default ScheduleShifts;

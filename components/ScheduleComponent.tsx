@@ -1,121 +1,77 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { Calendar } from "react-native-calendars"; // Import Calendar component
-import { format } from "date-fns"; // For date formatting
-import ScheduleShiftForm from "./ScheduleShiftForm"; // Import ScheduleShiftForm component
+import { View, Text, ScrollView } from "react-native";
+import { MaterialIcons } from '@expo/vector-icons'; // Import Expo vector icons
+import DatePicker from "react-datepicker"; // Import DatePicker component
+import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker styles
 
-interface Slot {
-  startTime: string;
-  endTime: string;
-}
+const ScheduleComponent = ({ schedule }) => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-interface Shift {
-  shiftName: string;
-  slots: Slot[];
-}
-
-interface Schedule {
-  [date: string]: Shift[];
-}
-
-interface ScheduleComponentProps {
-  schedule: Schedule;
-}
-
-const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
-  const [selectedDate, setSelectedDate] = useState<string>(
-    format(new Date(), "yyyy-MM-dd")
-  );
-  const [showForm, setShowForm] = useState<boolean>(false); // State to toggle form visibility
-
-  const shiftsForSelectedDate = schedule[selectedDate] || [];
-
-  const bgColors = ["#5C6BC0", "#66BB6A", "#FFA726", "#42A5F5", "#EC407A"];
-
-  // Helper function to get the week range
-  const getWeekRange = (date: Date) => {
-    const startOfWeek = format(date, "yyyy-MM-dd"); // Start of the week
-    const endOfWeek = format(
-      new Date(date.setDate(date.getDate() + 6)), // End of the week
-      "yyyy-MM-dd"
-    );
-    return { startOfWeek, endOfWeek };
+  const handleDateChange = (date) => {
+    setSelectedDate(date);
   };
 
-  const { startOfWeek, endOfWeek } = getWeekRange(new Date());
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const formattedDate = formatDate(selectedDate);
+  const shiftsForSelectedDate = schedule[formattedDate] || [];
+
+  // Array of modern background colors
+  const bgColors = [
+    "#e0f7fa",
+    "#e8f5e9",
+    "#fffde7",
+    "#e3f2fd",
+    "#fce4ec",
+  ];
 
   return (
-    <View style={styles.container}>
-      {/* Week Calendar Section */}
-      <Calendar
-        onDayPress={(day) => {
-          setSelectedDate(day.dateString);
-          setShowForm(true); // Show form when a date is selected
-        }}
-        markedDates={{
-          [selectedDate]: { selected: true, selectedColor: "#66BB6A" },
-        }}
-        markingType={"period"}
-        theme={{
-          todayTextColor: "#FFA726",
-          arrowColor: "#42A5F5",
-        }}
-        // Customize calendar to show only the week view
-        firstDay={1} // Start the week from Monday
-        hideExtraDays={true} // Hide days from the next month that are not in the week
-        markedDates={{
-          [startOfWeek]: { startingDay: true, color: "#66BB6A", textColor: "#fff" },
-          [endOfWeek]: { endingDay: true, color: "#66BB6A", textColor: "#fff" },
-        }}
-      />
-
-      {/* Render ScheduleShiftForm if showForm is true */}
-      {showForm && (
-        <ScheduleShiftForm
-          onAddShift={() => {}}
-          onSaveSchedule={() => {}}
-          shifts={shiftsForSelectedDate}
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          shiftData={{ name: "", startTime: "", endTime: "" }}
-          setShiftData={() => {}}
-          recurrence="none"
-          setRecurrence={() => {}}
-          consultationDuration={0}
-          setConsultationDuration={() => {}}
-          renderShiftPreview={() => <View />}
+    <View style={{ padding: 16, backgroundColor: '#f5f5f5', flex: 1 }}>
+      <View style={{ marginBottom: 16, backgroundColor: '#ffffff', padding: 16, borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
+        <DatePicker
+          selected={selectedDate}
+          onChange={handleDateChange}
+          className="date-picker"
+          style={{ width: '100%', padding: 10, borderRadius: 8, borderColor: '#ddd', borderWidth: 1 }}
         />
-      )}
-
-      {/* Shifts Display Section */}
-      {shiftsForSelectedDate.length > 0 && (
-        <ScrollView style={styles.scheduleList}>
+      </View>
+      {shiftsForSelectedDate.length === 0 ? (
+        <Text style={{ color: 'gray', textAlign: 'center', marginTop: 20 }}>
+          No saved schedule available for the selected date.
+        </Text>
+      ) : (
+        <ScrollView>
           {shiftsForSelectedDate.map((shift, shiftIndex) => (
             <View
               key={shiftIndex}
-              style={[
-                styles.shiftItem,
-                { backgroundColor: bgColors[shiftIndex % bgColors.length] },
-              ]}
+              style={{ padding: 16, backgroundColor: bgColors[shiftIndex % bgColors.length], marginBottom: 16, borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}
             >
-              <View style={styles.shiftHeader}>
-                <MaterialIcons
-                  name="calendar-today"
-                  size={20}
-                  style={styles.calendarIcon}
-                />
-                <Text style={styles.shiftDate}>{selectedDate}</Text>
-                <Text style={styles.shiftName}>{shift.shiftName}</Text>
+              {/* Date Header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <MaterialIcons name="calendar-today" size={20} style={{ marginRight: 8, color: '#00796b' }} /> 
+                <Text style={{ fontWeight: 'bold', color: '#00796b' }}>{formattedDate}</Text>
               </View>
-
-              {/* Slots Section */}
-              <ScrollView horizontal style={styles.slotsContainer}>
+              {/* Shift Name */}
+              <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#00796b' }}>
+                {shift.shiftName}
+              </Text>
+              {/* Horizontal Scrollable Slots */}
+              <ScrollView horizontal>
                 {shift.slots.map((slot, slotIndex) => (
-                  <View key={slotIndex} style={styles.slotCard}>
-                    <Text style={styles.slotTime}>{slot.startTime}</Text>
-                    <Text style={styles.slotSeparator}>-</Text>
-                    <Text style={styles.slotTime}>{slot.endTime}</Text>
+                  <View
+                    key={slotIndex}
+                    style={{ padding: 8, backgroundColor: '#ffffff', borderRadius: 4, marginRight: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 5, elevation: 3 }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Text style={{ marginRight: 4, color: '#00796b' }}>{slot.startTime}</Text>
+                      <Text style={{ marginHorizontal: 4, color: '#00796b' }}>-</Text>
+                      <Text style={{ color: '#00796b' }}>{slot.endTime}</Text>
+                    </View>
                   </View>
                 ))}
               </ScrollView>
@@ -123,68 +79,8 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
           ))}
         </ScrollView>
       )}
-
-      {shiftsForSelectedDate.length === 0 && (
-        <Text style={styles.noSchedule}>
-          No saved schedule available for the selected date.
-        </Text>
-      )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-  },
-  noSchedule: {
-    textAlign: "center",
-    color: "#666",
-    fontSize: 16,
-    marginTop: 16,
-  },
-  scheduleList: {
-    marginTop: 16,
-  },
-  shiftItem: {
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  shiftHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  calendarIcon: {
-    marginRight: 8,
-    color: "#fff",
-  },
-  shiftDate: {
-    fontWeight: "bold",
-    marginRight: 8,
-  },
-  shiftName: {
-    color: "#fff",
-  },
-  slotsContainer: {
-    flexDirection: "row",
-  },
-  slotCard: {
-    backgroundColor: "#fff",
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 8,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row", // Added to align items horizontally
-  },
-  slotTime: {
-    fontWeight: "bold",
-  },
-  slotSeparator: {
-    marginHorizontal: 4,
-  },
-});
 
 export default ScheduleComponent;
