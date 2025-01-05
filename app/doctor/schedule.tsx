@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import useSchedule from "../../hooks/useSchedule";
 import ScheduleComponent from "../../components/ScheduleComponent";
 import ScheduleShiftForm from "../../components/ScheduleShiftForm";
-import { StyleSheet, ScrollView, View, Text } from 'react-native'; // Import ScrollView, View, and Text
+import { StyleSheet } from 'react-native';
 import { useSelector } from 'react-redux'; // Import useSelector
-
-interface Slot {
-  startTime: string;
-  endTime: string;
-}
 
 interface Shift {
   name: string;
   startTime: string;
   endTime: string;
   date: string;
-  slots: Slot[];
+  slots: { startTime: string; endTime: string }[];
 }
 
 const ScheduleShifts: React.FC = () => {
-  const userId = useSelector((state: any) => state.auth.userId); // Get userId from Redux
-  const [schedule, setSchedule] = useState<{ [key: string]: Shift[] }>({});
+  const { schedule, fetchSchedule } = useSchedule();
+  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({
@@ -37,24 +33,10 @@ const ScheduleShifts: React.FC = () => {
     if (userId) {
       fetchSchedule(userId);
     }
-  }, [userId]);
-
-  const fetchSchedule = async (userId: string) => {
-    try {
-      const response = await axios.get(`https://medplus-health.onrender.com/api/schedule/${userId}`);
-      if (response.status === 200 && response.data.availability) {
-        setSchedule(response.data.availability);
-        await AsyncStorage.setItem('schedule', JSON.stringify(response.data.availability)); // Store schedule in AsyncStorage
-      } else {
-        console.error('Failed to fetch schedule:', response.data.message);
-      }
-    } catch (error) {
-      console.error('Error fetching schedule:', axios.isAxiosError(error) ? error.message : error);
-    }
-  };
+  }, [fetchSchedule, userId]);
 
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
-    const slots: Slot[] = [];
+    const slots: { startTime: string; endTime: string }[] = [];
     const start = new Date(`1970-01-01T${startTime}:00Z`);
     const end = new Date(`1970-01-01T${endTime}:00Z`);
 
@@ -151,7 +133,6 @@ const ScheduleShifts: React.FC = () => {
       await axios.put("https://medplus-health.onrender.com/api/schedule", payload);
       alert("Your schedule has been saved successfully!");
       setShifts([]);
-      fetchSchedule(userId); // Refresh the schedule after saving
     } catch (error) {
       alert("Error saving schedule.");
     }
@@ -165,35 +146,35 @@ const ScheduleShifts: React.FC = () => {
     const shiftsForSelectedDate = shifts.filter((shift) => shift.date === selectedDate);
 
     if (shiftsForSelectedDate.length === 0) {
-      return <Text style={styles.noShiftsMessage}>No shifts added for this date yet.</Text>;
+      return <p className="no-shifts-message">No shifts added for this date yet.</p>;
     }
 
     return (
-      <View style={styles.shiftPreviewContainer}>
-        <Text style={styles.previewTitle}>Shifts for {selectedDate}</Text>
-        <View style={styles.shiftsWrapper}>
+      <div className="shift-preview-container">
+        <h3 className="preview-title">Shifts for {selectedDate}</h3>
+        <div className="shifts-wrapper">
           {shiftsForSelectedDate.map((shift, index) => (
-            <View key={index} style={styles.shiftCard}>
-              <Text style={styles.shiftHeader} onPress={() => toggleShiftSlots(index)}>
+            <div key={index} className="shift-card">
+              <div className="shift-header" onClick={() => toggleShiftSlots(index)}>
                 {shift.name}
-              </Text>
-              <Text style={styles.shiftDetails}>
+              </div>
+              <div className="shift-details">
                 {shift.startTime} - {shift.endTime}
-              </Text>
+              </div>
 
               {expandedShift === index && (
-                <View style={styles.shiftSlots}>
+                <div className="shift-slots">
                   {shift.slots.map((slot, idx) => (
-                    <Text key={idx} style={styles.slot}>
+                    <div key={idx} className="slot">
                       {slot.startTime} - {slot.endTime}
-                    </Text>
+                    </div>
                   ))}
-                </View>
+                </div>
               )}
-            </View>
+            </div>
           ))}
-        </View>
-      </View>
+        </div>
+      </div>
     );
   };
 
@@ -203,58 +184,33 @@ const ScheduleShifts: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.scrollView}> {/* Wrap in ScrollView */}
-      <View style={styles.scheduleContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Schedule Your Day</Text>
-        </View>
-        {schedule && Object.keys(schedule).length > 0 ? (
-          <>
-            <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
-            {Object.keys(schedule).some(date => date === selectedDate) ? (
-              <ScheduleShiftForm
-                onAddShift={handleAddShift}
-                onSaveSchedule={handleSaveSchedule}
-                shifts={shifts}
-                selectedDate={selectedDate}
-                setSelectedDate={setSelectedDate}
-                shiftData={shiftData}
-                setShiftData={setShiftData}
-                recurrence={recurrence}
-                setRecurrence={setRecurrence}
-                consultationDuration={consultationDuration}
-                setConsultationDuration={setConsultationDuration}
-                renderShiftPreview={renderShiftPreview}
-              />
-            ) : (
-              <Text style={styles.noShiftsMessage}>No saved schedule for the selected date.</Text>
-            )}
-          </>
-        ) : (
-          <ScheduleShiftForm
-            onAddShift={handleAddShift}
-            onSaveSchedule={handleSaveSchedule}
-            shifts={shifts}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            shiftData={shiftData}
-            setShiftData={setShiftData}
-            recurrence={recurrence}
-            setRecurrence={setRecurrence}
-            consultationDuration={consultationDuration}
-            setConsultationDuration={setConsultationDuration}
-            renderShiftPreview={renderShiftPreview}
-          />
-        )}
-      </View>
-    </ScrollView>
+    <div style={styles.scheduleContainer}>
+      <div style={styles.header}>
+        <h2 style={styles.headerTitle}>Schedule Your Day</h2>
+      </div>
+      {schedule && Object.keys(schedule).length > 0 ? (
+        <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
+      ) : (
+        <ScheduleShiftForm
+          onAddShift={handleAddShift}
+          onSaveSchedule={handleSaveSchedule}
+          shifts={shifts}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          shiftData={shiftData}
+          setShiftData={setShiftData}
+          recurrence={recurrence}
+          setRecurrence={setRecurrence}
+          consultationDuration={consultationDuration}
+          setConsultationDuration={setConsultationDuration}
+          renderShiftPreview={renderShiftPreview}
+        />
+      )}
+    </div>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
   scheduleContainer: {
     flex: 1,
     padding: 20,
@@ -269,48 +225,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2a2a2a',
     textAlign: 'center',
-  },
-  noShiftsMessage: {
-    textAlign: 'center',
-    color: '#888',
-    marginTop: 20,
-  },
-  shiftPreviewContainer: {
-    marginTop: 20,
-  },
-  previewTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  shiftsWrapper: {
-    // Add styles for shiftsWrapper if needed
-  },
-  shiftCard: {
-    marginBottom: 10,
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  shiftHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  shiftDetails: {
-    fontSize: 16,
-    color: '#555',
-  },
-  shiftSlots: {
-    marginTop: 10,
-  },
-  slot: {
-    fontSize: 14,
-    color: '#777',
   },
 });
 
