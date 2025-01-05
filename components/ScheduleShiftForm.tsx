@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; 
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
-import DatePicker from "react-datepicker"; // Import DatePicker component
-import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker styles
 
 interface ScheduleShiftFormProps {
   onAddShift: () => void;
@@ -23,6 +21,7 @@ interface ScheduleShiftFormProps {
 const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
   const [showStartTimePicker, setShowStartTimePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const handleStartTimeChange = (event, selectedTime) => {
     setShowStartTimePicker(false);
@@ -35,6 +34,13 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
     setShowEndTimePicker(false);
     if (selectedTime) {
       setShiftData({ ...shiftData, endTime: selectedTime.toISOString().substr(11, 5) });
+    }
+  };
+
+  const handleDateChange = (event, selectedDate) => {
+    setShowDatePicker(false);
+    if (selectedDate) {
+      setSelectedDate(selectedDate.toISOString().split("T")[0]);
     }
   };
 
@@ -56,12 +62,20 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Choose the date for your shifts</Text>
-        <DatePicker
-          selected={new Date(selectedDate)}
-          onChange={(date: Date) => setSelectedDate(date.toISOString().split("T")[0])}
-          style={styles.datePicker}
-          aria-label="Select a date"
+        <TextInput
+          value={selectedDate}
+          onFocus={() => setShowDatePicker(true)}
+          style={styles.input}
+          placeholder="Select Date"
         />
+        {showDatePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
       </View>
 
       {/* Shift Input Form */}
@@ -167,14 +181,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   select: {
-    width: '100%',
-    padding: 10,
-    borderRadius: 5,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    fontSize: 16,
-  },
-  datePicker: {
     width: '100%',
     padding: 10,
     borderRadius: 5,
