@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; 
-import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
+import { View, Text, TextInput, Button, StyleSheet } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import DateTimePickerModal from "react-native-modal-datetime-picker"; // Expo-compatible DateTimePickerModal
 
 interface ScheduleShiftFormProps {
   onAddShift: () => void;
@@ -18,30 +18,37 @@ interface ScheduleShiftFormProps {
   renderShiftPreview: () => JSX.Element;
 }
 
-const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({
+  onAddShift,
+  onSaveSchedule,
+  shifts,
+  selectedDate,
+  setSelectedDate,
+  shiftData,
+  setShiftData,
+  recurrence,
+  setRecurrence,
+  consultationDuration,
+  setConsultationDuration,
+  renderShiftPreview,
+}) => {
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const [isStartTimePickerVisible, setStartTimePickerVisibility] = useState(false);
+  const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
 
-  const handleStartTimeChange = (event, selectedTime) => {
-    setShowStartTimePicker(false);
-    if (selectedTime) {
-      setShiftData({ ...shiftData, startTime: selectedTime.toISOString().substr(11, 5) });
-    }
+  const handleConfirmDate = (date: Date) => {
+    setSelectedDate(date.toISOString().split("T")[0]);
+    setDatePickerVisibility(false);
   };
 
-  const handleEndTimeChange = (event, selectedTime) => {
-    setShowEndTimePicker(false);
-    if (selectedTime) {
-      setShiftData({ ...shiftData, endTime: selectedTime.toISOString().substr(11, 5) });
-    }
+  const handleConfirmStartTime = (time: Date) => {
+    setShiftData({ ...shiftData, startTime: time.toISOString().substr(11, 5) });
+    setStartTimePickerVisibility(false);
   };
 
-  const handleDateChange = (event, selectedDate) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setSelectedDate(selectedDate.toISOString().split("T")[0]);
-    }
+  const handleConfirmEndTime = (time: Date) => {
+    setShiftData({ ...shiftData, endTime: time.toISOString().substr(11, 5) });
+    setEndTimePickerVisibility(false);
   };
 
   return (
@@ -62,20 +69,16 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
 
       <View style={styles.formGroup}>
         <Text style={styles.label}>Choose the date for your shifts</Text>
-        <TextInput
-          value={selectedDate}
-          onFocus={() => setShowDatePicker(true)}
-          style={styles.input}
-          placeholder="Select Date"
+        <Button
+          onPress={() => setDatePickerVisibility(true)}
+          title={selectedDate ? selectedDate : "Select Date"}
         />
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date()}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="date"
+          onConfirm={handleConfirmDate}
+          onCancel={() => setDatePickerVisibility(false)}
+        />
       </View>
 
       {/* Shift Input Form */}
@@ -94,45 +97,37 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
           <Text style={styles.label}>Start Time</Text>
           <TextInput
             value={shiftData.startTime}
-            onFocus={() => setShowStartTimePicker(true)}
+            onFocus={() => setStartTimePickerVisibility(true)}
             style={styles.input}
             placeholder="Select Start Time"
           />
-          {showStartTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              display="default"
-              onChange={handleStartTimeChange}
-            />
-          )}
+          <DateTimePickerModal
+            isVisible={isStartTimePickerVisible}
+            mode="time"
+            onConfirm={handleConfirmStartTime}
+            onCancel={() => setStartTimePickerVisibility(false)}
+          />
         </View>
         <View style={styles.formGroupHalf}>
           <Text style={styles.label}>End Time</Text>
           <TextInput
             value={shiftData.endTime}
-            onFocus={() => setShowEndTimePicker(true)}
+            onFocus={() => setEndTimePickerVisibility(true)}
             style={styles.input}
             placeholder="Select End Time"
           />
-          {showEndTimePicker && (
-            <DateTimePicker
-              value={new Date()}
-              mode="time"
-              display="default"
-              onChange={handleEndTimeChange}
-            />
-          )}
+          <DateTimePickerModal
+            isVisible={isEndTimePickerVisible}
+            mode="time"
+            onConfirm={handleConfirmEndTime}
+            onCancel={() => setEndTimePickerVisibility(false)}
+          />
         </View>
       </View>
 
       {/* Add Shift Button */}
       <View style={styles.buttonContainer}>
-        <Button
-          onPress={onAddShift}
-          title="Add Shift"
-          color="#4caf50"
-        />
+        <Button onPress={onAddShift} title="Add Shift" color="#4caf50" />
       </View>
 
       {/* Shift Preview */}
@@ -140,11 +135,7 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
 
       {/* Save Schedule Button */}
       <View style={styles.buttonContainer}>
-        <Button
-          onPress={onSaveSchedule}
-          title="Save Schedule"
-          color="#2196f3"
-        />
+        <Button onPress={onSaveSchedule} title="Save Schedule" color="#2196f3" />
       </View>
     </View>
   );
@@ -153,15 +144,18 @@ const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSav
 const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
   formGroup: {
     marginBottom: 20,
   },
   formGroupRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 20,
   },
   formGroupHalf: {
@@ -169,22 +163,22 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 8,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   input: {
-    width: '100%',
+    width: "100%",
     padding: 10,
     borderRadius: 5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     fontSize: 16,
   },
   select: {
-    width: '100%',
+    width: "100%",
     padding: 10,
     borderRadius: 5,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderWidth: 1,
     fontSize: 16,
   },
