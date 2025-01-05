@@ -14,7 +14,6 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
     institution: '',
     year: '',
     specialization: '',
-    certifications: '',
     licenseNumber: '',
     issuingMedicalBoard: '',
     yearsOfExperience: '',
@@ -134,17 +133,6 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
           style={styles.input}
           value={formData.specialization}
           onChangeText={(text) => handleInputChange('specialization', text)}
-        />
-      </View>
-      
-      {/* Certifications */}
-      <View style={styles.formGroup}>
-        <Text style={styles.label}>Certifications</Text>
-        <TextInput
-          placeholder="Enter certifications"
-          style={styles.input}
-          value={formData.certifications}
-          onChangeText={(text) => handleInputChange('certifications', text)}
         />
       </View>
       
