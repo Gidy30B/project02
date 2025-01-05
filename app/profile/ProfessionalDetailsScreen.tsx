@@ -111,8 +111,26 @@ const ProfessionalDetailsScreen = ({ navigation }) => {
       {/* Specialization */}
       <View style={styles.formGroup}>
         <Text style={styles.label}>Specialization</Text>
+        <Picker
+          selectedValue={formData.specialization}
+          style={styles.input}
+          onValueChange={(value) => handleInputChange('specialization', value)}
+        >
+          <Picker.Item label="Select Specialization" value="" />
+          <Picker.Item label="Critical Care Medicine" value="Critical Care Medicine" />
+          <Picker.Item label="Neuro-anaesthesia" value="Neuro-anaesthesia" />
+          <Picker.Item label="Cardiac Anaesthesia" value="Cardiac Anaesthesia" />
+          <Picker.Item label="Paediatric Anaesthesia" value="Paediatric Anaesthesia" />
+          <Picker.Item label="Critical Care Anaesthesia" value="Critical Care Anaesthesia" />
+          <Picker.Item label="Regional Anaesthesia" value="Regional Anaesthesia" />
+          <Picker.Item label="Pain Management" value="Pain Management" />
+          <Picker.Item label="Cardiothoracic Anaesthesia" value="Cardiothoracic Anaesthesia" />
+          <Picker.Item label="Ambulatory Anaesthesia" value="Ambulatory Anaesthesia" />
+          <Picker.Item label="Obstetric Anaesthesia" value="Obstetric Anaesthesia" />
+          <Picker.Item label="Transplant Anaesthesia" value="Transplant Anaesthesia" />
+        </Picker>
         <TextInput
-          placeholder="Enter specialization"
+          placeholder="Or type your specialization"
           style={styles.input}
           value={formData.specialization}
           onChangeText={(text) => handleInputChange('specialization', text)}
