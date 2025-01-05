@@ -19,6 +19,7 @@ import { useSelector } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { firebase } from '../../firebase/config';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 const PracticeInformation = () => {
   const [profileImage, setProfileImage] = useState(null);
@@ -46,6 +47,8 @@ const PracticeInformation = () => {
   const router = useRouter();
   const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
   const { missingFields } = useLocalSearchParams();
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   console.log('User ID:', userId);
 
   useEffect(() => {
@@ -228,6 +231,26 @@ const PracticeInformation = () => {
     }
   };
 
+  const handleStartTimeChange = (event, selectedTime) => {
+    setShowStartTimePicker(false);
+    if (selectedTime) {
+      const hours = selectedTime.getHours();
+      const minutes = selectedTime.getMinutes();
+      const formattedTime = `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+      setWorkingHours({ ...workingHours, startTime: formattedTime });
+    }
+  };
+
+  const handleEndTimeChange = (event, selectedTime) => {
+    setShowEndTimePicker(false);
+    if (selectedTime) {
+      const hours = selectedTime.getHours();
+      const minutes = selectedTime.getMinutes();
+      const formattedTime = `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+      setWorkingHours({ ...workingHours, endTime: formattedTime });
+    }
+  };
+
   const renderInsuranceProvider = ({ item }) => (
     <TouchableOpacity
       style={[
@@ -299,19 +322,39 @@ const PracticeInformation = () => {
         {/* Working Hours Section */}
         <Text style={styles.sectionHeader}>Working Hours</Text>
         <View style={styles.hoursContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Start Time (e.g., 9:00 AM)"
-            value={workingHours.startTime}
-            onChangeText={(value) => setWorkingHours({ ...workingHours, startTime: value })}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="End Time (e.g., 5:00 PM)"
-            value={workingHours.endTime}
-            onChangeText={(value) => setWorkingHours({ ...workingHours, endTime: value })}
-          />
+          <TouchableOpacity onPress={() => setShowStartTimePicker(true)}>
+            <TextInput
+              style={styles.input}
+              placeholder="Start Time (e.g., 9:00 AM)"
+              value={workingHours.startTime}
+              editable={false}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowEndTimePicker(true)}>
+            <TextInput
+              style={styles.input}
+              placeholder="End Time (e.g., 5:00 PM)"
+              value={workingHours.endTime}
+              editable={false}
+            />
+          </TouchableOpacity>
         </View>
+        {showStartTimePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="time"
+            display="default"
+            onChange={handleStartTimeChange}
+          />
+        )}
+        {showEndTimePicker && (
+          <DateTimePicker
+            value={new Date()}
+            mode="time"
+            display="default"
+            onChange={handleEndTimeChange}
+          />
+        )}
 
         {/* Experience Section */}
         <Text style={styles.sectionHeader}>Experience (Optional)</Text>

@@ -149,6 +149,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   progressBar: {
     flex: 1,
@@ -160,6 +161,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
+    width: 40,
+    textAlign: 'right',
   },
   button: {
     backgroundColor: '#007BFF',
