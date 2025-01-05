@@ -4,7 +4,6 @@ import { ProgressBar } from 'react-native-paper';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VerificationScreen() {
   const router = useRouter();
@@ -25,11 +24,23 @@ export default function VerificationScreen() {
   useEffect(() => {
     const fetchProfileProgress = async () => {
       try {
-        const response = await axios.get(`https://medplus-health.onrender.com/api/professionals/progress/${userId}`);
-        
-        const professionalDetailsProgress = response.data.progress.professionalDetails.missingFields.length === 0 ? 100 : Math.round(response.data.progress.professionalDetails.progress);
-        const practiceInfoProgress = response.data.progress.practiceInfo.missingFields.length === 0 ? 100 : Math.round(response.data.progress.practiceInfo.progress);
-        const overallProgress = response.data.progress.professionalDetails.missingFields.length === 0 && response.data.progress.practiceInfo.missingFields.length === 0 ? 100 : Math.round(response.data.progress.overall);
+        const response = await axios.get(
+          `https://medplus-health.onrender.com/api/professionals/progress/${userId}`
+        );
+
+        const professionalDetailsProgress =
+          response.data.progress.professionalDetails.missingFields.length === 0
+            ? 100
+            : Math.round(response.data.progress.professionalDetails.progress);
+        const practiceInfoProgress =
+          response.data.progress.practiceInfo.missingFields.length === 0
+            ? 100
+            : Math.round(response.data.progress.practiceInfo.progress);
+        const overallProgress =
+          response.data.progress.professionalDetails.missingFields.length === 0 &&
+          response.data.progress.practiceInfo.missingFields.length === 0
+            ? 100
+            : Math.round(response.data.progress.overall);
 
         setProfileCompletion({
           professionalDetails: professionalDetailsProgress,
@@ -41,9 +52,12 @@ export default function VerificationScreen() {
           practiceInfo: response.data.progress.practiceInfo.missingFields,
         });
 
-        // Send a POST request to update profile completion status
+        // Update profile completion status
         const profileCompleted = professionalDetailsProgress === 100 && practiceInfoProgress === 100;
-        await axios.post(`https://medplus-health.onrender.com/api/professionals/update-profile-completion/${userId}`, { completedProfile: profileCompleted });
+        await axios.post(
+          `https://medplus-health.onrender.com/api/professionals/update-profile-completion/${userId}`,
+          { completedProfile: profileCompleted }
+        );
 
         setLoading(false);
       } catch (err) {
@@ -69,48 +83,53 @@ export default function VerificationScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Profile Verification</Text>
 
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => router.push({
-          pathname: '/profile/ProfessionalDetailsScreen',
-          params: {
-            missingFields: JSON.stringify(missingFields.professionalDetails),
-            nextScreenMissingFields: JSON.stringify(missingFields.practiceInfo)
-          }
-        })}
-      >
+      <View style={styles.card}>
         <Text style={styles.cardTitle}>Professional Details</Text>
-        <View style={styles.progressContainer}>
-          <ProgressBar
-            progress={professionalDetails / 100}
-            color="#007BFF"
-            style={styles.progressBar}
-          />
-          <Text style={styles.percentage}>{professionalDetails}%</Text>
-        </View>
-      </TouchableOpacity>
+        <ProgressBar
+          progress={professionalDetails / 100}
+          color="#007BFF"
+          style={styles.progressBar}
+        />
+        <Text style={styles.percentage}>{professionalDetails}% Completed</Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            router.push({
+              pathname: '/profile/ProfessionalDetailsScreen',
+              params: {
+                missingFields: JSON.stringify(missingFields.professionalDetails),
+              },
+            })
+          }
+        >
+          <Text style={styles.buttonText}>Update</Text>
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => router.push({
-          pathname: '/profile/PracticeInfoScreen',
-          params: { missingFields: JSON.stringify(missingFields.practiceInfo) }
-        })}
-      >
+      <View style={styles.card}>
         <Text style={styles.cardTitle}>Practice Information</Text>
-        <View style={styles.progressContainer}>
-          <ProgressBar
-            progress={practiceInfo / 100}
-            color="#28A745"
-            style={styles.progressBar}
-          />
-          <Text style={styles.percentage}>{practiceInfo}%</Text>
-        </View>
-      </TouchableOpacity>
+        <ProgressBar
+          progress={practiceInfo / 100}
+          color="#28A745"
+          style={styles.progressBar}
+        />
+        <Text style={styles.percentage}>{practiceInfo}% Completed</Text>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() =>
+            router.push({
+              pathname: '/profile/PracticeInfoScreen',
+              params: { missingFields: JSON.stringify(missingFields.practiceInfo) },
+            })
+          }
+        >
+          <Text style={styles.buttonText}>Update</Text>
+        </TouchableOpacity>
+      </View>
 
       {overall === 100 && (
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
+          style={[styles.button, styles.successButton]}
           onPress={() => router.push('/doctor/schedule')}
         >
           <Text style={styles.buttonText}>Set Up Schedule</Text>
@@ -124,7 +143,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 20,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F5F5F5',
   },
   title: {
     fontSize: 24,
@@ -134,51 +153,52 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   card: {
-    backgroundColor: '#FFF',
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 20,
     marginBottom: 15,
-    elevation: 2,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 5,
-    color: '#333',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 10,
+    color: '#222',
   },
   progressBar: {
-    flex: 1,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 10,
+    height: 10,
+    borderRadius: 5,
+    marginBottom: 10,
   },
   percentage: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
-    width: 40,
+    color: '#555',
     textAlign: 'right',
   },
-  button: {
+  actionButton: {
+    marginTop: 10,
+    padding: 10,
     backgroundColor: '#007BFF',
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  button: {
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
     marginTop: 20,
   },
-  secondaryButton: {
+  successButton: {
     backgroundColor: '#28A745',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   loading: {
     flex: 1,
@@ -187,7 +207,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 16,
     color: '#D9534F',
   },
 });
