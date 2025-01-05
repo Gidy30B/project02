@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Button } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Calendar } from "react-native-calendars"; // Import Calendar component
 import { format } from "date-fns"; // For date formatting
+import ScheduleShiftForm from "./ScheduleShiftForm"; // Import ScheduleShiftForm component
 
 interface Slot {
   startTime: string;
@@ -26,6 +27,7 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
   const [selectedDate, setSelectedDate] = useState<string>(
     format(new Date(), "yyyy-MM-dd")
   );
+  const [showForm, setShowForm] = useState<boolean>(false); // State to toggle form visibility
 
   const shiftsForSelectedDate = schedule[selectedDate] || [];
 
@@ -47,7 +49,10 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
     <View style={styles.container}>
       {/* Week Calendar Section */}
       <Calendar
-        onDayPress={(day) => setSelectedDate(day.dateString)}
+        onDayPress={(day) => {
+          setSelectedDate(day.dateString);
+          setShowForm(true); // Show form when a date is selected
+        }}
         markedDates={{
           [selectedDate]: { selected: true, selectedColor: "#66BB6A" },
         }}
@@ -65,12 +70,26 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
         }}
       />
 
+      {/* Render ScheduleShiftForm if showForm is true */}
+      {showForm && (
+        <ScheduleShiftForm
+          onAddShift={() => {}}
+          onSaveSchedule={() => {}}
+          shifts={shiftsForSelectedDate}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          shiftData={{ name: "", startTime: "", endTime: "" }}
+          setShiftData={() => {}}
+          recurrence="none"
+          setRecurrence={() => {}}
+          consultationDuration={0}
+          setConsultationDuration={() => {}}
+          renderShiftPreview={() => <View />}
+        />
+      )}
+
       {/* Shifts Display Section */}
-      {shiftsForSelectedDate.length === 0 ? (
-        <Text style={styles.noSchedule}>
-          No saved schedule available for the selected date.
-        </Text>
-      ) : (
+      {shiftsForSelectedDate.length > 0 && (
         <ScrollView style={styles.scheduleList}>
           {shiftsForSelectedDate.map((shift, shiftIndex) => (
             <View
@@ -103,6 +122,12 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
             </View>
           ))}
         </ScrollView>
+      )}
+
+      {shiftsForSelectedDate.length === 0 && (
+        <Text style={styles.noSchedule}>
+          No saved schedule available for the selected date.
+        </Text>
       )}
     </View>
   );
@@ -152,6 +177,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     alignItems: "center",
     justifyContent: "center",
+    flexDirection: "row", // Added to align items horizontally
   },
   slotTime: {
     fontWeight: "bold",

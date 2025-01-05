@@ -195,7 +195,27 @@ const ScheduleShifts: React.FC = () => {
           <Text style={styles.headerTitle}>Schedule Your Day</Text>
         </View>
         {schedule && Object.keys(schedule).length > 0 ? (
-          <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
+          <>
+            <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
+            {Object.keys(schedule).some(date => date === selectedDate) ? (
+              <ScheduleShiftForm
+                onAddShift={handleAddShift}
+                onSaveSchedule={handleSaveSchedule}
+                shifts={shifts}
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                shiftData={shiftData}
+                setShiftData={setShiftData}
+                recurrence={recurrence}
+                setRecurrence={setRecurrence}
+                consultationDuration={consultationDuration}
+                setConsultationDuration={setConsultationDuration}
+                renderShiftPreview={renderShiftPreview}
+              />
+            ) : (
+              <Text style={styles.noShiftsMessage}>No saved schedule for the selected date.</Text>
+            )}
+          </>
         ) : (
           <ScheduleShiftForm
             onAddShift={handleAddShift}
