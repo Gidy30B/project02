@@ -132,19 +132,7 @@ export default function Example() {
                 />
               </View>
 
-              {/* Sound Row */}
-              <TouchableOpacity
-                onPress={() => {
-                  // handle onPress
-                }}
-                style={styles.row}>
-                <View style={[styles.rowIcon, { backgroundColor: '#FE3C30' }]}>
-                  <FeatherIcon color="#fff" name="music" size={20} />
-                </View>
-                <Text style={styles.rowLabel}>Sound</Text>
-                <Text style={styles.rowValue}>Default</Text>
-                <FeatherIcon color="#C6C6C6" name="chevron-right" size={20} />
-              </TouchableOpacity>
+              
             </View>
           </View>
           
