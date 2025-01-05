@@ -35,7 +35,6 @@ const useSchedule = (): UseScheduleHook => {
         await fetchSchedule(storedUserId);
       }
     })();
-    // Ensure this runs only once to fetch the initial userId
   }, []); // No dependencies to prevent continuous re-execution
 
   const fetchSchedule = async (userId: string) => {

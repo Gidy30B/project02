@@ -73,8 +73,8 @@ const TransactionScreen: React.FC = () => {
         headers: { Authorization: `Bearer ${PAYSTACK_SECRET_KEY}` },
       });
       setTransactions(response.data || []);
-    } catch {
-      showAlert('Failed to fetch transactions.');
+    } catch (error) {
+      // No need to log or alert, the "No transactions found" message is enough
     }
   };
 

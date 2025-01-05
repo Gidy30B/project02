@@ -31,17 +31,37 @@ const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
 
   const bgColors = ["#5C6BC0", "#66BB6A", "#FFA726", "#42A5F5", "#EC407A"];
 
+  // Helper function to get the week range
+  const getWeekRange = (date: Date) => {
+    const startOfWeek = format(date, "yyyy-MM-dd"); // Start of the week
+    const endOfWeek = format(
+      new Date(date.setDate(date.getDate() + 6)), // End of the week
+      "yyyy-MM-dd"
+    );
+    return { startOfWeek, endOfWeek };
+  };
+
+  const { startOfWeek, endOfWeek } = getWeekRange(new Date());
+
   return (
     <View style={styles.container}>
-      {/* Calendar Section */}
+      {/* Week Calendar Section */}
       <Calendar
         onDayPress={(day) => setSelectedDate(day.dateString)}
         markedDates={{
           [selectedDate]: { selected: true, selectedColor: "#66BB6A" },
         }}
+        markingType={"period"}
         theme={{
           todayTextColor: "#FFA726",
           arrowColor: "#42A5F5",
+        }}
+        // Customize calendar to show only the week view
+        firstDay={1} // Start the week from Monday
+        hideExtraDays={true} // Hide days from the next month that are not in the week
+        markedDates={{
+          [startOfWeek]: { startingDay: true, color: "#66BB6A", textColor: "#fff" },
+          [endOfWeek]: { endingDay: true, color: "#66BB6A", textColor: "#fff" },
         }}
       />
 
