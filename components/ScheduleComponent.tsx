@@ -1,14 +1,33 @@
 import React, { useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from 'react-native'; // Import React Native components
 import { MaterialIcons } from "@expo/vector-icons"; // Import Expo vector icons
 import DatePicker from "react-datepicker"; // Import DatePicker component
 import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker styles
 
-const ScheduleComponent = ({ schedule }) => {
-  const [selectedDate, setSelectedDate] = useState(new Date());
+interface Slot {
+  startTime: string;
+  endTime: string;
+}
 
-  const handleDateChange = (date) => setSelectedDate(date);
+interface Shift {
+  shiftName: string;
+  slots: Slot[];
+}
 
-  const formatDate = (date) => {
+interface Schedule {
+  [date: string]: Shift[];
+}
+
+interface ScheduleComponentProps {
+  schedule: Schedule;
+}
+
+const ScheduleComponent: React.FC<ScheduleComponentProps> = ({ schedule }) => {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  const handleDateChange = (date: Date) => setSelectedDate(date);
+
+  const formatDate = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
@@ -18,131 +37,127 @@ const ScheduleComponent = ({ schedule }) => {
   const formattedDate = formatDate(selectedDate);
   const shiftsForSelectedDate = schedule[formattedDate] || [];
 
-  // Inline styles
-  const styles = {
-    container: {
-      padding: "1rem",
-      fontFamily: "Arial, sans-serif",
-    },
-    datePickerContainer: {
-      marginBottom: "1rem",
-    },
-    datePicker: {
-      width: "100%",
-      padding: "0.5rem",
-      fontSize: "1rem",
-      borderRadius: "5px",
-      border: "1px solid #ccc",
-    },
-    noSchedule: {
-      textAlign: "center",
-      color: "#666",
-      fontSize: "1rem",
-      marginTop: "1rem",
-    },
-    scheduleList: {
-      display: "flex",
-      flexDirection: "column",
-      gap: "1rem",
-    },
-    shiftItem: (bgColor) => ({
-      backgroundColor: bgColor,
-      padding: "1rem",
-      borderRadius: "8px",
-      color: "#fff",
-      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    }),
-    shiftHeader: {
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-      marginBottom: "0.5rem",
-      fontSize: "1rem",
-    },
-    calendarIcon: {
-      color: "#fff",
-    },
-    slotsContainer: {
-      display: "flex",
-      overflowX: "auto",
-      gap: "0.5rem",
-    },
-    slotCard: {
-      backgroundColor: "#fff",
-      color: "#333",
-      padding: "0.5rem 1rem",
-      borderRadius: "5px",
-      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-      minWidth: "120px",
-      textAlign: "center",
-      display: "flex", // Added to ensure horizontal alignment
-      justifyContent: "center", // Center the content horizontally
-      alignItems: "center", // Center the content vertically
-    },
-    slotTime: {
-      fontWeight: "bold",
-    },
-    slotSeparator: {
-      margin: "0 0.25rem",
-    },
-  };
-
   // Array of subtle background colors
   const bgColors = ["#5C6BC0", "#66BB6A", "#FFA726", "#42A5F5", "#EC407A"];
 
   return (
-    <div style={styles.container}>
+    <View style={styles.container}>
       {/* Date Picker Section */}
-      <div style={styles.datePickerContainer}>
+      <View style={styles.datePickerContainer}>
         <DatePicker
           selected={selectedDate}
           onChange={handleDateChange}
           style={styles.datePicker}
           aria-label="Select a date"
         />
-      </div>
+      </View>
 
       {/* Shifts Display Section */}
       {shiftsForSelectedDate.length === 0 ? (
-        <p style={styles.noSchedule}>
+        <Text style={styles.noSchedule}>
           No saved schedule available for the selected date.
-        </p>
+        </Text>
       ) : (
-        <div style={styles.scheduleList}>
+        <ScrollView style={styles.scheduleList}>
           {shiftsForSelectedDate.map((shift, shiftIndex) => (
-            <div
+            <View
               key={shiftIndex}
-              style={styles.shiftItem(bgColors[shiftIndex % bgColors.length])}
+              style={[styles.shiftItem, { backgroundColor: bgColors[shiftIndex % bgColors.length] }]}
             >
               {/* Date and Shift Name */}
-              <div style={styles.shiftHeader}>
+              <View style={styles.shiftHeader}>
                 <MaterialIcons
                   name="calendar-today"
                   size={20}
                   style={styles.calendarIcon}
                 />
-                <span>{formattedDate}</span>
-                <span>{shift.shiftName}</span>
-              </div>
+                <Text>{formattedDate}</Text>
+                <Text>{shift.shiftName}</Text>
+              </View>
 
               {/* Slots Section */}
-              <div style={styles.slotsContainer}>
+              <ScrollView horizontal style={styles.slotsContainer}>
                 {shift.slots.map((slot, slotIndex) => (
-                  <div key={slotIndex} style={styles.slotCard}>
-                    <div>
-                      <span style={styles.slotTime}>{slot.startTime}</span>
-                      <span style={styles.slotSeparator}>-</span>
-                      <span style={styles.slotTime}>{slot.endTime}</span>
-                    </div>
-                  </div>
+                  <View key={slotIndex} style={styles.slotCard}>
+                    <View>
+                      <Text style={styles.slotTime}>{slot.startTime}</Text>
+                      <Text style={styles.slotSeparator}>-</Text>
+                      <Text style={styles.slotTime}>{slot.endTime}</Text>
+                    </View>
+                  </View>
                 ))}
-              </div>
-            </div>
+              </ScrollView>
+            </View>
           ))}
-        </div>
+        </ScrollView>
       )}
-    </div>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    fontFamily: "Arial, sans-serif",
+  },
+  datePickerContainer: {
+    marginBottom: 16,
+  },
+  datePicker: {
+    width: "100%",
+    padding: 8,
+    fontSize: 16,
+    borderRadius: 5,
+    borderColor: "#ccc",
+    borderWidth: 1,
+  },
+  noSchedule: {
+    textAlign: "center",
+    color: "#666",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  scheduleList: {
+    flexDirection: "column",
+    gap: 16,
+  },
+  shiftItem: {
+    padding: 16,
+    borderRadius: 8,
+    color: "#fff",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+  },
+  shiftHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+    fontSize: 16,
+  },
+  calendarIcon: {
+    color: "#fff",
+  },
+  slotsContainer: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  slotCard: {
+    backgroundColor: "#fff",
+    color: "#333",
+    padding: 8,
+    borderRadius: 5,
+    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+    minWidth: 120,
+    textAlign: "center",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  slotTime: {
+    fontWeight: "bold",
+  },
+  slotSeparator: {
+    marginHorizontal: 4,
+  },
+});
 
 export default ScheduleComponent;

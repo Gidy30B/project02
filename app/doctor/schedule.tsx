@@ -7,17 +7,22 @@ import ScheduleShiftForm from "../../components/ScheduleShiftForm";
 import { StyleSheet, ScrollView, View, Text } from 'react-native'; // Import ScrollView, View, and Text
 import { useSelector } from 'react-redux'; // Import useSelector
 
+interface Slot {
+  startTime: string;
+  endTime: string;
+}
+
 interface Shift {
   name: string;
   startTime: string;
   endTime: string;
   date: string;
-  slots: { startTime: string; endTime: string }[];
+  slots: Slot[];
 }
 
 const ScheduleShifts: React.FC = () => {
   const { schedule, fetchSchedule } = useSchedule();
-  const userId = useSelector((state) => state.auth.userId); // Get userId from Redux
+  const userId = useSelector((state: any) => state.auth.userId); // Get userId from Redux
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [shiftData, setShiftData] = useState<{ name: string; startTime: string; endTime: string }>({
@@ -36,7 +41,7 @@ const ScheduleShifts: React.FC = () => {
   }, [fetchSchedule, userId]);
 
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
-    const slots: { startTime: string; endTime: string }[] = [];
+    const slots: Slot[] = [];
     const start = new Date(`1970-01-01T${startTime}:00Z`);
     const end = new Date(`1970-01-01T${endTime}:00Z`);
 

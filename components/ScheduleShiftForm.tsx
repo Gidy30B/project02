@@ -1,97 +1,140 @@
-import React from "react";
+import React, { useState } from "react";
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; 
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker
 
-const ScheduleShiftForm = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
+interface ScheduleShiftFormProps {
+  onAddShift: () => void;
+  onSaveSchedule: () => void;
+  shifts: any[];
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+  shiftData: { name: string; startTime: string; endTime: string };
+  setShiftData: (data: { name: string; startTime: string; endTime: string }) => void;
+  recurrence: string;
+  setRecurrence: (recurrence: string) => void;
+  consultationDuration: number;
+  setConsultationDuration: (duration: number) => void;
+  renderShiftPreview: () => JSX.Element;
+}
+
+const ScheduleShiftForm: React.FC<ScheduleShiftFormProps> = ({ onAddShift, onSaveSchedule, shifts, selectedDate, setSelectedDate, shiftData, setShiftData, recurrence, setRecurrence, consultationDuration, setConsultationDuration, renderShiftPreview }) => {
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+
+  const handleStartTimeChange = (event, selectedTime) => {
+    setShowStartTimePicker(false);
+    if (selectedTime) {
+      setShiftData({ ...shiftData, startTime: selectedTime.toISOString().substr(11, 5) });
+    }
+  };
+
+  const handleEndTimeChange = (event, selectedTime) => {
+    setShowEndTimePicker(false);
+    if (selectedTime) {
+      setShiftData({ ...shiftData, endTime: selectedTime.toISOString().substr(11, 5) });
+    }
+  };
+
   return (
-    <div style={styles.formContainer}>
+    <View style={styles.formContainer}>
       {/* Schedule Form */}
-      <div style={styles.formGroup}>
-        <label htmlFor="recurrence" style={styles.label}>Recurrence</label>
-        <select
-          id="recurrence"
-          value={recurrence}
-          onChange={(e) => setRecurrence(e.target.value)}
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Recurrence</Text>
+        <Picker
+          selectedValue={recurrence}
+          onValueChange={(itemValue) => setRecurrence(itemValue)}
           style={styles.select}
         >
-          <option value="none">Only for this day</option>
-          <option value="daily">Repeat every day</option>
-          <option value="weekly">Repeat weekly on this day</option>
-        </select>
-      </div>
+          <Picker.Item label="Only for this day" value="none" />
+          <Picker.Item label="Repeat every day" value="daily" />
+          <Picker.Item label="Repeat weekly on this day" value="weekly" />
+        </Picker>
+      </View>
 
-      <div style={styles.formGroup}>
-        <label htmlFor="date" style={styles.label}>Choose the date for your shifts</label>
-        <input
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Choose the date for your shifts</Text>
+        <TextInput
           type="date"
-          id="date"
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChangeText={(text) => setSelectedDate(text)}
           style={styles.input}
         />
-      </div>
+      </View>
 
       {/* Shift Input Form */}
-      <div style={styles.formGroup}>
-        <label htmlFor="shiftName" style={styles.label}>Shift Name</label>
-        <input
-          type="text"
-          id="shiftName"
+      <View style={styles.formGroup}>
+        <Text style={styles.label}>Shift Name</Text>
+        <TextInput
           value={shiftData.name}
-          onChange={(e) => setShiftData({ ...shiftData, name: e.target.value })}
+          onChangeText={(text) => setShiftData({ ...shiftData, name: text })}
           style={styles.input}
           placeholder="e.g., Morning Shift"
         />
-      </div>
+      </View>
 
-      <div style={styles.formGroupRow}>
-        <div style={styles.formGroupHalf}>
-          <label htmlFor="startTime" style={styles.label}>Start Time</label>
-          <input
-            type="time"
-            id="startTime"
+      <View style={styles.formGroupRow}>
+        <View style={styles.formGroupHalf}>
+          <Text style={styles.label}>Start Time</Text>
+          <TextInput
             value={shiftData.startTime}
-            onChange={(e) => setShiftData({ ...shiftData, startTime: e.target.value })}
+            onFocus={() => setShowStartTimePicker(true)}
             style={styles.input}
+            placeholder="Select Start Time"
           />
-        </div>
-        <div style={styles.formGroupHalf}>
-          <label htmlFor="endTime" style={styles.label}>End Time</label>
-          <input
-            type="time"
-            id="endTime"
+          {showStartTimePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="time"
+              display="default"
+              onChange={handleStartTimeChange}
+            />
+          )}
+        </View>
+        <View style={styles.formGroupHalf}>
+          <Text style={styles.label}>End Time</Text>
+          <TextInput
             value={shiftData.endTime}
-            onChange={(e) => setShiftData({ ...shiftData, endTime: e.target.value })}
+            onFocus={() => setShowEndTimePicker(true)}
             style={styles.input}
+            placeholder="Select End Time"
           />
-        </div>
-      </div>
+          {showEndTimePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="time"
+              display="default"
+              onChange={handleEndTimeChange}
+            />
+          )}
+        </View>
+      </View>
 
       {/* Add Shift Button */}
-      <div style={styles.buttonContainer}>
-        <button
-          onClick={onAddShift}
-          style={{ ...styles.button, ...styles.addButton }}
-        >
-          Add Shift
-        </button>
-      </div>
+      <View style={styles.buttonContainer}>
+        <Button
+          onPress={onAddShift}
+          title="Add Shift"
+          color="#4caf50"
+        />
+      </View>
 
       {/* Shift Preview */}
       {selectedDate && renderShiftPreview()}
 
       {/* Save Schedule Button */}
-      <div style={styles.buttonContainer}>
-        <button
-          onClick={onSaveSchedule}
-          style={{ ...styles.button, ...styles.saveButton }}
-        >
-          Save Schedule
-        </button>
-      </div>
-    </div>
+      <View style={styles.buttonContainer}>
+        <Button
+          onPress={onSaveSchedule}
+          title="Save Schedule"
+          color="#2196f3"
+        />
+      </View>
+    </View>
   );
 };
 
-const styles = {
+const styles = StyleSheet.create({
   formContainer: {
     padding: 20,
     backgroundColor: '#fff',
@@ -102,14 +145,13 @@ const styles = {
     marginBottom: 20,
   },
   formGroupRow: {
-    display: 'flex',
+    flexDirection: 'row',
     gap: 20,
   },
   formGroupHalf: {
     flex: 1,
   },
   label: {
-    display: 'block',
     marginBottom: 8,
     fontWeight: 'bold',
     color: '#333',
@@ -118,36 +160,21 @@ const styles = {
     width: '100%',
     padding: 10,
     borderRadius: 5,
-    border: '1px solid #ccc',
+    borderColor: '#ccc',
+    borderWidth: 1,
     fontSize: 16,
   },
   select: {
     width: '100%',
     padding: 10,
     borderRadius: 5,
-    border: '1px solid #ccc',
+    borderColor: '#ccc',
+    borderWidth: 1,
     fontSize: 16,
   },
   buttonContainer: {
     marginTop: 20,
   },
-  button: {
-    width: '100%',
-    padding: 15,
-    borderRadius: 5,
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    cursor: 'pointer',
-  },
-  addButton: {
-    backgroundColor: '#4caf50',
-    color: '#fff',
-  },
-  saveButton: {
-    backgroundColor: '#2196f3',
-    color: '#fff',
-  },
-};
+});
 
 export default ScheduleShiftForm;
