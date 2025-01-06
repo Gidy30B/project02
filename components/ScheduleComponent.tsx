@@ -56,10 +56,15 @@ const ScheduleComponent = ({ schedule }) => {
                 <MaterialIcons name="calendar-today" size={20} style={{ marginRight: 8, color: '#00796b' }} /> 
                 <Text style={{ fontWeight: 'bold', color: '#00796b' }}>{formattedDate}</Text>
               </View>
-              {/* Shift Name */}
-              <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#00796b' }}>
-                {shift.shiftName}
-              </Text>
+              {/* Shift Name and Time */}
+              <View style={{ marginBottom: 8 }}>
+                <Text style={{ fontWeight: 'bold', color: '#00796b' }}>
+                  {shift.shiftName}
+                </Text>
+                <Text style={{ color: '#00796b' }}>
+                  {shift.startTime} - {shift.endTime}
+                </Text>
+              </View>
               {/* Horizontal Scrollable Slots */}
               <ScrollView horizontal>
                 {shift.slots.map((slot, slotIndex) => (
