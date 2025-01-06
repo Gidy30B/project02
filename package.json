@@ -19,7 +19,6 @@
     "@expo/vector-icons": "^14.0.2",
     "@mui/material": "^6.1.10",
     "@mui/x-date-pickers": "^7.23.3",
-    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-community/datetimepicker": "8.2.0",
     "@react-native-community/slider": "4.5.5",
     "@react-native-masked-view/masked-view": "^0.3.2",
@@ -92,7 +91,8 @@
     "socket.io-client": "^4.8.1",
     "styled-components": "^6.1.13",
     "tailwindcss": "^3.4.17",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "@react-native-async-storage/async-storage": "1.23.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
