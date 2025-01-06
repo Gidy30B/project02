@@ -6,7 +6,17 @@ import prescriptionReducer from './prescriptionSlice';
 import appointmentsReducer from './appointmentSlice';
 import { combineReducers } from 'redux';
 
-const persistConfig = {
+const persistConfig: {
+  key: string;
+  storage: typeof AsyncStorage;
+  whitelist: string[];
+  serialize: boolean;
+  stateReconciler: (inboundState: any, originalState: any) => any;
+  transforms: {
+    out: (state: any) => any;
+    in: (state: any) => any;
+  }[];
+} = {
   key: 'root',
   storage: AsyncStorage,
   whitelist: ['auth'], // Only persist the auth reducer
@@ -18,6 +28,16 @@ const persistConfig = {
       err: undefined, // Ignore the err field
     };
   },
+  // Add the following lines to handle non-serializable values
+  transforms: [
+    {
+      out: (state: any) => {
+        const { err, ...rest } = state;
+        return rest;
+      },
+      in: (state: any) => state,
+    },
+  ],
 };
 
 const rootReducer = combineReducers({

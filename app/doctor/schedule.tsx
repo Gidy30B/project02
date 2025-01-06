@@ -34,7 +34,7 @@ const ScheduleShifts: React.FC = () => {
       }
     };
     getUserId();
-  }, [fetchSchedule]);
+  }, []);
 
   // Generate time slots based on start time, end time, and consultation duration
   const generateTimeSlots = (startTime: string, endTime: string, duration: number) => {
@@ -194,6 +194,12 @@ const ScheduleShifts: React.FC = () => {
     setShifts(schedule[date] || []);
   };
 
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
   return (
     <View style={{ flex: 1, padding: 24 }}>
       {/* Top Section */}
@@ -201,8 +207,8 @@ const ScheduleShifts: React.FC = () => {
         <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Schedule Your Day</Text>
       </View>
 
-      {/* Render saved schedule if available */}
-      {schedule && Object.keys(schedule).length > 0 ? (
+      {/* Render saved schedule if available for today */}
+      {schedule && schedule[getTodayDate()] ? (
         <ScheduleComponent schedule={schedule} onEditSchedule={handleEditSchedule} />
       ) : (
         <ScheduleShiftForm

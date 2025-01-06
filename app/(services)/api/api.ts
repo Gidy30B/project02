@@ -53,12 +53,37 @@ const setPassword = async (token: string, password: string): Promise<any> => {
   return response.data;
 };
 
+// reset password
+const resetPassword = async (email: string, verificationCode: string, newPassword: string): Promise<any> => {
+  const response = await axios.post(`${API_URL}/api/users/reset-password`, { email, verificationCode, newPassword });
+  return response.data;
+};
+
+// request password reset
+const requestPasswordReset = async (email: string): Promise<any> => {
+  const response = await fetch(`${API_URL}/api/users/request-password-reset`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to request password reset");
+  }
+
+  return response.json();
+};
+
 // export the functions
-export { loginUser, registerUser, googleLoginUser, setPassword };
+export { loginUser, registerUser, googleLoginUser, setPassword, resetPassword, requestPasswordReset };
 
 export default {
   loginUser,
   registerUser,
   googleLoginUser,
   setPassword,
+  resetPassword,
+  requestPasswordReset,
 };
