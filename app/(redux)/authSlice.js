@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from 'axios';
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import AsyncStorage
 
 // Function to load user from AsyncStorage
 export const loadUserFromStorage = async () => {
@@ -86,6 +87,8 @@ const authSlice = createSlice({
           loginMethod: user.loginMethod,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
+          phoneNumber: user.phoneNumber,
+          completedProfile: user.completedProfile,
         };
         state.name = user.firstName + ' ' + user.lastName;
         state.email = user.email;
@@ -99,6 +102,8 @@ const authSlice = createSlice({
     },
     logoutAction: (state) => {
       Object.assign(state, initialState); // Reset state to initial values
+      AsyncStorage.removeItem("userToken"); // Clear user token from AsyncStorage
+      AsyncStorage.removeItem("userId"); // Clear user ID from AsyncStorage
     },
     setUser: (state, action) => {
       const user = action.payload;

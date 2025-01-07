@@ -12,9 +12,12 @@ import { emailValidator } from "../../helpers/emailValidator";
 import { passwordValidator } from "../../helpers/passwordValidator";
 import { loginUser } from "../(services)/api/api"; // Import the loginUser function
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useDispatch } from "react-redux";
+import { loginAction } from "../(redux)/authSlice"; // Import the loginAction
 
 export default function LoginScreen() {
   const router = useRouter(); // Use useRouter hook
+  const dispatch = useDispatch(); // Use useDispatch hook
   const [email, setEmail] = useState({ value: "", error: "" });
   const [password, setPassword] = useState({ value: "", error: "" });
 
@@ -32,6 +35,7 @@ export default function LoginScreen() {
       if (response.token) {
         await AsyncStorage.setItem("userToken", response.token);
         await AsyncStorage.setItem("userId", response.user._id);
+        dispatch(loginAction({ user: response.user, token: response.token })); // Dispatch login action
         if (response.user.completedProfile) {
           router.replace("/doctor/dashboard");
         } else {
