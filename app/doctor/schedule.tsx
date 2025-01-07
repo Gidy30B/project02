@@ -201,7 +201,7 @@ const ScheduleShifts: React.FC = () => {
   };
 
   return (
-    <View style={{ flex: 1, padding: 24 }}>
+    <ScrollView style={{ flex: 1, padding: 24 }}>
       {/* Top Section */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Schedule Your Day</Text>
@@ -226,7 +226,7 @@ const ScheduleShifts: React.FC = () => {
           renderShiftPreview={renderShiftPreview}
         />
       )}
-    </View>
+    </ScrollView>
   );
 };
 
