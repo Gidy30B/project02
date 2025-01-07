@@ -138,6 +138,7 @@ const ScheduleShifts: React.FC = () => {
       await axios.put("https://medplus-health.onrender.com/api/schedule", payload);
       Alert.alert("Your schedule has been saved successfully!");
       setShifts([]); // Clear shifts after saving
+      fetchSchedule(userId); // Fetch the updated schedule
     } catch (error) {
       Alert.alert("Error saving schedule.");
     }
