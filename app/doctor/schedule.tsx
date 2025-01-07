@@ -14,7 +14,7 @@ interface Shift {
   slots: { startTime: string; endTime: string }[];
 }
 
-const ScheduleShifts: React.FC = () => {
+const Schedule: React.FC = () => {
   const { schedule, fetchSchedule } = useSchedule(); // Use the custom hook
   const [userId, setUserId] = useState<string | null>(null);
   const [shifts, setShifts] = useState<Shift[]>([]); 
@@ -231,4 +231,4 @@ const ScheduleShifts: React.FC = () => {
   );
 };
 
-export default ScheduleShifts;
+export default Schedule;
