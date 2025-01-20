@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons'; // Import Expo vector icons
-import DatePicker from "react-datepicker"; // Import DatePicker component
-import "react-datepicker/dist/react-datepicker.css"; // Import DatePicker styles
+import DateTimePicker from '@react-native-community/datetimepicker'; // Import DateTimePicker component
 
 const ScheduleComponent = ({ schedule }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const handleDateChange = (date) => {
-    setSelectedDate(date);
+  const handleDateChange = (event, date) => {
+    setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+    }
   };
 
   const formatDate = (date) => {
@@ -33,12 +36,19 @@ const ScheduleComponent = ({ schedule }) => {
   return (
     <View style={{ padding: 16, backgroundColor: '#f5f5f5', flex: 1 }}>
       <View style={{ marginBottom: 16, backgroundColor: '#ffffff', padding: 16, borderRadius: 8, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
-        <DatePicker
-          selected={selectedDate}
-          onChange={handleDateChange}
-          className="date-picker"
-          style={{ width: '100%', padding: 10, borderRadius: 8, borderColor: '#ddd', borderWidth: 1 }}
-        />
+        <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+          <Text style={{ width: '100%', padding: 10, borderRadius: 8, borderColor: '#ddd', borderWidth: 1 }}>
+            {formattedDate}
+          </Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            onChange={handleDateChange}
+          />
+        )}
       </View>
       {shiftsForSelectedDate.length === 0 ? (
         <Text style={{ color: 'gray', textAlign: 'center', marginTop: 20 }}>
